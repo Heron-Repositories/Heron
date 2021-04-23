@@ -17,6 +17,7 @@ class Operation:
     attribute_types: list
     executable: str
     parent_dir: str
+    node_extras: object
 
 
 operations_list = []
@@ -53,7 +54,8 @@ for path, subdirs, files in os.walk(root):
                                   attributes=module.NodeAttributeNames,
                                   attribute_types=module.NodeAttributeType,
                                   executable=module.Exec,
-                                  parent_dir=parent)
+                                  parent_dir=parent,
+                                  node_extras=module.node_extras)
 
             operations_list.append(operation)
 

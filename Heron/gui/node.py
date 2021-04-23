@@ -4,7 +4,7 @@ import atexit
 from dearpygui import simple
 from dearpygui.core import *
 from Heron.gui import operations_list as op
-from Heron.general_utils import kill_child
+from Heron.general_utils import kill_child, choose_color_according_to_operations_type
 
 operations_list = op.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
@@ -64,14 +64,19 @@ class Node:
 
     def put_on_editor(self):
         with simple.node(name=self.name, parent='Node Editor##Editor', x_pos=100, y_pos=100):
+            colour = choose_color_according_to_operations_type(self.operation.parent_dir)
+            set_item_color(self.name, style=mvGuiCol_TitleBg, color=colour)
+
             for i, attr in enumerate(self.operation.attributes):
                 if self.operation.attribute_types[i] == 'Input':
                     output_type = False
                 elif self.operation.attribute_types[i] == 'Output':
                     output_type = True
-                with simple.node_attribute(attr + '##{}##{}'.format(self.operation.name, self.index),
-                                           parent=self.operation.name + '##{}'.format(self.index), output=output_type):
+                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.index)
+                with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.index),
+                                           output=output_type):
                     add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.index), default_value=attr)
+                    self.operation.node_extras(attribute_name)
 
     def start_exec(self):
         arguments_list = ['python', self.operation.executable, self.push_port]
@@ -81,6 +86,7 @@ class Node:
             arguments_list.append(topic_in)
         for topic_out in self.topics_out:
             arguments_list.append(topic_out)
+        arguments_list.append(self.name)
         print(arguments_list)
 
         self.process_pid = subprocess.Popen(arguments_list)

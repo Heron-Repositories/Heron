@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import atexit
 import numpy as np
-from Heron.general_utils import kill_child
+from Heron.general_utils import kill_child, choose_color_according_to_operations_type
 from Heron.gui import operations_list as op
 from Heron.gui.node import Node
 from dearpygui import simple
@@ -68,11 +68,11 @@ def on_add_node(sender, data):
     all_nodes = get_item_children("Node Editor##Editor")
     if all_nodes is not None:
         for n in all_nodes:
-            if op.name in n:
+            if operation.name in n:
                 num_of_same_nodes = num_of_same_nodes+1
 
     # Create the Node
-    name = op.name + '##{}'.format(num_of_same_nodes)
+    name = operation.name + '##{}'.format(num_of_same_nodes)
     n = Node(name=name)
     n.put_on_editor()
     n.push_port = next(port_generator)
@@ -112,37 +112,6 @@ def start_forwarder_processes(path_to_com):
     print('Main loop PID = {}'.format(os.getpid()))
     print('Forwarder for Data PID = {}'.format(forwarder_for_data.pid))
     print('Forwarder for State PID = {}'.format(forwarder_for_state.pid))
-
-'''
-def on_adding_node(sender, data):
-    index = get_value('##Add Node')
-    pos = get_mouse_pos(local=True)
-    node = Operations[index]
-    add_node(node, parent='Node Editor', x_pos=int(pos[0]), y_pos=int(pos[1]))
-
-    for i, attr in enumerate(attributes[node]):
-        print(attrs_types[node][i].split(' ')[-1])
-        if attrs_types[node][i].split(' ')[-1] == 'Input':
-            add_node_attribute(attributes[node][i], output=False)
-            add_text('##' + attributes[node][i] + ' Name', default_value=attributes[node][i].split('#')[0])
-            end()
-        elif attrs_types[node][i].split(' ')[-1] == 'Output':
-            add_node_attribute(attributes[node][i], output=True)
-            add_text('##' + attributes[node][i] + ' Name', default_value=attributes[node][i].split('#')[0])
-            end()
-
-    delete_item('Node Add')
-    end()
-
-
-def on_right_click(sender, data):
-    if data == mvMouseButton_Right:
-        pos = get_mouse_pos(local=False)
-        add_window('Node Add', on_close=lambda sender, data: delete_item(sender))
-        set_window_pos('Node Add', x=int(pos[0]), y=int(pos[1]))
-        add_listbox('##Add Node', items=Operations, callback=on_adding_node)
-        end()
-'''
 
 
 def get_links_dictionary():
@@ -202,7 +171,7 @@ def on_start_graph(sender, data):
 with simple.window("Main Window"):
     set_main_window_title("Heron")
     set_main_window_size(1700, 1000)
-
+    set_main_window_pos(350, 0)
     # The Start Graph button that starts all processes
     add_button("Start Graph", callback=on_start_graph)
 
@@ -222,13 +191,7 @@ with simple.window("Main Window"):
                 with simple.tree_node(node, parent=parent, default_open=True):
                     for op in operations_list:
                         if node == op.parent_dir:
-                            colour = [255, 255, 255, 100]
-                            if 'Sources' in node:
-                                colour = [0, 0, 255, 100]
-                            elif 'Transforms' in node:
-                                colour = [0, 255, 0, 100]
-                            elif 'Sinks' in node:
-                                colour = [255, 0, 0, 100]
+                            colour = choose_color_according_to_operations_type(node)
                             add_button(op.name, width=150, height=30, callback=on_add_node)
                             set_item_color(op.name, style=mvGuiCol_Button, color=colour)
 
