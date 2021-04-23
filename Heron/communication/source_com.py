@@ -72,8 +72,6 @@ class SourceCom:
         worker's work function is using
         :return: Nothing
         """
-        #print(topic)
-        #print(arguments_list)
         gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_STATE.send_pyobj(arguments_list)
 
@@ -83,7 +81,7 @@ class SourceCom:
         :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui)
         :return: Nothing
         """
-        worker = subprocess.Popen(['python', self.worker, self.port, self.state_topic])
+        worker = subprocess.Popen(['python', self.worker, self.port, self.state_topic, str(self.verbose)])
 
         if self.verbose:
             print('Source {} PID = {}.'.format(self.sending_topic, worker.pid))

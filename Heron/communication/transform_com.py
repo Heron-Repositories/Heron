@@ -1,5 +1,4 @@
 
-import numpy as np
 import subprocess
 import zmq
 import atexit
@@ -9,7 +8,6 @@ from Heron.general_utils import kill_child
 from Heron import constants as ct
 from Heron.communication import gui_com
 import time
-
 
 
 class TransformCom:

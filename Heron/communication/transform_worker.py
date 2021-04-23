@@ -26,7 +26,8 @@ class TransformWorker:
 
     def connect_sockets(self):
         """
-        Sets up the sockets to do the communication with the transform_com process.
+        Sets up the sockets to do the communication with the transform_com process through the forwarders
+        (for the data and the state).
         :return: Nothing
         """
         self.context = zmq.Context()

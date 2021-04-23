@@ -36,7 +36,8 @@ def start_loop(worker):
 
 def start_the_worker_process():
     args = sys.argv[1:]
-    assert len(args) == 3, 'The Source worker process needs 3 arguments, the port, the state topic and the verbose value'
+    assert len(args) == 3, 'The Source worker process needs 3 arguments, the port, the state topic and the verbose ' \
+                           'value'
     port, state_topic, verbose = args
     verbose = verbose == 'True'
 
@@ -45,9 +46,8 @@ def start_the_worker_process():
 
     while worker.state is None:
         worker.update_arguments()
-    print('CAMERA INDEX = {}'.format(worker.state))
 
-    start_loop()
+    start_loop(worker)
 
 
 if __name__ == "__main__":
