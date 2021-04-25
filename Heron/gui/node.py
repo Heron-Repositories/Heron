@@ -87,11 +87,11 @@ class Node:
         for topic_out in self.topics_out:
             arguments_list.append(topic_out)
         arguments_list.append(self.name)
-        print(arguments_list)
+        #print(arguments_list)
 
         self.process_pid = subprocess.Popen(arguments_list)
         # creationflags=subprocess.DETACHED_PROCESS)
         atexit.register(kill_child, self.process_pid)
 
     def stop_exec(self):
-        kill_child(self.process_pid)
+        self.process_pid.kill()

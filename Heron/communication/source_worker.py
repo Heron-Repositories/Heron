@@ -38,11 +38,9 @@ class SourceWorker:
     def update_arguments(self):
         try:
             topic = self.socket_sub_state.recv(flags=zmq.NOBLOCK)
-            print('THE TOPIC {}'.format(topic))
             binary_state = self.socket_sub_state.recv()
-            print('THE BINARY STATE {}'.format(binary_state))
             args = pickle.loads(binary_state)
-            print(args)
+            #print(args)
             self.state = args
         except zmq.Again as e:
             pass

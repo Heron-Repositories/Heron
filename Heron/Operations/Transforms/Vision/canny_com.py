@@ -1,11 +1,12 @@
 
 import os
 import sys
+import atexit
 from Heron.communication.transform_com import TransformCom
 from dearpygui.simple import *
 from dearpygui.core import *
 Exec = os.path.realpath(__file__)
-
+import signal
 
 # <editor-fold desc="The following code is called from the GUI process as part of the generation of the node.
 # It is meant to create node specific elements (not part of a generic node).
@@ -104,5 +105,6 @@ def start_the_communications_process():
 
 if __name__ == "__main__":
     start_the_communications_process()
+
 
 # </editor-fold>

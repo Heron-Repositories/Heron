@@ -23,10 +23,13 @@ def accurate_delay(delay):
 
 
 def kill_child(child_pid):
-    if child_pid is None:
+    print('KILL')
+    print(child_pid)
+    try:
+        child_pid.kill()
+    except:
         pass
-    else:
-        os.kill(child_pid, signal.SIGTERM)
+        #os.kill(child_pid, signal.SIGTERM)
 
 
 def choose_color_according_to_operations_type(operations_parent_name):

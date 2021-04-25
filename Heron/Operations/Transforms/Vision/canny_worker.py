@@ -10,7 +10,6 @@ def canny(data, arguments):
     max_val = arguments[1]
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(data)
     edges = cv2.Canny(image, min_val, max_val)
-    #edges = np.ones((100,100))
     cv2.namedWindow("Canny", cv2.WINDOW_NORMAL)
     cv2.imshow('Canny', edges)
     cv2.waitKey(1)

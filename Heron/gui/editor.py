@@ -16,6 +16,8 @@ operations_list = op.operations_list  # This generates all of the Operation data
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 5999
 nodes_list = []
+forwarders_list = []
+graph_running = False
 
 
 def generate_node_tree():
@@ -113,6 +115,9 @@ def start_forwarder_processes(path_to_com):
     print('Forwarder for Data PID = {}'.format(forwarder_for_data.pid))
     print('Forwarder for State PID = {}'.format(forwarder_for_state.pid))
 
+    forwarders_list.append(forwarder_for_data)
+    forwarders_list.append(forwarder_for_state)
+
 
 def get_links_dictionary():
     links = np.array(get_links("Node Editor##Editor"))
@@ -168,12 +173,21 @@ def on_start_graph(sender, data):
             n.start_exec()
 
 
+def on_end_graph(sender, data):
+    for n in nodes_list:
+        n.stop_exec()
+
+    for forwarder in forwarders_list:
+        forwarder.kill()
+
 with simple.window("Main Window"):
     set_main_window_title("Heron")
     set_main_window_size(1700, 1000)
     set_main_window_pos(350, 0)
     # The Start Graph button that starts all processes
     add_button("Start Graph", callback=on_start_graph)
+    add_same_line()
+    add_button("End Graph", callback=on_end_graph)
 
     with simple.window('Node Selector'):
         # Create the window of the Node selector
