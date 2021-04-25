@@ -86,19 +86,19 @@ def start_the_communications_process():
     global arguments_list
 
     args = sys.argv[1:]
-    assert len(args) == 5, 'There should be 5 arguments passed to the Canny process.' \
-                           'The sending_topic, the receiving_topic, the state_topic, the push_port and the pull_port'
+    assert len(args) == 4, 'There should be 4 arguments passed to all Transform processes.' \
+                            'The push port, the receiving topic, the sending topic and the state topic'
     push_port = args[0]
-    pull_port = args[1]
-    receiving_topic = args[2]
-    sending_topic = args[3]
-    state_topic = args[4]
+    receiving_topic = args[1]
+    sending_topic = args[2]
+    state_topic = args[3]
 
     worker_exec = os.path.join(os.path.dirname(Exec), 'canny_worker.py')
 
     canny_com = TransformCom(sending_topic=sending_topic, receiving_topic=receiving_topic, state_topic=state_topic,
-                             push_port=push_port, pull_port=pull_port, worker_exec=worker_exec, verbose=False)
+                             push_port=push_port, worker_exec=worker_exec, verbose=False)
     canny_com.connect_sockets()
+    canny_com.start_heartbeat_thread()
     canny_com.start_worker(arguments_list)
     canny_com.start_ioloop()
 

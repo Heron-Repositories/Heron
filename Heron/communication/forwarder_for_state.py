@@ -1,10 +1,16 @@
 
 import zmq
 from Heron import constants as ct
+import sys
 
 
 def main():
-    print('Forwarder for State ON')
+    args = sys.argv[1:]
+    debug = args == 'True'
+    # if process is called with 'True' then it becomes verbose and sends all messages also to the capture port
+    if debug:
+        print('Forwarder for State ON')
+
     try:
         context = zmq.Context(1)
         frontend = context.socket(zmq.SUB)
@@ -16,18 +22,17 @@ def main():
         #backend.CONFLATE = 1
         backend.bind("tcp://*:{}".format(ct.STATE_FORWARDER_PUBLISH_PORT))
 
-        capture = context.socket(zmq.PUB)
-        capture.bind("tcp://*:{}".format(4000))
+        if debug:
+            capture = context.socket(zmq.PUB)
+            capture.bind("tcp://*:{}".format(ct.STATE_FORWARDER_CAPTURE_PORT))
 
-        zmq.proxy(frontend, backend, capture)
+            zmq.proxy(frontend, backend, capture)
+        else:
+            zmq.proxy(frontend, backend)
 
     except Exception as e:
         print(e)
-        print("bringing down zmq device")
-    finally:
-        frontend.close()
-        backend.close()
-        context.term()
+        print("bringing down Forwarder for State")
 
 
 if __name__ == "__main__":

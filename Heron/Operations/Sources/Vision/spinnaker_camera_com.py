@@ -80,7 +80,8 @@ def start_the_communications_process():
                                 worker_exec=worker_exec, verbose=False)
 
     spin_camera_com.connect_sockets()
-    spin_camera_com.start_worker(arguments_list)
+    spin_camera_com.start_heartbeat_thread()
+    spin_camera_com.start_worker_process(arguments_list)
     spin_camera_com.start_ioloop()
 
 

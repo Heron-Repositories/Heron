@@ -1,25 +1,24 @@
 
 import subprocess
+import time
+import threading
 import zmq
 from zmq.eventloop import ioloop, zmqstream
-import atexit
 import os
 from Heron.communication.socket_for_serialization import Socket
-from Heron.general_utils import kill_child
 from Heron import constants as ct
 from Heron.communication import gui_com
-import time
-import signal
 
 
 class TransformCom:
 
-    def __init__(self, receiving_topic, sending_topic, state_topic, push_port, pull_port, worker_exec, verbose=True):
+    def __init__(self, receiving_topic, sending_topic, state_topic, push_port, worker_exec, verbose=True):
         self.receiving_topic = receiving_topic
         self.sending_topic = sending_topic
         self.state_topic = state_topic
-        self.push_port = push_port
-        self.pull_port = pull_port
+        self.push_data_port = push_port
+        self.pull_data_port = str(int(self.push_data_port) + 1)
+        self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
 
@@ -35,6 +34,7 @@ class TransformCom:
         self.socket_push_data = None
         self.socket_pull_data = None
         self.socket_pub_data = None
+        self.socket_push_heartbeat = None
 
         self.index = -1
 
@@ -74,17 +74,22 @@ class TransformCom:
         # Socket for pushing the data to the worker
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.set_hwm(1)
-        self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_port))
+        self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
 
         # Socket for pulling transformed data from the worker
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_port))
+        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
 
         # Socket for publishing transformed data to other nodes
         self.socket_pub_data = Socket(self.context, zmq.PUB)
         self.socket_pub_data.set_hwm(1)
         self.socket_pub_data.connect(r"tcp://localhost:{}".format(self.port_pub_data))
+
+        # Socket for publishing the heartbeat to the worker
+        self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
+        self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
+        self.socket_push_heartbeat.set_hwm(1)
 
     @staticmethod
     def publish_parameters_to_worker(topic, arguments_list):
@@ -97,18 +102,34 @@ class TransformCom:
         gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_STATE.send_pyobj(arguments_list)
 
+    def heartbeat_loop(self):
+        """
+        The loop that send a 'PULSE' heartbeat to the worker process to keep it alive (every ct.HEARTBEAT_RATE seconds)
+        :return: Nothing
+        """
+        while True:
+            self.socket_push_heartbeat.send_string('PULSE')
+            #print('PULSE FROM TRANSFORM to {}'.format(self.worker_pid))
+            time.sleep(ct.HEARTBEAT_RATE)
+
+    def start_heartbeat_thread(self):
+        """
+        The daemon thread that runs the infinite heartbeat_loop
+        :return: Noting
+        """
+        heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
+        heartbeat_thread.start()
+
     def start_worker(self, arguments_list):
         """
         Starts the worker process and then sends the parameters as are currently on the node to the process
-        :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui)
+        :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui).
+        The pull_data_port of the worker needs to be the push_data_port of the com (obviously)
         :return: Nothing
         """
         self.worker_pid = subprocess.Popen(
-            ['python', self.worker_exec, str(self.pull_port), str(self.push_port), str(self.state_topic),
+            ['python', self.worker_exec, str(self.push_data_port), str(self.state_topic),
              str(self.verbose)])
-        atexit.register(kill_child, self.worker_pid)
-        signal.signal(signal.SIGTERM, kill_child)
-        signal.signal(signal.SIGINT, kill_child)
 
         if self.verbose:
             print('Transform from {} to {} worker com with PID = {}.'.format(self.receiving_topic,
@@ -121,14 +142,14 @@ class TransformCom:
 
     def data_callback(self, topic):
         """
-        Start the io loop for the transform node. It reads the data from the previous node's _com process,
+        The data callback of te io loop for the transform node. It is called when the previous node publishes the topic.
+        Then the callback reads the rest of the data (index, time and data) from the previous node's _com process,
         pushes it to the worker_com process,
         waits for the results,
-        grabs the resulting data from the worker_com process and
-        publishes the transformed data to the data forwarder with this nodes' topic
+        pulls the resulting data from the worker_com process
+        and publishes the transformed data to the data forwarder with this nodes' topic
         :return: Nothing
         """
-        #while True:
 
         # Get data from subsribed node
         t1 = time.perf_counter()

@@ -18,8 +18,7 @@ class Node:
         self.process_pid = None
         self.topics_out = []
         self.topics_in = []
-        self.pull_port = None
-        self.push_port = None
+        self.starting_port = None
         self.num_of_inputs = 0
         self.num_of_outputs = 0
 
@@ -79,13 +78,13 @@ class Node:
                     self.operation.node_extras(attribute_name)
 
     def start_exec(self):
-        arguments_list = ['python', self.operation.executable, self.push_port]
-        if 'Input' in self.operation.attribute_types and 'Output' in self.operation.attribute_types:
-            arguments_list.append(self.pull_port)
-        for topic_in in self.topics_in:
-            arguments_list.append(topic_in)
-        for topic_out in self.topics_out:
-            arguments_list.append(topic_out)
+        arguments_list = ['python', self.operation.executable, self.starting_port]
+        if 'Input' in self.operation.attribute_types:
+            for topic_in in self.topics_in:
+                arguments_list.append(topic_in)
+        if 'Output' in self.operation.attribute_types:
+            for topic_out in self.topics_out:
+                arguments_list.append(topic_out)
         arguments_list.append(self.name)
         #print(arguments_list)
 

@@ -19,7 +19,7 @@ def show_preview(frame):
     cv2.waitKey(1)
 
 
-def start_loop(worker):
+def start_worker_loop(worker):
     with Camera() as cam: # Acquire and initialize Camera
         cam.start() # Start recording
         #print(cam.PixelFormat)
@@ -30,7 +30,6 @@ def start_loop(worker):
             image = cam.get_array()
             show_preview(image)
             worker.socket_push_data.send_array(image, copy=False)
-            worker.update_arguments()
             cv2.waitKey(1)
 
 
@@ -43,11 +42,13 @@ def start_the_worker_process():
 
     worker = SourceWorker(port=port, state_topic=state_topic)
     worker.connect_socket()
+    worker.start_parameters_thread()
+    worker.start_heartbeat_thread()
 
     while worker.state is None:
         worker.update_arguments()
 
-    start_loop(worker)
+    start_worker_loop(worker)
 
 
 if __name__ == "__main__":

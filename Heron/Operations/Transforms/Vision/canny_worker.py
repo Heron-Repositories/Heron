@@ -28,12 +28,12 @@ def start_the_worker_process():
     :return:
     """
     args = sys.argv[1:]
-    assert len(args) == 4, 'The Transform worker process needs 4 arguments, the push port, the pull port, the state ' \
+    assert len(args) == 3, 'The Transform worker process needs 3 arguments, the pull port, the state ' \
                            'topic and the verbose value'
-    push_port, pull_port, state_topic, verbose = sys.argv[1:]
+    pull_port, state_topic, verbose = sys.argv[1:]
     verbose = verbose == 'True'
 
-    worker = TransformWorker(pull_port=pull_port, push_port=push_port, work_function=canny, state_topic=state_topic,
+    worker = TransformWorker(pull_port=pull_port, work_function=canny, state_topic=state_topic,
                              verbose=verbose)
     worker.connect_sockets()
     worker.start_ioloop()

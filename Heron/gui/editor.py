@@ -1,4 +1,5 @@
 
+import time
 import subprocess
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import numpy as np
 from Heron.general_utils import kill_child, choose_color_according_to_operations_type
 from Heron.gui import operations_list as op
 from Heron.gui.node import Node
+from Heron import constants as ct
 from dearpygui import simple
 from dearpygui.core import *
 import default_style
@@ -17,7 +19,6 @@ heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 5999
 nodes_list = []
 forwarders_list = []
-graph_running = False
 
 
 def generate_node_tree():
@@ -77,8 +78,7 @@ def on_add_node(sender, data):
     name = operation.name + '##{}'.format(num_of_same_nodes)
     n = Node(name=name)
     n.put_on_editor()
-    n.push_port = next(port_generator)
-    n.pull_port = next(port_generator)
+    n.starting_port = next(port_generator)
     nodes_list.append(n)
 
 
@@ -142,14 +142,14 @@ def get_operation_from_attribute_name(attr_name):
             return op
 
 
-def get_next_available_port():
+def get_next_available_port_group():
     global last_used_port
     while True:
         yield str(last_used_port)
-        last_used_port = last_used_port + 1
+        last_used_port = last_used_port + 3
 
 
-port_generator = get_next_available_port()
+port_generator = get_next_available_port_group()
 
 
 def on_start_graph(sender, data):
@@ -161,6 +161,7 @@ def on_start_graph(sender, data):
     :param data: Not used
     :return: Nothing
     """
+    global graph_running
 
     if nodes_list:
 
@@ -172,13 +173,30 @@ def on_start_graph(sender, data):
         for n in nodes_list:
             n.start_exec()
 
+        update_control_graph_buttons(True)
+
 
 def on_end_graph(sender, data):
+    global graph_running
+
     for n in nodes_list:
         n.stop_exec()
 
     for forwarder in forwarders_list:
         forwarder.kill()
+
+    time.sleep(ct.HEARTBEAT_RATE * 1.2)
+    update_control_graph_buttons(False)
+
+
+def update_control_graph_buttons(graph_running):
+    if graph_running:
+        configure_item('Start Graph', enabled=False)
+        configure_item('End Graph', enabled=True)
+    else:
+        configure_item('Start Graph', enabled=True)
+        configure_item('End Graph', enabled=False)
+
 
 with simple.window("Main Window"):
     set_main_window_title("Heron")
@@ -188,6 +206,7 @@ with simple.window("Main Window"):
     add_button("Start Graph", callback=on_start_graph)
     add_same_line()
     add_button("End Graph", callback=on_end_graph)
+    update_control_graph_buttons(False)
 
     with simple.window('Node Selector'):
         # Create the window of the Node selector
