@@ -15,43 +15,11 @@ Exec = os.path.realpath(__file__)
 Properties of the generated Node
 """
 BaseName = 'Spinnaker Camera'
-NodeAttributeNames = ['Frame Out']
-NodeAttributeType = ['Output']
-
-"""
-Parameters of the generated Node. All parameters need to be in a list. This is a single list that is send to the 
-single worker function of the worker. It is possible that it is updated by widgets of multiple node attributes.
-"""
-arguments_list = [0]  # [Camera Index]
-
-
-def node_extras(attribute_name):
-    """
-    Extra GUI element under the attribute_name attribute of the generated Node.
-    This function is called for all attributes in the node, so it needs a multiple if statement
-    to deal with any attribute that needs extra elements
-    :param attribute_name: The name of the attribute that is the parent of the element(s) added there
-    :return: Nothing
-    """
-    global arguments_list
-    # Set up int inputs under the Edges Out attribute to define the Min and Max values for the canny algorithm
-    if NodeAttributeNames[0] in attribute_name:
-        add_input_int('Camera Index##{}'.format(attribute_name), default_value=arguments_list[0],
-                      callback=on_cam_index_change)
-        set_item_width('Camera Index##{}'.format(attribute_name), width=100)
-
-
-def on_cam_index_change(sender, data):
-    """
-    Callback that make the gui's publish state socket send the changed min value to the workers subscribe state socket
-    :param sender: The sender widget that calls the callback
-    :param data: not used
-    :return: Nothing
-    """
-    global arguments_list
-    arguments_list[0] = get_value(sender)
-    topic = BaseName + sender.split(BaseName)[1]
-    SourceCom.publish_parameters_to_worker(topic, arguments_list)
+NodeAttributeNames = ['Parameters', 'Frame Out']
+NodeAttributeType = ['Static', 'Output']
+ParameterNames = ['Cam Index']
+ParameterTypes = ['int']
+ParametersDefaultValues = [0]
 
 # </editor-fold>
 
@@ -65,7 +33,7 @@ def start_the_communications_process():
     :return: Nothing (continuous loop)
     """
     global Exec
-    global arguments_list
+    global parameters_list
 
     args = sys.argv[1:]
     assert len(args) == 3, 'There should be 3 arguments passed to the Spinnaker camera process. ' \
@@ -81,7 +49,7 @@ def start_the_communications_process():
 
     spin_camera_com.connect_sockets()
     spin_camera_com.start_heartbeat_thread()
-    spin_camera_com.start_worker_process(arguments_list)
+    spin_camera_com.start_worker_process(None)
     spin_camera_com.start_ioloop()
 
 

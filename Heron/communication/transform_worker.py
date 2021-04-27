@@ -54,7 +54,7 @@ class TransformWorker:
         self.socket_sub_state.connect(r'tcp://localhost:{}'.format(self.port_sub_state))
         self.socket_sub_state.subscribe(self.state_topic)
         self.stream_state = zmqstream.ZMQStream(self.socket_sub_state)
-        self.stream_state.on_recv(self.arguments_callback)
+        self.stream_state.on_recv(self.parameters_callback)
 
         # Setup the socket that sends the results to the com
         self.socket_push_data = Socket(self.context, zmq.PUSH)
@@ -77,13 +77,14 @@ class TransformWorker:
         result = self.work_function(data, self.state)
         self.socket_push_data.send_array(result, copy=False)
 
-    def arguments_callback(self, binary_state):
+    def parameters_callback(self, binary_state):
         """
         The callback called when there is an update of the state (worker function's parameters) from the node
         (send by the gui_com)
         :param binary_state:
         :return:
         """
+        #print(binary_state)
         args_pyobj = binary_state[1]  # remove the topic
         args = pickle.loads(args_pyobj)
         self.state = args
@@ -95,7 +96,6 @@ class TransformWorker:
         :return:
         """
         self.time_of_pulse = time.perf_counter()
-        #print('TRANSFORM RECEIVED PULSE AT {}'.format(self.time_of_pulse))
 
     def heartbeat_loop(self):
         """
@@ -105,11 +105,11 @@ class TransformWorker:
         """
         while True:
             current_time = time.perf_counter()
-            if current_time - self.time_of_pulse > 2 * ct.HEARTBEAT_RATE:
+            if current_time - self.time_of_pulse > 0.5 + ct.HEARTBEAT_RATE:
                 pid = os.getpid()
                 print('Killing pid {}'.format(pid))
                 os.kill(pid, signal.SIGTERM)
-            time.sleep(0.5)
+            time.sleep(int(ct.HEARTBEAT_RATE / 2))
 
     def start_ioloop(self):
         """

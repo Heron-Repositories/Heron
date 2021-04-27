@@ -27,6 +27,7 @@ class TransformCom:
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
         self.port_pub_state = ct.STATE_FORWARDER_SUBMIT_PORT
+        self.poller = zmq.Poller()
 
         self.context = None
         self.socket_sub_data = None
@@ -68,8 +69,9 @@ class TransformCom:
         self.socket_sub_data.set_hwm(1)
         self.socket_sub_data.connect("tcp://localhost:{}".format(self.port_sub_data))
         self.socket_sub_data.SUBSCRIBE = self.receiving_topic
-        self.stream_sub = zmqstream.ZMQStream(self.socket_sub_data)
-        self.stream_sub.on_recv(self.data_callback)
+        #self.stream_sub = zmqstream.ZMQStream(self.socket_sub_data)
+        #self.stream_sub.on_recv(self.data_callback)
+        self.poller.register(self.socket_sub_data, zmq.POLLIN)
 
         # Socket for pushing the data to the worker
         self.socket_push_data = Socket(self.context, zmq.PUSH)
@@ -86,21 +88,10 @@ class TransformCom:
         self.socket_pub_data.set_hwm(1)
         self.socket_pub_data.connect(r"tcp://localhost:{}".format(self.port_pub_data))
 
-        # Socket for publishing the heartbeat to the worker
+        # Socket for pushing the heartbeat to the worker
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
         self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
-
-    @staticmethod
-    def publish_parameters_to_worker(topic, arguments_list):
-        """
-        Uses the gui's publish state socket to publish the argument_list with the correct topic. This will be read by
-        the worker's subscribe state socket (which subscribes to the specific topic) and update the parameters that the
-        worker's work function is using
-        :return: Nothing
-        """
-        gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
-        gui_com.SOCKET_PUB_STATE.send_pyobj(arguments_list)
 
     def heartbeat_loop(self):
         """
@@ -109,7 +100,6 @@ class TransformCom:
         """
         while True:
             self.socket_push_heartbeat.send_string('PULSE')
-            #print('PULSE FROM TRANSFORM to {}'.format(self.worker_pid))
             time.sleep(ct.HEARTBEAT_RATE)
 
     def start_heartbeat_thread(self):
@@ -120,10 +110,10 @@ class TransformCom:
         heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
         heartbeat_thread.start()
 
-    def start_worker(self, arguments_list):
+    def start_worker(self, parameters_list):
         """
         Starts the worker process and then sends the parameters as are currently on the node to the process
-        :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui).
+        :param parameters_list: The argument list that has all the parameters for the worker (as given in the node's gui).
         The pull_data_port of the worker needs to be the push_data_port of the com (obviously)
         :return: Nothing
         """
@@ -136,51 +126,49 @@ class TransformCom:
                                                                              self.sending_topic,
                                                                              self.worker_pid))
 
-        # We need to send the parameter values on the node to the worker right after it starts.
-        time.sleep(0.5) # Allow the worker process to start before sending the current parameters
-        self.publish_parameters_to_worker(self.state_topic, arguments_list)
-
-    def data_callback(self, topic):
+    def start_ioloop(self):
         """
-        The data callback of te io loop for the transform node. It is called when the previous node publishes the topic.
-        Then the callback reads the rest of the data (index, time and data) from the previous node's _com process,
+        Start the io loop for the transform node. It reads the data from the previous node's _com process,
         pushes it to the worker_com process,
         waits for the results,
-        pulls the resulting data from the worker_com process
-        and publishes the transformed data to the data forwarder with this nodes' topic
+        grabs the resulting data from the worker_com process and
+        publishes the transformed data to the data forwarder with this nodes' topic
         :return: Nothing
         """
+        while True:
+            # Get data from subsribed node
+            t1 = time.perf_counter()
 
-        # Get data from subsribed node
-        t1 = time.perf_counter()
-        _, data_index, data_time, messagedata = self.get_sub_data()
-        if self.verbose:
-            print("-Transform from {} to {}, index {} at time {}".format(self.receiving_topic,
-                                                                         self.sending_topic,
-                                                                         data_index,
-                                                                         data_time))
+            data_in_sockets = dict(self.poller.poll(timeout=0))
+            while not data_in_sockets:
+                data_in_sockets = dict(self.poller.poll(timeout=0))
 
-        # Send data to be transformed to the worker
-        self.socket_push_data.send_array(messagedata, copy=False)
-        t2 = time.perf_counter()
+            if self.socket_sub_data in data_in_sockets and data_in_sockets[self.socket_sub_data] == zmq.POLLIN:
+                _, data_index, data_time, messagedata = self.get_sub_data()
+                if self.verbose:
+                    print("-Transform from {} to {}, index {} at time {}".format(self.receiving_topic,
+                                                                                 self.sending_topic,
+                                                                                 data_index,
+                                                                                 data_time))
 
-        # Get the transformed data (wait for it)
-        new_message_data = self.socket_pull_data.recv_array()
-        results_time = int(1000000 * time.perf_counter())
+                # Send data to be transformed to the worker
+                self.socket_push_data.send_array(messagedata, copy=False)
+                t2 = time.perf_counter()
 
-        if self.verbose:
-            print('--Results got back at time {}'.format(results_time))
+            # Get the transformed data (wait for it)
+            new_message_data = self.socket_pull_data.recv_array()
+            results_time = int(1000000 * time.perf_counter())
 
-        # Publish the results
-        self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send_array(new_message_data, copy=False)
-        t3 = time.perf_counter()
+            if self.verbose:
+                print('--Results got back at time {}'.format(results_time))
 
-        if self.verbose:
-            print("---Times to: i) transport data from worker to worker = {}, "
-                  "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+            # Publish the results
+            self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
+            self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+            self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+            self.socket_pub_data.send_array(new_message_data, copy=False)
+            t3 = time.perf_counter()
 
-    def start_ioloop(self):
-        ioloop.IOLoop.instance().start()
+            if self.verbose:
+                print("---Times to: i) transport data from worker to worker = {}, "
+                      "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))

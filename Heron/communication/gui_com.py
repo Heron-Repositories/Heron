@@ -11,3 +11,4 @@ GUI_CONTEXT = zmq.Context()
 # use the same object but send messages with different topics
 SOCKET_PUB_STATE = Socket(GUI_CONTEXT, zmq.PUB)
 SOCKET_PUB_STATE.connect(r"tcp://127.0.0.1:{}".format(ct.STATE_FORWARDER_SUBMIT_PORT))
+#SOCKET_PUB_STATE.set_hwm(2)

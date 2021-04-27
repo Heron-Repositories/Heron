@@ -5,15 +5,17 @@ import os
 from pathlib import Path
 import atexit
 import numpy as np
+import json
+import copy
 from Heron.general_utils import kill_child, choose_color_according_to_operations_type
-from Heron.gui import operations_list as op
+from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron import constants as ct
 from dearpygui import simple
 from dearpygui.core import *
 import default_style
 
-operations_list = op.operations_list  # This generates all of the Operation dataclass instances currently
+operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 5999
@@ -177,6 +179,12 @@ def on_start_graph(sender, data):
 
 
 def on_end_graph(sender, data):
+    """
+    Kill all running processes (except the one running the gui)
+    :param sender: Not used
+    :param data: Not used
+    :return: Nothing
+    """
     global graph_running
 
     for n in nodes_list:
@@ -185,17 +193,104 @@ def on_end_graph(sender, data):
     for forwarder in forwarders_list:
         forwarder.kill()
 
-    time.sleep(ct.HEARTBEAT_RATE * 1.2)
+    time.sleep(ct.HEARTBEAT_RATE + 0.2)
     update_control_graph_buttons(False)
 
 
-def update_control_graph_buttons(graph_running):
-    if graph_running:
+def update_control_graph_buttons(is_graph_running):
+    """
+    Used to enable and disable (grey out) the Start Graph or the End Graph according to whether the Graph is running or
+    not
+    :param is_graph_running: Is the graph running bool
+    :return: Nothing
+    """
+    if is_graph_running:
         configure_item('Start Graph', enabled=False)
         configure_item('End Graph', enabled=True)
     else:
         configure_item('Start Graph', enabled=True)
         configure_item('End Graph', enabled=False)
+
+
+def save_graph():
+    def on_file_select(sender, data):
+        save_to = os.path.join(data[0], data[1])
+        node_dict = {}
+        for n in nodes_list:
+            print(n.__dict__)
+            n = copy.deepcopy(n)
+            node_dict[n.name] = n.__dict__
+            node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
+
+        node_dict['links'] = get_links_dictionary()
+        print(node_dict)
+        with open(save_to, 'w+') as file:
+            json.dump(node_dict, file)
+
+    open_file_dialog(callback=on_file_select)
+
+
+def load_graph():
+    clear_editor()
+
+    def on_file_select(sender, data):
+        global nodes_list
+        load_file = os.path.join(data[0], data[1])
+        
+        with open(load_file, 'r') as file:
+            raw_dict = json.load(file)
+            nodes_list = []
+
+            for key in raw_dict.keys():
+                if key != 'links':
+                    value = raw_dict[key]
+                    n = Node(name=value['name'])
+                    op_dict = value['operation']
+                    n.operation = op_list.create_operation_from_dictionary(op_dict)
+                    n.index = value['index']
+                    n.process_pid = value['process_pid']
+                    n.topics_out = value['topics_out']
+                    n.topics_in = value['topics_in']
+                    n.starting_port = value['starting_port']
+                    n.num_of_inputs = value['num_of_inputs']
+                    n.num_of_outputs = value['num_of_outputs']
+                    n.coordinates = value['coordinates']
+                    n.node_parameters = value['node_parameters']
+                    n.put_on_editor()
+
+                    nodes_list.append(n)
+
+                elif key == 'links':
+                    links_dict = raw_dict[key]
+                    for l1 in links_dict:
+                        for l2 in links_dict[l1]:
+                            add_node_link('Node Editor##Editor', l1, l2)
+    
+    open_file_dialog(callback=on_file_select)
+
+
+def clear_editor():
+    if get_item_children('Node Editor##Editor'):
+        for n in get_item_children('Node Editor##Editor'):
+            delete_item(n)
+    if get_links('Node Editor##Editor'):
+        for l in get_links('Node Editor##Editor'):
+            delete_node_link('Node Editor##Editor', l[0], l[1])
+
+
+def on_drag(sender, data):
+    """
+    When mouse is dragged and a node is selected then update that node's coordinates
+    :param sender: Not used
+    :param data: The mouse drag time in x and y. Used to detect an end of drag
+    :return: Nothing
+    """
+    data = np.array(data)
+    if np.sum(np.abs(data)) > 0 and len(nodes_list) > 0:
+        for sel in get_selected_nodes('Node Editor##Editor'):
+            for n in nodes_list:
+                if n.name in sel:
+                    n.coordinates = [get_item_configuration(sel)['x_pos'], get_item_configuration(sel)['y_pos']]
 
 
 with simple.window("Main Window"):
@@ -208,11 +303,17 @@ with simple.window("Main Window"):
     add_button("End Graph", callback=on_end_graph)
     update_control_graph_buttons(False)
 
+    with simple.menu_bar('Menu Bar'):
+        with simple.menu('File'):
+            add_menu_item('New', callback=clear_editor)
+            add_menu_item('Save', callback=save_graph)
+            add_menu_item('Load', callback=load_graph)
+
     with simple.window('Node Selector'):
         # Create the window of the Node selector
-        simple.set_window_pos('Node Selector', 10, 50)
+        simple.set_window_pos('Node Selector', 10, 60)
         simple.set_item_width('Node Selector', 300)
-        simple.set_item_height('Node Selector', 900)
+        simple.set_item_height('Node Selector', 890)
 
         node_tree = generate_node_tree()
         base_name = node_tree[0][0]
@@ -233,14 +334,17 @@ with simple.window("Main Window"):
         with simple.node_editor('Node Editor##Editor', link_callback=on_link, delink_callback=on_delink):
 
             simple.set_item_width('Node Editor', 1300)
-            simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 50))
-            simple.set_window_pos('Node Editor', 370, 0)
+            simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 80))
+            simple.set_window_pos('Node Editor', 370, 30)
             #set_mouse_click_callback(on_right_click)
 
 #simple.show_debug()
 #simple.show_logger()
 #simple.show_documentation()
 #simple.show_style_editor()
+
+# Button and mouse callback registers
+set_mouse_drag_callback(callback=on_drag, threshold=0.1)
 
 default_style.set_style(heron_path)
 start_dearpygui(primary_window="Main Window")

@@ -18,6 +18,7 @@ class SourceWorker:
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_state = ct.STATE_FORWARDER_PUBLISH_PORT
+        self.running_thread = True
 
         self.context = None
         self.socket_push_data = None
@@ -54,7 +55,7 @@ class SourceWorker:
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
 
-    def update_arguments(self):
+    def update_parameters(self):
         """
         This updates the self.state from the parameters send form the node (through the gui_com)
         :return: Nothing
@@ -68,13 +69,13 @@ class SourceWorker:
         except zmq.Again as e:
             pass
 
-    def arguments_loop(self):
+    def parameters_loop(self):
         """
         The loop that updates the arguments (self.state)
         :return: Nothing
         """
         while True:
-            self.update_arguments()
+            self.update_parameters()
             time.sleep(0.2)
 
     def start_parameters_thread(self):
@@ -82,7 +83,7 @@ class SourceWorker:
         Start the thread that runs the infinite arguments_loop
         :return: Nothing
         """
-        self.thread_state = threading.Thread(target=self.arguments_loop, daemon=True)
+        self.thread_state = threading.Thread(target=self.parameters_loop, daemon=True)
         self.thread_state.start()
 
     def heartbeat_loop(self):
@@ -98,7 +99,7 @@ class SourceWorker:
                 pid = os.getpid()
                 print('Killing pid {}'.format(pid))
                 os.kill(pid, signal.SIGTERM)
-            time.sleep(0.5)
+            time.sleep(int(ct.HEARTBEAT_RATE / 2))
 
     def start_heartbeat_thread(self):
         """

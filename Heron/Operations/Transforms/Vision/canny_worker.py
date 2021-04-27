@@ -3,18 +3,25 @@ from Heron.communication.transform_worker import TransformWorker
 from Heron.communication.socket_for_serialization import Socket
 import sys
 import cv2
+import numpy as np
 
 
 def canny(data, arguments):
-    min_val = arguments[0]
-    max_val = arguments[1]
-    image = Socket.reconstruct_array_from_bytes_message_cv2correction(data)
-    edges = cv2.Canny(image, min_val, max_val)
-    cv2.namedWindow("Canny", cv2.WINDOW_NORMAL)
-    cv2.imshow('Canny', edges)
-    cv2.waitKey(1)
+    try:
+        min_val = arguments[0]
+        max_val = arguments[1]
+        image = Socket.reconstruct_array_from_bytes_message_cv2correction(data)
+        edges = cv2.Canny(image, min_val, max_val)
+        cv2.namedWindow("Canny", cv2.WINDOW_NORMAL)
+        cv2.imshow('Canny', edges)
+        cv2.waitKey(1)
+    except:
+        edges = np.array([])
 
     return edges
+
+
+WORK_FUNCTION = canny
 
 
 def start_the_worker_process():
@@ -33,7 +40,7 @@ def start_the_worker_process():
     pull_port, state_topic, verbose = sys.argv[1:]
     verbose = verbose == 'True'
 
-    worker = TransformWorker(pull_port=pull_port, work_function=canny, state_topic=state_topic,
+    worker = TransformWorker(pull_port=pull_port, work_function=WORK_FUNCTION, state_topic=state_topic,
                              verbose=verbose)
     worker.connect_sockets()
     worker.start_ioloop()

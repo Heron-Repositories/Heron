@@ -16,57 +16,11 @@ import signal
 Properties of the generated Node
 """
 BaseName = 'Canny'
-NodeAttributeNames = ['Frame In', 'Edges Out']
-NodeAttributeType = ['Input', 'Output']
-
-"""
-Parameters of the generated Node. All parameters need to be in a list. This is a single list that is send to the 
-single worker function of the worker. It is possible that it is updated by widgets of multiple node attributes.
-"""
-arguments_list = [100, 200]  # [Min Value, Max Value]
-
-
-def node_extras(attribute_name):
-    """
-    Extra GUI element under the attribute_name attribute of the generated Node.
-    This function is called for all attributes in the node, so it needs a multiple if statement
-    to deal with any attribute that needs extra elements
-    :param attribute_name: The name of the attribute that is the parent of the element(s) added there
-    :return: Nothing
-    """
-    global arguments_list
-    # Set up int inputs under the Edges Out attribute to define the Min and Max values for the canny algorithm
-    if NodeAttributeNames[1] in attribute_name:
-        add_input_int('Min Value##{}'.format(attribute_name), default_value=arguments_list[0], callback=on_min_val_change)
-        set_item_width('Min Value##{}'.format(attribute_name), width=100)
-        add_input_int('Max Value##{}'.format(attribute_name), default_value=arguments_list[1], callback=on_max_val_change)
-        set_item_width('Max Value##{}'.format(attribute_name), width=100)
-
-
-def on_min_val_change(sender, data):
-    """
-    Callback that make the gui's publish state socket send the changed min value to the workers subscribe state socket
-    :param sender: The sender widget that calls the callback
-    :param data: not used
-    :return: Nothing
-    """
-    global arguments_list
-    arguments_list[0] = get_value(sender)
-    topic = BaseName + sender.split(BaseName)[1]
-    TransformCom.publish_parameters_to_worker(topic, arguments_list)
-
-
-def on_max_val_change(sender, data):
-    """
-        Callback that make the gui's publish state socket send the changed max value to the workers subscribe state socket
-        :param sender: The sender widget that calls the callback
-        :param data: not used
-        :return: Nothing
-        """
-    global arguments_list
-    arguments_list[1] = get_value(sender)
-    topic = BaseName + sender.split(BaseName)[1]
-    TransformCom.publish_parameters_to_worker(topic, arguments_list)
+NodeAttributeNames = ['Parameters', 'Frame In', 'Edges Out']
+NodeAttributeType = ['Static', 'Input', 'Output']
+ParameterNames = ['Min Value', 'Max Value']
+ParameterTypes = ['int', 'int']
+ParametersDefaultValues = [100, 200]
 
 # </editor-fold>
 
@@ -83,7 +37,7 @@ def start_the_communications_process():
     :return: Nothing (continuous loop)
     """
     global Exec
-    global arguments_list
+    global parameters_list
 
     args = sys.argv[1:]
     assert len(args) == 4, 'There should be 4 arguments passed to all Transform processes.' \
@@ -99,7 +53,7 @@ def start_the_communications_process():
                              push_port=push_port, worker_exec=worker_exec, verbose=False)
     canny_com.connect_sockets()
     canny_com.start_heartbeat_thread()
-    canny_com.start_worker(arguments_list)
+    canny_com.start_worker(None)
     canny_com.start_ioloop()
 
 

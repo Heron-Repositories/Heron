@@ -19,7 +19,7 @@ def show_preview(frame):
     cv2.waitKey(1)
 
 
-def start_worker_loop(worker):
+def worker_function(worker):
     with Camera() as cam: # Acquire and initialize Camera
         cam.start() # Start recording
         #print(cam.PixelFormat)
@@ -45,10 +45,7 @@ def start_the_worker_process():
     worker.start_parameters_thread()
     worker.start_heartbeat_thread()
 
-    while worker.state is None:
-        worker.update_arguments()
-
-    start_worker_loop(worker)
+    worker_function(worker)
 
 
 if __name__ == "__main__":

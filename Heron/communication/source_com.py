@@ -76,17 +76,6 @@ class SourceCom:
             print('----------')
             print("Sink sending to {} with index {} at time {}".format(self.sending_topic, self.index, self.time))
 
-    @staticmethod
-    def publish_parameters_to_worker(topic, arguments_list):
-        """
-        Uses the gui's publish state socket to publish the argument_list with the correct topic. This will be read by
-        the worker's subscribe state socket (which subscribes to the specific topic) and update the parameters that the
-        worker's work function is using
-        :return: Nothing
-        """
-        gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
-        gui_com.SOCKET_PUB_STATE.send_pyobj(arguments_list)
-
     def heartbeat_loop(self):
         """
         Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker so that it stays alive
@@ -115,10 +104,6 @@ class SourceCom:
         if self.verbose:
             print('Source {} PID = {}.'.format(self.sending_topic, worker.pid))
         atexit.register(gu.kill_child, worker.pid)
-
-        # We need to send the parameter values on the node to the worker right after it starts.
-        time.sleep(1)  # Allow the worker process to start before sending the current parameters
-        self.publish_parameters_to_worker(self.state_topic, arguments_list)
 
     def start_ioloop(self):
         """
