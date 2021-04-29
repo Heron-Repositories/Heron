@@ -1,9 +1,9 @@
 
 import os
 import sys
+from Heron import general_utils as gu
 from Heron.communication.source_com import SourceCom
-from dearpygui.simple import *
-from dearpygui.core import *
+
 Exec = os.path.realpath(__file__)
 
 
@@ -33,14 +33,9 @@ def start_the_communications_process():
     :return: Nothing (continuous loop)
     """
     global Exec
-    global parameters_list
 
-    args = sys.argv[1:]
-    assert len(args) == 3, 'There should be 3 arguments passed to the Spinnaker camera process. ' \
-                           'The sending_topic, the state_topic and the push_port'
-    push_port = args[0]
-    sending_topic = args[1]
-    state_topic = args[2]
+    push_port, _, sending_topics, state_topic = gu.parse_arguments_to_com(sys.argv)
+    sending_topic = sending_topics[0]
 
     worker_exec = os.path.join(os.path.dirname(Exec), 'spinnaker_camera_worker.py')
 

@@ -1,4 +1,5 @@
 
+
 import os
 import sys
 from Heron import general_utils as gu
@@ -13,12 +14,12 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Canny'
-NodeAttributeNames = ['Parameters', 'Frame In', 'Edges Out']
-NodeAttributeType = ['Static', 'Input', 'Output']
-ParameterNames = ['Min Value', 'Max Value']
-ParameterTypes = ['int', 'int']
-ParametersDefaultValues = [100, 200]
+BaseName = 'Differencing'
+NodeAttributeNames = ['Parameters', 'Frame 1 In', 'Frame 2 In', 'Difference Out']
+NodeAttributeType = ['Static', 'Input', 'Input', 'Output']
+ParameterNames = ['Time Offset']
+ParameterTypes = ['int']
+ParametersDefaultValues = [0]
 
 # </editor-fold>
 
@@ -38,14 +39,14 @@ def start_the_communications_process():
 
     push_port, receiving_topics, sending_topics, state_topic = gu.parse_arguments_to_com(sys.argv)
 
-    worker_exec = os.path.join(os.path.dirname(Exec), 'canny_worker.py')
+    worker_exec = os.path.join(os.path.dirname(Exec), 'differencing_worker.py')
 
-    canny_com = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics, state_topic=state_topic,
-                             push_port=push_port, worker_exec=worker_exec, verbose=False)
-    canny_com.connect_sockets()
-    canny_com.start_heartbeat_thread()
-    canny_com.start_worker()
-    canny_com.start_ioloop()
+    differencing_com = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,
+                                    state_topic=state_topic, push_port=push_port, worker_exec=worker_exec, verbose=False)
+    differencing_com.connect_sockets()
+    differencing_com.start_heartbeat_thread()
+    differencing_com.start_worker()
+    differencing_com.start_ioloop()
 
 
 if __name__ == "__main__":

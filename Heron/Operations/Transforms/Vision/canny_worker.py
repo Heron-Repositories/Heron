@@ -1,24 +1,30 @@
 
 from Heron.communication.transform_worker import TransformWorker
 from Heron.communication.socket_for_serialization import Socket
+from Heron import general_utils as gu
 import sys
 import cv2
 import numpy as np
 
+buffer = {}
 
-def canny(data, arguments):
+
+def canny(data, parameters):
     try:
-        min_val = arguments[0]
-        max_val = arguments[1]
-        image = Socket.reconstruct_array_from_bytes_message_cv2correction(data)
+        min_val = parameters[0]
+        max_val = parameters[1]
+        topic = data[0]
+        message = data[1:]
+        image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
         edges = cv2.Canny(image, min_val, max_val)
         cv2.namedWindow("Canny", cv2.WINDOW_NORMAL)
         cv2.imshow('Canny', edges)
         cv2.waitKey(1)
     except:
         edges = np.array([])
+        print('Canny operation failed')
 
-    return edges
+    return [edges]
 
 
 WORK_FUNCTION = canny
@@ -34,14 +40,14 @@ def start_the_worker_process():
     Verbose is the verbosity
     :return:
     """
-    args = sys.argv[1:]
-    assert len(args) == 3, 'The Transform worker process needs 3 arguments, the pull port, the state ' \
-                           'topic and the verbose value'
-    pull_port, state_topic, verbose = sys.argv[1:]
-    verbose = verbose == 'True'
+    global buffer
 
-    worker = TransformWorker(pull_port=pull_port, work_function=WORK_FUNCTION, state_topic=state_topic,
-                             verbose=verbose)
+    pull_port, state_topic, receiving_topics, verbose = gu.parse_arguments_to_worker(sys.argv)
+    verbose = verbose == 'True'
+    for rt in receiving_topics:
+        buffer[rt] = []
+
+    worker = TransformWorker(pull_port=pull_port, work_function=WORK_FUNCTION, state_topic=state_topic, verbose=verbose)
     worker.connect_sockets()
     worker.start_ioloop()
 

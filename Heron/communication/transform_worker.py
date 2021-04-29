@@ -69,13 +69,17 @@ class TransformWorker:
 
     def data_callback(self, data):
         """
-        The callback that is called when data is send from the com process this com process receives data from
-         (shares a common topic) and pushes the data to the worker
+        The callback that is called when data is send from the previous com process this com process is connected to
+        (receives data from and shares a common topic) and pushes the data to the worker.
+        The data are a three items list. The first is the topic (used for the worker to distinguish which input the
+        data have come from in the case of multiple input nodes). The other two items are the details and the data load
+        of the numpy array coming from the previous node).
         :param data: The data received
         :return: Nothing
         """
-        result = self.work_function(data, self.state)
-        self.socket_push_data.send_array(result, copy=False)
+        results = self.work_function(data, self.state)
+        for array_in_list in results:
+            self.socket_push_data.send_array(array_in_list, copy=False)
 
     def parameters_callback(self, binary_state):
         """

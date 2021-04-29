@@ -8,13 +8,14 @@ import os
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
 from Heron.communication import gui_com
+import numpy as np
 
 
 class TransformCom:
 
-    def __init__(self, receiving_topic, sending_topic, state_topic, push_port, worker_exec, verbose=True):
-        self.receiving_topic = receiving_topic
-        self.sending_topic = sending_topic
+    def __init__(self, receiving_topics, sending_topics, state_topic, push_port, worker_exec, verbose=True):
+        self.receiving_topics = receiving_topics
+        self.sending_topics = sending_topics
         self.state_topic = state_topic
         self.push_data_port = push_port
         self.pull_data_port = str(int(self.push_data_port) + 1)
@@ -39,22 +40,6 @@ class TransformCom:
 
         self.index = -1
 
-    def get_sub_data(self):
-        """
-        Gets the data from the forwarder. It assumes that each message has four parts:
-        The topic
-        The data_index, an int that increases by one for every message the previous node sends
-        The data_time, the time.perf_counter() result at the time the previous node send its message
-        The messagedata, the array of data
-        :return: Nothing
-        """
-        topic = self.socket_sub_data.recv()
-        data_index = self.socket_sub_data.recv()
-        data_time = self.socket_sub_data.recv()
-        messagedata = self.socket_sub_data.recv_array()
-
-        return topic, data_index, data_time, messagedata
-
     def connect_sockets(self):
         """
         Start the required sockets to communicate with the data forwarder and the worker_com processes
@@ -66,12 +51,12 @@ class TransformCom:
 
         # Socket for subscribing to data from node connected to the input
         self.socket_sub_data = Socket(self.context, zmq.SUB)
-        self.socket_sub_data.set_hwm(1)
-        self.socket_sub_data.connect("tcp://localhost:{}".format(self.port_sub_data))
-        self.socket_sub_data.SUBSCRIBE = self.receiving_topic
-        #self.stream_sub = zmqstream.ZMQStream(self.socket_sub_data)
-        #self.stream_sub.on_recv(self.data_callback)
+        self.socket_sub_data.set_hwm(len(self.receiving_topics))
+        self.socket_sub_data.connect("tcp://127.0.0.1:{}".format(self.port_sub_data))
+        for rt in self.receiving_topics:
+            self.socket_sub_data.setsockopt(zmq.SUBSCRIBE, rt.encode('ascii'))
         self.poller.register(self.socket_sub_data, zmq.POLLIN)
+        #print(self.socket_sub_data.get(zmq.SUBSCRIBE))
 
         # Socket for pushing the data to the worker
         self.socket_push_data = Socket(self.context, zmq.PUSH)
@@ -82,10 +67,11 @@ class TransformCom:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        self.poller.register(self.socket_pull_data, zmq.POLLIN)
 
         # Socket for publishing transformed data to other nodes
         self.socket_pub_data = Socket(self.context, zmq.PUB)
-        self.socket_pub_data.set_hwm(1)
+        self.socket_pub_data.set_hwm(len(self.sending_topics))
         self.socket_pub_data.connect(r"tcp://localhost:{}".format(self.port_pub_data))
 
         # Socket for pushing the heartbeat to the worker
@@ -110,21 +96,43 @@ class TransformCom:
         heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
         heartbeat_thread.start()
 
-    def start_worker(self, parameters_list):
+    def start_worker(self):
         """
         Starts the worker process and then sends the parameters as are currently on the node to the process
         :param parameters_list: The argument list that has all the parameters for the worker (as given in the node's gui).
         The pull_data_port of the worker needs to be the push_data_port of the com (obviously)
         :return: Nothing
         """
-        self.worker_pid = subprocess.Popen(
-            ['python', self.worker_exec, str(self.push_data_port), str(self.state_topic),
-             str(self.verbose)])
+        arguments_list = ['python']
+        arguments_list.append(self.worker_exec)
+        arguments_list.append(str(self.push_data_port))
+        arguments_list.append(str(self.state_topic))
+        arguments_list.append(str(len(self.receiving_topics)))
+        for i in range(len(self.receiving_topics)):
+            arguments_list.append(self.receiving_topics[i])
+        arguments_list.append(str(self.verbose))
+        self.worker_pid = subprocess.Popen(arguments_list)
 
         if self.verbose:
-            print('Transform from {} to {} worker com with PID = {}.'.format(self.receiving_topic,
-                                                                             self.sending_topic,
-                                                                             self.worker_pid))
+            print('Transform from {} to {} worker com with PID = {}.'.format(self.receiving_topics,
+                                                                             self.sending_topics,
+                                                                             self.worker_pid.pid))
+
+    def get_sub_data(self):
+        """
+        Gets the data from the forwarder. It assumes that each message has four parts:
+        The topic
+        The data_index, an int that increases by one for every message the previous node sends
+        The data_time, the time.perf_counter() result at the time the previous node send its message
+        The messagedata, the array of data
+        :return: Nothing
+        """
+        topic = self.socket_sub_data.recv()
+        data_index = self.socket_sub_data.recv()
+        data_time = self.socket_sub_data.recv()
+        messagedata = self.socket_sub_data.recv_array()
+
+        return topic, data_index, data_time, messagedata
 
     def start_ioloop(self):
         """
@@ -139,36 +147,44 @@ class TransformCom:
             # Get data from subsribed node
             t1 = time.perf_counter()
 
-            data_in_sockets = dict(self.poller.poll(timeout=0))
-            while not data_in_sockets:
-                data_in_sockets = dict(self.poller.poll(timeout=0))
+            sockets_in = dict(self.poller.poll(timeout=1))
+            while not sockets_in:
+                sockets_in = dict(self.poller.poll(timeout=1))
 
-            if self.socket_sub_data in data_in_sockets and data_in_sockets[self.socket_sub_data] == zmq.POLLIN:
-                _, data_index, data_time, messagedata = self.get_sub_data()
+            if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                topic, data_index, data_time, messagedata = self.get_sub_data()
+                #print('----At transform {} received topic: {}'.format(self.worker_exec.split('Vision')[-1], topic))
                 if self.verbose:
-                    print("-Transform from {} to {}, index {} at time {}".format(self.receiving_topic,
-                                                                                 self.sending_topic,
+                    print("-Transform from {} to {}, index {} at time {}".format(topic,
+                                                                                 self.sending_topics,
                                                                                  data_index,
                                                                                  data_time))
 
                 # Send data to be transformed to the worker
+                self.socket_push_data.send(topic, flags=zmq.SNDMORE)
                 self.socket_push_data.send_array(messagedata, copy=False)
                 t2 = time.perf_counter()
 
-            # Get the transformed data (wait for it)
-            new_message_data = self.socket_pull_data.recv_array()
-            results_time = int(1000000 * time.perf_counter())
+            new_message_data = []
+            if self.socket_pull_data in sockets_in and sockets_in[self.socket_pull_data] == zmq.POLLIN:
+                # Get the transformed data (wait for it)
+                for i in range(len(self.sending_topics)):
+                    new_message_data.append(self.socket_pull_data.recv_array())
+                results_time = int(1000000 * time.perf_counter())
 
-            if self.verbose:
-                print('--Results got back at time {}'.format(results_time))
+                if self.verbose:
+                    print('--Results got back at time {}'.format(results_time))
 
-            # Publish the results
-            self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
-            self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-            self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-            self.socket_pub_data.send_array(new_message_data, copy=False)
-            t3 = time.perf_counter()
+                # Publish the results. Each array in the list of arrays is published to its own sending topic
+                # (matched by order)
+                for i, st in enumerate(self.sending_topics):
+                    #print('----From transform {} sending topic: {}'.format(self.worker_exec.split('Vision')[-1], st))
+                    self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send_array(new_message_data[i], copy=False)
+                t3 = time.perf_counter()
 
-            if self.verbose:
-                print("---Times to: i) transport data from worker to worker = {}, "
-                      "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+                if self.verbose:
+                    print("---Times to: i) transport data from worker to worker = {}, "
+                          "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))

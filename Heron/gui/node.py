@@ -3,6 +3,7 @@ import subprocess
 import atexit
 import zmq
 import time
+import numpy as np
 from dearpygui import simple
 from dearpygui.core import *
 from Heron.gui import operations_list as op
@@ -64,18 +65,19 @@ class Node:
         for i, t in enumerate(self.topics_in):
             if t == 'NothingIn':
                 self.topics_in[i] = topic
+                break
 
     def add_topic_out(self, topic):
         for i, t in enumerate(self.topics_out):
             if t == 'NothingOut':
                 self.topics_out[i] = topic
+                break
 
     def update_parameters(self):
         attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.index)
         for i, parameter in enumerate(self.operation.parameters):
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
         topic = self.operation.name + '##' + self.index
-        print(topic, self.node_parameters)
         gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_STATE.send_pyobj(self.node_parameters)
 
@@ -86,6 +88,7 @@ class Node:
             set_item_color(self.name, style=mvGuiCol_TitleBg, color=colour)
 
             for i, attr in enumerate(self.operation.attributes):
+
                 if self.operation.attribute_types[i] == 'Input':
                     output_type = False
                     static = False
@@ -95,7 +98,9 @@ class Node:
                 elif self.operation.attribute_types[i] == 'Static':
                     output_type = False
                     static = True
+
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.index)
+
                 with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.index),
                                            output=output_type, static=static):
                     add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.index), default_value=attr)
@@ -118,11 +123,18 @@ class Node:
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)
 
+    def generate_argument_list_for_executable(self):
+        arguments_list = ['python', self.operation.executable, self.starting_port]
+
     def start_exec(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
+        num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
+        num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
+        arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
             for topic_in in self.topics_in:
                 arguments_list.append(topic_in)
+        arguments_list.append(str(num_of_outputs))
         if 'Output' in self.operation.attribute_types:
             for topic_out in self.topics_out:
                 arguments_list.append(topic_out)

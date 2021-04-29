@@ -47,7 +47,7 @@ class Socket(zmq.Socket):
         :param type: the type to be switched to unsigned
         :return:
         """
-        if 'int' in type or 'float' in type:
+        if 'int' in type:
             if 'u' not in type:
                 type = 'u' + type
         return type

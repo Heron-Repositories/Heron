@@ -7,7 +7,7 @@ import atexit
 import numpy as np
 import json
 import copy
-from Heron.general_utils import kill_child, choose_color_according_to_operations_type
+from Heron.general_utils import kill_child, choose_color_according_to_operations_type, get_next_available_port_group
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron import constants as ct
@@ -18,9 +18,10 @@ import default_style
 operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-last_used_port = 5999
+last_used_port = 6000
 nodes_list = []
 forwarders_list = []
+panel_coordinates = [0, 0]
 
 
 def generate_node_tree():
@@ -51,6 +52,9 @@ def generate_node_tree():
                 dir_name = dir + '##' + parent
                 node_dirs.append((parent, dir_name))
     return node_dirs
+
+
+port_generator = get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
 
 def on_add_node(sender, data):
@@ -85,6 +89,13 @@ def on_add_node(sender, data):
 
 
 def on_link(sender, data):
+    """
+    When a link is created its out part is stored as a topic_out in the node with the output and as a topic_in in the
+    node with the input
+    :param sender: The node editor (not used)
+    :param data: The link list
+    :return: Nothing
+    """
     output_node = data[0].split('##')[-2] + '##' +data[0].split('##')[-1]
     input_node = data[1].split('##')[-2] + '##' + data[1].split('##')[-1]
     for n in nodes_list:
@@ -94,6 +105,7 @@ def on_link(sender, data):
             n.add_topic_in(data[0])
 
 
+# TODO: Define what happens when user deletes a link
 def on_delink():
     pass
 
@@ -106,11 +118,9 @@ def start_forwarder_processes(path_to_com):
     :return: Nothing
     """
     forwarder_for_data = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_data.py')])
-    # creationflags=subprocess.DETACHED_PROCESS)
     atexit.register(kill_child, forwarder_for_data.pid)
 
     forwarder_for_state = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_state.py')])
-    # creationflags=subprocess.DETACHED_PROCESS)
     atexit.register(kill_child, forwarder_for_state.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
@@ -122,6 +132,10 @@ def start_forwarder_processes(path_to_com):
 
 
 def get_links_dictionary():
+    """
+    Returns the links in dictionary form (the key is the out and the value is the list of all the ins connected to it)
+    :return: The links dictionary
+    """
     links = np.array(get_links("Node Editor##Editor"))
     links_dict = {}
     for l in range(len(links[:, 0])):
@@ -135,23 +149,6 @@ def get_links_dictionary():
         links_dict[out] = inputs
 
     return links_dict
-
-
-def get_operation_from_attribute_name(attr_name):
-    op_name = attr_name.split('##')[1]
-    for op in operations_list:
-        if op.name == op_name:
-            return op
-
-
-def get_next_available_port_group():
-    global last_used_port
-    while True:
-        yield str(last_used_port)
-        last_used_port = last_used_port + 3
-
-
-port_generator = get_next_available_port_group()
 
 
 def on_start_graph(sender, data):
@@ -193,8 +190,18 @@ def on_end_graph(sender, data):
     for forwarder in forwarders_list:
         forwarder.kill()
 
-    time.sleep(ct.HEARTBEAT_RATE + 0.2)
+    with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
+        add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
+                         overlay='Closing worker processes')
+        t = 0
+        while t < ct.HEARTBEAT_RATE + 0.5:
+            set_value('Killing processes', t/5.5)
+            t = t + 0.1
+            time.sleep(0.1)
+        #time.sleep(ct.HEARTBEAT_RATE + 0.2)
+        delete_item('Killing processes')
     update_control_graph_buttons(False)
+    delete_item('Progress bar')
 
 
 def update_control_graph_buttons(is_graph_running):
@@ -213,6 +220,10 @@ def update_control_graph_buttons(is_graph_running):
 
 
 def save_graph():
+    """
+    Saves the current graph
+    :return: Nothing
+    """
     def on_file_select(sender, data):
         save_to = os.path.join(data[0], data[1])
         node_dict = {}
@@ -231,6 +242,10 @@ def save_graph():
 
 
 def load_graph():
+    """
+    Loads a saved graph
+    :return: Nothing
+    """
     clear_editor()
 
     def on_file_select(sender, data):
@@ -269,28 +284,51 @@ def load_graph():
     open_file_dialog(callback=on_file_select)
 
 
+# TODO: Add a UI asking the user if they are sure (and that all data will be lost)
 def clear_editor():
+    """
+    Clear the editor of all nodes and links
+    :return: Nothing
+    """
+    global nodes_list
     if get_item_children('Node Editor##Editor'):
         for n in get_item_children('Node Editor##Editor'):
             delete_item(n)
     if get_links('Node Editor##Editor'):
         for l in get_links('Node Editor##Editor'):
             delete_node_link('Node Editor##Editor', l[0], l[1])
+    nodes_list = []
 
 
 def on_drag(sender, data):
     """
     When mouse is dragged and a node is selected then update that node's coordinates
-    :param sender: Not used
-    :param data: The mouse drag time in x and y. Used to detect an end of drag
+    When mouse is dragged on the canvas with no node selected then move all nodes by the mouse movement and
+    update their coordinates
+    :param sender: Not used (the editor window)
+    :param data: The mouse drag amount in x and y
     :return: Nothing
     """
+    global panel_coordinates
     data = np.array(data)
+
+    # If moving a selected node, update the node's stores coordinates
     if np.sum(np.abs(data)) > 0 and len(nodes_list) > 0:
         for sel in get_selected_nodes('Node Editor##Editor'):
             for n in nodes_list:
                 if n.name in sel:
                     n.coordinates = [get_item_configuration(sel)['x_pos'], get_item_configuration(sel)['y_pos']]
+
+    # If dragging on the canvas then move all nodes and update their stored coordinates
+    if len(get_selected_nodes('Node Editor##Editor')) == 0:
+        panel_coordinates = [0, 0]
+        panel_coordinates[0] = panel_coordinates[0] + data[1]
+        panel_coordinates[1] = panel_coordinates[1] + data[2]
+        for n in nodes_list:
+            simple.set_window_pos(n.name, n.coordinates[0] + int(data[1]),
+                                  n.coordinates[1] + int(data[2]))
+            n.coordinates = [get_item_configuration(n.name)['x_pos'], get_item_configuration(n.name)['y_pos']]
+
 
 
 with simple.window("Main Window"):
