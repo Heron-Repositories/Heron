@@ -6,10 +6,11 @@ import sys
 
 def main():
     args = sys.argv[1:]
-    debug = args == 'True'
+    debug = args[0] == 'True'
+
     # if process is called with 'True' then it becomes verbose and sends all messages also to the capture port
     if debug:
-        print('Forwarder for State ON')
+        print('Forwarder for state is in debug mode (capture is on)')
 
     try:
         context = zmq.Context(1)

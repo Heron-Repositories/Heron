@@ -153,7 +153,7 @@ class TransformCom:
 
             if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                 topic, data_index, data_time, messagedata = self.get_sub_data()
-                #print('----At transform {} received topic: {}'.format(self.worker_exec.split('Vision')[-1], topic))
+
                 if self.verbose:
                     print("-Transform from {} to {}, index {} at time {}".format(topic,
                                                                                  self.sending_topics,
@@ -165,26 +165,30 @@ class TransformCom:
                 self.socket_push_data.send_array(messagedata, copy=False)
                 t2 = time.perf_counter()
 
+            # Get the transformed data (wait for the socket_pull_data to get some data from the worker)
+            sockets_in = dict(self.poller.poll(timeout=1))
+            while not sockets_in or self.socket_pull_data not in sockets_in \
+                    or sockets_in[self.socket_pull_data] != zmq.POLLIN:
+                sockets_in = dict(self.poller.poll(timeout=1))
+
             new_message_data = []
-            if self.socket_pull_data in sockets_in and sockets_in[self.socket_pull_data] == zmq.POLLIN:
-                # Get the transformed data (wait for it)
-                for i in range(len(self.sending_topics)):
-                    new_message_data.append(self.socket_pull_data.recv_array())
-                results_time = int(1000000 * time.perf_counter())
 
-                if self.verbose:
-                    print('--Results got back at time {}'.format(results_time))
+            for i in range(len(self.sending_topics)):
+                new_message_data.append(self.socket_pull_data.recv_array())
+            results_time = time.perf_counter()
 
-                # Publish the results. Each array in the list of arrays is published to its own sending topic
-                # (matched by order)
-                for i, st in enumerate(self.sending_topics):
-                    #print('----From transform {} sending topic: {}'.format(self.worker_exec.split('Vision')[-1], st))
-                    self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send_array(new_message_data[i], copy=False)
-                t3 = time.perf_counter()
+            if self.verbose:
+                print('--Results got back at time {}'.format(results_time))
 
-                if self.verbose:
-                    print("---Times to: i) transport data from worker to worker = {}, "
-                          "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+            # Publish the results. Each array in the list of arrays is published to its own sending topic
+            # (matched by order)
+            for i, st in enumerate(self.sending_topics):
+                self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send_array(new_message_data[i], copy=False)
+            t3 = time.perf_counter()
+
+            if self.verbose:
+                print("---Times to: i) transport data from worker to worker = {}, "
+                      "2) publish transformed data = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))

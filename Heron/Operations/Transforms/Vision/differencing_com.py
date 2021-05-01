@@ -17,9 +17,9 @@ Properties of the generated Node
 BaseName = 'Differencing'
 NodeAttributeNames = ['Parameters', 'Frame 1 In', 'Frame 2 In', 'Difference Out']
 NodeAttributeType = ['Static', 'Input', 'Input', 'Output']
-ParameterNames = ['Time Offset']
-ParameterTypes = ['int']
-ParametersDefaultValues = [0]
+ParameterNames = ['Frame 2 - Frame In']
+ParameterTypes = ['bool']
+ParametersDefaultValues = [False]
 
 # </editor-fold>
 

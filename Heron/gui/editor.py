@@ -117,18 +117,23 @@ def start_forwarder_processes(path_to_com):
     :param path_to_com: The path that the two python files that define the processes are
     :return: Nothing
     """
-    forwarder_for_data = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_data.py')])
-    atexit.register(kill_child, forwarder_for_data.pid)
+    forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'True', 'True', 'True'])
+    atexit.register(kill_child, forwarders.pid)
 
-    forwarder_for_state = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_state.py')])
-    atexit.register(kill_child, forwarder_for_state.pid)
+    #forwarder_for_data = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_data.py')])
+    #atexit.register(kill_child, forwarder_for_data.pid)
+
+    #forwarder_for_state = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_state.py'), 'False'])
+    #atexit.register(kill_child, forwarder_for_state.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
-    print('Forwarder for Data PID = {}'.format(forwarder_for_data.pid))
-    print('Forwarder for State PID = {}'.format(forwarder_for_state.pid))
+    #print('Forwarder for Data PID = {}'.format(forwarder_for_data.pid))
+    #print('Forwarder for State PID = {}'.format(forwarder_for_state.pid))
+    print('Forwarders PID = {}'.format(forwarders.pid))
 
-    forwarders_list.append(forwarder_for_data)
-    forwarders_list.append(forwarder_for_state)
+    forwarders_list.append(forwarders)
+    #forwarders_list.append(forwarder_for_data)
+    #forwarders_list.append(forwarder_for_state)
 
 
 def get_links_dictionary():
@@ -177,7 +182,8 @@ def on_start_graph(sender, data):
 
 def on_end_graph(sender, data):
     """
-    Kill all running processes (except the one running the gui)
+    Kill all running processes (except the one running the gui). Also shows a progress bar while waiting for processes
+    to die. They need a ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH seconds to die.
     :param sender: Not used
     :param data: Not used
     :return: Nothing
@@ -194,11 +200,10 @@ def on_end_graph(sender, data):
         add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
                          overlay='Closing worker processes')
         t = 0
-        while t < ct.HEARTBEAT_RATE + 0.5:
-            set_value('Killing processes', t/5.5)
+        while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
+            set_value('Killing processes', t/(ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
             t = t + 0.1
             time.sleep(0.1)
-        #time.sleep(ct.HEARTBEAT_RATE + 0.2)
         delete_item('Killing processes')
     update_control_graph_buttons(False)
     delete_item('Progress bar')
@@ -330,7 +335,6 @@ def on_drag(sender, data):
             n.coordinates = [get_item_configuration(n.name)['x_pos'], get_item_configuration(n.name)['y_pos']]
 
 
-
 with simple.window("Main Window"):
     set_main_window_title("Heron")
     set_main_window_size(1700, 1000)
@@ -374,7 +378,6 @@ with simple.window("Main Window"):
             simple.set_item_width('Node Editor', 1300)
             simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 80))
             simple.set_window_pos('Node Editor', 370, 30)
-            #set_mouse_click_callback(on_right_click)
 
 #simple.show_debug()
 #simple.show_logger()

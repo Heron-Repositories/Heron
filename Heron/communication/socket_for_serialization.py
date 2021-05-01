@@ -61,10 +61,12 @@ class Socket(zmq.Socket):
         :return:
         """
         md_bytes = msg[0]
+
         md_str = md_bytes.decode("UTF-8")
         md = ast.literal_eval(md_str)
 
         type = md['dtype']
+
         if switch_to_unsigned:
             type = Socket.switch_type_to_unsigned(type)
 

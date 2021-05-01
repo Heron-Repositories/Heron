@@ -80,6 +80,7 @@ class Node:
         topic = self.operation.name + '##' + self.index
         gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_STATE.send_pyobj(self.node_parameters)
+        print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
 
     def put_on_editor(self):
         with simple.node(name=self.name, parent='Node Editor##Editor',
@@ -119,12 +120,13 @@ class Node:
                                 add_input_float('{}##{}'.format(parameter, attribute_name),
                                                 default_value=self.node_parameters[i],
                                                 callback=self.update_parameters)
+                            elif self.operation.parameter_types[i] == 'bool':
+                                add_checkbox('{}##{}'.format(parameter, attribute_name),
+                                             default_value=self.node_parameters[i],
+                                             callback=self.update_parameters)
                             simple.set_item_width('{}##{}'.format(parameter, attribute_name), width=100)
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)
-
-    def generate_argument_list_for_executable(self):
-        arguments_list = ['python', self.operation.executable, self.starting_port]
 
     def start_exec(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
@@ -143,7 +145,13 @@ class Node:
         self.process_pid = subprocess.Popen(arguments_list)
         atexit.register(kill_child, self.process_pid)
 
-        time.sleep(0.8)
+        # Wait until the worker sends a proof_of_life signal (i.e. it is up and running)
+        its_alive = 'No'
+        while its_alive != 'POL':
+            its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
+            its_alive = its_alive.split('##')[-1]
+            time.sleep(0.1)
+        time.sleep(0.2)
         self.update_parameters()
 
     def stop_exec(self):

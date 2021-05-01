@@ -2,35 +2,46 @@
 from simple_pyspin import Camera
 import cv2 as cv2
 import sys
+import threading
 from Heron.communication.source_worker import SourceWorker
 
+visualisation_on = False
+image = []
 
-def show_preview(frame):
-    cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
 
-    width = cv2.getWindowImageRect("Camera")[2]
-    height = cv2.getWindowImageRect("Camera")[3]
-    try:
-        frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
-    except:
-        pass
-    cv2.imshow('Camera', frame)
+def visualisation_loop():
+    global image
+    global visualisation_on
 
-    cv2.waitKey(1)
+    while visualisation_on:
+        cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
+
+        width = cv2.getWindowImageRect("Camera")[2]
+        height = cv2.getWindowImageRect("Camera")[3]
+        try:
+            image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
+            cv2.imshow('Camera', image)
+            cv2.waitKey(1)
+        except:
+            pass
+
 
 
 def worker_function(worker):
-    with Camera() as cam: # Acquire and initialize Camera
-        cam.start() # Start recording
-        #print(cam.PixelFormat)
-        #if 'Bayer' in cam.PixelFormat:
-        #    cam.PixelFormat = "RGB8"
+    global visualisation_on
+    global image
+
+    with Camera() as cam:  # Acquire and initialize Camera
+        cam.start()  # Start recording
 
         while True:
             image = cam.get_array()
-            show_preview(image)
             worker.socket_push_data.send_array(image, copy=False)
             cv2.waitKey(1)
+
+
+def on_end_of_life():
+    pass
 
 
 def start_the_worker_process():
@@ -40,10 +51,15 @@ def start_the_worker_process():
     port, state_topic, verbose = args
     verbose = verbose == 'True'
 
-    worker = SourceWorker(port=port, state_topic=state_topic)
+    worker = SourceWorker(port=port, state_topic=state_topic, end_of_life_function=on_end_of_life, verbose=verbose)
     worker.connect_socket()
-    worker.start_parameters_thread()
     worker.start_heartbeat_thread()
+    worker.start_parameters_thread()
+
+    global visualisation_on
+    visualisation_on = True
+    visualisation_thread = threading.Thread(target=visualisation_loop, daemon=True)
+    visualisation_thread.start()
 
     worker_function(worker)
 

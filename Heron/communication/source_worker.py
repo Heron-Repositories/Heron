@@ -10,14 +10,16 @@ from Heron import constants as ct
 
 
 class SourceWorker:
-    def __init__(self, port, state_topic, verbose=False):
+    def __init__(self, port, state_topic, end_of_life_function, verbose=False):
         self.state_topic = state_topic
         self.data_port = port
         self.heartbeat_port = str(int(self.data_port) + 1)
+        self.end_of_life_function=end_of_life_function
         self.verbose = verbose
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_state = ct.STATE_FORWARDER_PUBLISH_PORT
+        self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.running_thread = True
 
         self.context = None
@@ -29,6 +31,8 @@ class SourceWorker:
         self.socket_pull_heartbeat = None
         self.stream_heartbeat = None
         self.thread_heartbeat = None
+        self.socket_pub_proof_of_life = None
+        self.thread_proof_of_life = None
 
     def connect_socket(self):
         """
@@ -55,6 +59,11 @@ class SourceWorker:
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
 
+        # Setup the socket that sends (publishes) the fact that the worker is up and running to the node com so that it
+        # can then update the parameters of the worker
+        self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
+        self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
+
     def update_parameters(self):
         """
         This updates the self.state from the parameters send form the node (through the gui_com)
@@ -62,7 +71,9 @@ class SourceWorker:
         """
         try:
             topic = self.socket_sub_state.recv(flags=zmq.NOBLOCK)
-            binary_state = self.socket_sub_state.recv()
+            binary_state = self.socket_sub_state.recv(flags=zmq.NOBLOCK)
+            #print('TOPIC {}'.format(topic))
+            print('--Source {} binary state {}'.format(self.state_topic, binary_state))
             args = pickle.loads(binary_state)
             #print(args)
             self.state = args
@@ -93,13 +104,24 @@ class SourceWorker:
         :return: Nothing
         """
         while True:
-            if self.socket_pull_heartbeat.poll(timeout=1200 * ct.HEARTBEAT_RATE):
+            if self.socket_pull_heartbeat.poll(timeout=(1000 * ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH)):
                 self.socket_pull_heartbeat.recv()
             else:
                 pid = os.getpid()
-                print('Killing pid {}'.format(pid))
+                self.end_of_life_function()
+                print('Killing source pid {}'.format(pid))
                 os.kill(pid, signal.SIGTERM)
-            time.sleep(int(ct.HEARTBEAT_RATE / 2))
+            time.sleep(int(ct.HEARTBEAT_RATE))
+
+    def proof_of_life(self):
+        """
+        When the worker process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
+        that lets the node (in the gui_com process) that the worker is running and ready to receive parameter updates.
+        :return: Nothing
+        """
+        for i in range(2):
+            self.socket_pub_proof_of_life.send_string(self.state_topic + '##' + 'POL')
+            time.sleep(0.2)
 
     def start_heartbeat_thread(self):
         """
@@ -108,4 +130,7 @@ class SourceWorker:
         """
         self.thread_heartbeat = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.thread_heartbeat.start()
+
+        self.thread_proof_of_life = threading.Thread(target=self.proof_of_life, daemon=True)
+        self.thread_proof_of_life.start()
 

@@ -11,17 +11,19 @@ from zmq.eventloop import ioloop, zmqstream
 
 
 class TransformWorker:
-    def __init__(self, pull_port, work_function, state_topic, verbose):
+    def __init__(self, pull_port, work_function, end_of_life_function, state_topic, verbose):
 
         self.pull_data_port = pull_port
         self.push_data_port = str(int(self.pull_data_port) + 1)
         self.pull_heartbeat_port = str(int(self.pull_data_port) + 2)
         self.work_function = work_function
+        self.end_of_life_function = end_of_life_function
         self.state_topic = state_topic
         self.verbose = verbose
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_state = ct.STATE_FORWARDER_PUBLISH_PORT
+        self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
 
         self.context = None
         self.socket_pull_data = None
@@ -33,6 +35,8 @@ class TransformWorker:
         self.socket_pull_heartbeat = None
         self.stream_heartbeat = None
         self.thread_heartbeat = None
+        self.socket_pub_proof_of_life = None
+        self.thread_proof_of_life = None
 
     def connect_sockets(self):
         """
@@ -47,14 +51,14 @@ class TransformWorker:
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
-        self.stream_pull_data.on_recv(self.data_callback)
+        self.stream_pull_data.on_recv(self.data_callback, copy=False)
 
         # Setup the socket and the stream that receives the parameters of the worker function from the node (gui_com)
         self.socket_sub_state = Socket(self.context, zmq.SUB)
         self.socket_sub_state.connect(r'tcp://localhost:{}'.format(self.port_sub_state))
         self.socket_sub_state.subscribe(self.state_topic)
         self.stream_state = zmqstream.ZMQStream(self.socket_sub_state)
-        self.stream_state.on_recv(self.parameters_callback)
+        self.stream_state.on_recv(self.parameters_callback, copy=False)
 
         # Setup the socket that sends the results to the com
         self.socket_push_data = Socket(self.context, zmq.PUSH)
@@ -65,21 +69,28 @@ class TransformWorker:
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
         self.stream_heartbeat = zmqstream.ZMQStream(self.socket_pull_heartbeat)
-        self.stream_heartbeat.on_recv(self.heartbeat_callback)
+        self.stream_heartbeat.on_recv(self.heartbeat_callback, copy=False)
+
+        # Setup the socket that sends (publishes) the fact that the worker is up and running to the node com so that it
+        # can then update the parameters of the worker
+        self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
+        self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
 
     def data_callback(self, data):
         """
         The callback that is called when data is send from the previous com process this com process is connected to
         (receives data from and shares a common topic) and pushes the data to the worker.
-        The data are a three items list. The first is the topic (used for the worker to distinguish which input the
+        The data are a three zmq.Frame list. The first is the topic (used for the worker to distinguish which input the
         data have come from in the case of multiple input nodes). The other two items are the details and the data load
         of the numpy array coming from the previous node).
         :param data: The data received
         :return: Nothing
         """
+        data = [data[0].bytes, data[1].bytes, data[2].bytes]
         results = self.work_function(data, self.state)
         for array_in_list in results:
             self.socket_push_data.send_array(array_in_list, copy=False)
+        self.stream_pull_data.flush()
 
     def parameters_callback(self, binary_state):
         """
@@ -88,14 +99,16 @@ class TransformWorker:
         :param binary_state:
         :return:
         """
-        #print(binary_state)
-        args_pyobj = binary_state[1]  # remove the topic
-        args = pickle.loads(args_pyobj)
-        self.state = args
+        if len(binary_state) > 1:
+            args_pyobj = binary_state[1].bytes  # remove the topic
+            args = pickle.loads(args_pyobj)
+            if args is not None:
+                print('Updated parameters in {} = {}'.format(self.state_topic, args))
+                self.state = args
 
     def heartbeat_callback(self, pulse):
         """
-        The callback called when the com send a 'PULSE'. It registers the time the 'PULSE' has been received
+        The callback called when the com sends a 'PULSE'. It registers the time the 'PULSE' has been received
         :param pulse: The pulse (message from the com's push) received
         :return:
         """
@@ -105,15 +118,27 @@ class TransformWorker:
         """
         The loop that checks whether the latest 'PULSE' received from the com's heartbeat push is not too stale.
         If it is then the current process is killed
-        :return:
+        :return: Nothing
         """
         while True:
             current_time = time.perf_counter()
-            if current_time - self.time_of_pulse > 0.5 + ct.HEARTBEAT_RATE:
+            if current_time - self.time_of_pulse > ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
+                #print('At {}, CT = {}, time of pulse = {}'.format(self.state_topic, current_time, self.time_of_pulse))
                 pid = os.getpid()
-                print('Killing pid {}'.format(pid))
+                self.end_of_life_function()
+                print('||| Killing {} with pid {}'.format(self.state_topic, pid))
                 os.kill(pid, signal.SIGTERM)
-            time.sleep(int(ct.HEARTBEAT_RATE / 2))
+            time.sleep(ct.HEARTBEAT_RATE)
+
+    def proof_of_life(self):
+        """
+        When the worker process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
+        that lets the node (in the gui_com process) that the worker is running and ready to receive parameter updates.
+        :return: Nothing
+        """
+        for i in range(2):
+            self.socket_pub_proof_of_life.send_string(self.state_topic + '##' + 'POL')
+            time.sleep(0.2)
 
     def start_ioloop(self):
         """
@@ -122,7 +147,12 @@ class TransformWorker:
         """
         self.thread_heartbeat = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.thread_heartbeat.start()
+
+        self.thread_proof_of_life = threading.Thread(target=self.proof_of_life, daemon=True)
+        self.thread_proof_of_life.start()
+
         ioloop.IOLoop.instance().start()
+        print('!!! WORKER {} HAS STOPPED'.format(self.state_topic))
 
 
 
