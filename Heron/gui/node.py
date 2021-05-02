@@ -78,9 +78,9 @@ class Node:
         for i, parameter in enumerate(self.operation.parameters):
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
         topic = self.operation.name + '##' + self.index
-        gui_com.SOCKET_PUB_STATE.send_string(topic, flags=zmq.SNDMORE)
-        gui_com.SOCKET_PUB_STATE.send_pyobj(self.node_parameters)
-        print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
+        gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
+        gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
+        #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
 
     def put_on_editor(self):
         with simple.node(name=self.name, parent='Node Editor##Editor',

@@ -13,10 +13,10 @@ import numpy as np
 
 class TransformCom:
 
-    def __init__(self, receiving_topics, sending_topics, state_topic, push_port, worker_exec, verbose=True):
+    def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True):
         self.receiving_topics = receiving_topics
         self.sending_topics = sending_topics
-        self.state_topic = state_topic
+        self.parameters_topic = parameters_topic
         self.push_data_port = push_port
         self.pull_data_port = str(int(self.push_data_port) + 1)
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
@@ -27,7 +27,7 @@ class TransformCom:
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
-        self.port_pub_state = ct.STATE_FORWARDER_SUBMIT_PORT
+        self.port_pub_parameters = ct.PARAMETERS_FORWARDER_SUBMIT_PORT
         self.poller = zmq.Poller()
 
         self.context = None
@@ -106,7 +106,7 @@ class TransformCom:
         arguments_list = ['python']
         arguments_list.append(self.worker_exec)
         arguments_list.append(str(self.push_data_port))
-        arguments_list.append(str(self.state_topic))
+        arguments_list.append(str(self.parameters_topic))
         arguments_list.append(str(len(self.receiving_topics)))
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])

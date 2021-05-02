@@ -7,7 +7,7 @@ import time
 from Heron import constants as ct
 
 debug_data = False
-debug_state = False
+debug_parameters = False
 debug_proof_of_life = False
 
 
@@ -42,25 +42,25 @@ def data_forwarder_loop():
         print("bringing down Forwarder for Data")
 
 
-def state_forwarder_loop():
-    global debug_state
+def parameters_forwarder_loop():
+    global debug_parameters
 
     # if process is called with 'True' then it becomes verbose and sends all messages also to the capture port
-    if debug_state:
-        print('Forwarder for state is in debug mode (capture is on)')
+    if debug_parameters:
+        print('Forwarder for parameters is in debug mode (capture is on)')
 
     try:
         context = zmq.Context(1)
         frontend = context.socket(zmq.SUB)
-        frontend.bind("tcp://*:{}".format(ct.STATE_FORWARDER_SUBMIT_PORT))
+        frontend.bind("tcp://*:{}".format(ct.PARAMETERS_FORWARDER_SUBMIT_PORT))
         frontend.SUBSCRIBE = ""
 
         backend = context.socket(zmq.PUB)
-        backend.bind("tcp://*:{}".format(ct.STATE_FORWARDER_PUBLISH_PORT))
+        backend.bind("tcp://*:{}".format(ct.PARAMETERS_FORWARDER_PUBLISH_PORT))
 
-        if debug_state:
+        if debug_parameters:
             capture = context.socket(zmq.PUB)
-            capture.bind("tcp://*:{}".format(ct.STATE_FORWARDER_CAPTURE_PORT))
+            capture.bind("tcp://*:{}".format(ct.PARAMETERS_FORWARDER_CAPTURE_PORT))
 
             zmq.proxy(frontend, backend, capture)
         else:
@@ -68,7 +68,7 @@ def state_forwarder_loop():
 
     except Exception as e:
         print(e)
-        print("bringing down Forwarder for State")
+        print("bringing down Forwarder for Parameters")
 
 
 def proof_of_life_forwarder_loop():
@@ -97,23 +97,23 @@ def proof_of_life_forwarder_loop():
 
     except Exception as e:
         print(e)
-        print("bringing down Forwarder for State")
+        print("bringing down Forwarder for Parameters")
 
 
 def main():
     global debug_data
-    global debug_state
+    global debug_parameters
     global debug_proof_of_life
 
     args = sys.argv[1:]
     debug_data = args[0] == 'True'
-    debug_state = args[1] == 'True'
+    debug_parameters = args[1] == 'True'
     debug_proof_of_life = args[2] == 'True'
 
     data_thread = threading.Thread(target=data_forwarder_loop, daemon=True)
     data_thread.start()
-    state_thread = threading.Thread(target=state_forwarder_loop, daemon=True)
-    state_thread.start()
+    parameters_thread = threading.Thread(target=parameters_forwarder_loop, daemon=True)
+    parameters_thread.start()
     proof_of_life_thread = threading.Thread(target=proof_of_life_forwarder_loop, daemon=True)
     proof_of_life_thread.start()
 

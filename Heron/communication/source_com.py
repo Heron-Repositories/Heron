@@ -12,9 +12,9 @@ from zmq.eventloop import ioloop, zmqstream
 
 
 class SourceCom:
-    def __init__(self, sending_topic, state_topic, port, worker_exec, verbose=False):
+    def __init__(self, sending_topic, parameters_topic, port, worker_exec, verbose=False):
         self.sending_topic = sending_topic
-        self.state_topic = state_topic
+        self.parameters_topic = parameters_topic
         self.data_port = port
         self.heartbeat_port = str(int(self.data_port) + 1)
         self.worker = worker_exec
@@ -25,10 +25,10 @@ class SourceCom:
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
-        self.socket_pub_state = None
+        self.socket_pub_parameters = None
         self.socket_pub_data = None
         self.socket_pull_data = None
-        self.stream_pull = None
+        self.stream_pull_data = None
         self.socket_push_heartbeat = None
 
     def connect_sockets(self):
@@ -41,8 +41,8 @@ class SourceCom:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.data_port))
-        self.stream_pull = zmqstream.ZMQStream(self.socket_pull_data)
-        self.stream_pull.on_recv(self.on_receive_data_from_worker)
+        self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
+        self.stream_pull_data.on_recv(self.on_receive_data_from_worker)
 
         # Socket for publishing the data to the data forwarder
         self.socket_pub_data = Socket(self.context, zmq.PUB)
@@ -99,7 +99,7 @@ class SourceCom:
         :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui)
         :return: Nothing
         """
-        worker = subprocess.Popen(['python', self.worker, self.data_port, self.state_topic, str(self.verbose)])
+        worker = subprocess.Popen(['python', self.worker, self.data_port, self.parameters_topic, str(0), str(self.verbose)])
 
         if self.verbose:
             print('Source {} PID = {}.'.format(self.sending_topic, worker.pid))

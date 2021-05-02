@@ -2,41 +2,26 @@
 from simple_pyspin import Camera
 import cv2 as cv2
 import sys
-import threading
+from Heron import general_utils as gu
 from Heron.communication.source_worker import SourceWorker
+from Heron.Operations.Sources.Vision import spinnaker_camera_com
 
-visualisation_on = False
-image = []
-
-
-def visualisation_loop():
-    global image
-    global visualisation_on
-
-    while visualisation_on:
-        cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
-
-        width = cv2.getWindowImageRect("Camera")[2]
-        height = cv2.getWindowImageRect("Camera")[3]
-        try:
-            image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
-            cv2.imshow('Camera', image)
-            cv2.waitKey(1)
-        except:
-            pass
-
-
-
-def worker_function(worker):
-    global visualisation_on
-    global image
+def worker_function(worker_object):
 
     with Camera() as cam:  # Acquire and initialize Camera
         cam.start()  # Start recording
 
         while True:
-            image = cam.get_array()
-            worker.socket_push_data.send_array(image, copy=False)
+            worker_object.worker_result = cam.get_array()
+            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+
+            try:
+                worker_object.visualisation_on = worker_object.parameters[0]
+            except:
+                worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
+
+            worker_object.visualisation_toggle()
+
             cv2.waitKey(1)
 
 
@@ -45,23 +30,15 @@ def on_end_of_life():
 
 
 def start_the_worker_process():
-    args = sys.argv[1:]
-    assert len(args) == 3, 'The Source worker process needs 3 arguments, the port, the state topic and the verbose ' \
-                           'value'
-    port, state_topic, verbose = args
+
+    port, parameters_topic, _, verbose = gu.parse_arguments_to_worker(sys.argv)
     verbose = verbose == 'True'
 
-    worker = SourceWorker(port=port, state_topic=state_topic, end_of_life_function=on_end_of_life, verbose=verbose)
-    worker.connect_socket()
-    worker.start_heartbeat_thread()
-    worker.start_parameters_thread()
-
-    global visualisation_on
-    visualisation_on = True
-    visualisation_thread = threading.Thread(target=visualisation_loop, daemon=True)
-    visualisation_thread.start()
-
-    worker_function(worker)
+    worker_object = SourceWorker(port=port, parameters_topic=parameters_topic, end_of_life_function=on_end_of_life, verbose=verbose)
+    worker_object.connect_socket()
+    worker_object.start_heartbeat_thread()
+    worker_object.start_parameters_thread()
+    worker_function(worker_object)
 
 
 if __name__ == "__main__":

@@ -20,8 +20,8 @@ operations_list = op_list.operations_list  # This generates all of the Operation
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6000
 nodes_list = []
-forwarders_list = []
 panel_coordinates = [0, 0]
+forwarders = None
 
 
 def generate_node_tree():
@@ -113,27 +113,17 @@ def on_delink():
 def start_forwarder_processes(path_to_com):
     """
     This initialises the two processes that run the two forwarders connecting the data flow between com and worker
-    processes and the state flow between the same processes
+    processes and the parameters flow between the same processes
     :param path_to_com: The path that the two python files that define the processes are
     :return: Nothing
     """
+    global forwarders
+
     forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'True', 'True', 'True'])
     atexit.register(kill_child, forwarders.pid)
 
-    #forwarder_for_data = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_data.py')])
-    #atexit.register(kill_child, forwarder_for_data.pid)
-
-    #forwarder_for_state = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarder_for_state.py'), 'False'])
-    #atexit.register(kill_child, forwarder_for_state.pid)
-
     print('Main loop PID = {}'.format(os.getpid()))
-    #print('Forwarder for Data PID = {}'.format(forwarder_for_data.pid))
-    #print('Forwarder for State PID = {}'.format(forwarder_for_state.pid))
     print('Forwarders PID = {}'.format(forwarders.pid))
-
-    forwarders_list.append(forwarders)
-    #forwarders_list.append(forwarder_for_data)
-    #forwarders_list.append(forwarder_for_state)
 
 
 def get_links_dictionary():
@@ -145,7 +135,6 @@ def get_links_dictionary():
     links_dict = {}
     for l in range(len(links[:, 0])):
         out = links[l, 0]
-        print(out)
         try:
             inputs = links_dict[out]
         except:
@@ -165,7 +154,6 @@ def on_start_graph(sender, data):
     :param data: Not used
     :return: Nothing
     """
-    global graph_running
 
     if nodes_list:
 
@@ -188,13 +176,12 @@ def on_end_graph(sender, data):
     :param data: Not used
     :return: Nothing
     """
-    global graph_running
+    global forwarders
 
     for n in nodes_list:
         n.stop_exec()
 
-    for forwarder in forwarders_list:
-        forwarder.kill()
+    forwarders.kill
 
     with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
         add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
@@ -233,13 +220,11 @@ def save_graph():
         save_to = os.path.join(data[0], data[1])
         node_dict = {}
         for n in nodes_list:
-            print(n.__dict__)
             n = copy.deepcopy(n)
             node_dict[n.name] = n.__dict__
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
 
         node_dict['links'] = get_links_dictionary()
-        print(node_dict)
         with open(save_to, 'w+') as file:
             json.dump(node_dict, file)
 

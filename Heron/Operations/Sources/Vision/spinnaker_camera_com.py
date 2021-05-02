@@ -17,9 +17,9 @@ Properties of the generated Node
 BaseName = 'Spinnaker Camera'
 NodeAttributeNames = ['Parameters', 'Frame Out']
 NodeAttributeType = ['Static', 'Output']
-ParameterNames = ['Cam Index']
-ParameterTypes = ['int']
-ParametersDefaultValues = [0]
+ParameterNames = ['Visualisation', 'Cam Index']
+ParameterTypes = ['bool', 'int']
+ParametersDefaultValues = [False, 0]
 
 # </editor-fold>
 
@@ -34,12 +34,12 @@ def start_the_communications_process():
     """
     global Exec
 
-    push_port, _, sending_topics, state_topic = gu.parse_arguments_to_com(sys.argv)
+    push_port, _, sending_topics, parameters_topic = gu.parse_arguments_to_com(sys.argv)
     sending_topic = sending_topics[0]
 
     worker_exec = os.path.join(os.path.dirname(Exec), 'spinnaker_camera_worker.py')
 
-    spin_camera_com = SourceCom(sending_topic=sending_topic, state_topic=state_topic, port=push_port,
+    spin_camera_com = SourceCom(sending_topic=sending_topic, parameters_topic=parameters_topic, port=push_port,
                                 worker_exec=worker_exec, verbose=False)
 
     spin_camera_com.connect_sockets()
