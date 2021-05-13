@@ -15,7 +15,7 @@ Exec = os.path.realpath(__file__)
 Properties of the generated Node
 """
 BaseName = 'Differencing'
-NodeAttributeNames = ['Parameters', 'Frame 1 In', 'Frame 2 In', 'Difference Out']
+NodeAttributeNames = ['Parameters', 'Frame_1_In', 'Frame_2_In', 'Difference_Out']
 NodeAttributeType = ['Static', 'Input', 'Input', 'Output']
 ParameterNames = ['Visualisation', 'Frame 2 - Frame In']
 ParameterTypes = ['bool', 'bool']
@@ -27,7 +27,7 @@ ParametersDefaultValues = [False, False]
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
     worker_exec = os.path.join(os.path.dirname(Exec), 'differencing_worker.py')
-    differencing_com = gu.start_the_communications_process(worker_exec)
+    differencing_com = gu.start_the_transform_communications_process(worker_exec)
     differencing_com.start_ioloop()
 
 # </editor-fold>

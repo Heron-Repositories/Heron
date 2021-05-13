@@ -1,13 +1,12 @@
 
+import cv2
 import subprocess
-import atexit
 import zmq
-import time
 import numpy as np
 from dearpygui import simple
 from dearpygui.core import *
 from Heron.gui import operations_list as op
-from Heron.general_utils import kill_child, choose_color_according_to_operations_type
+from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication import gui_com
 
 operations_list = op.operations_list  # This generates all of the Operation dataclass instances currently
@@ -18,8 +17,8 @@ class Node:
     def __init__(self, name):
         self.name = name
         self.operation = None
-        self.index = None
-        self.process_pid = None
+        self.node_index = None
+        self.process = None
         self.topics_out = []
         self.topics_in = []
         self.starting_port = None
@@ -33,6 +32,9 @@ class Node:
         self.get_numbers_of_inputs_and_outputs()
         self.generate_default_topics()
         self.get_node_index()
+
+    def remove_from_editor(self):
+        delete_item(self.name)
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
@@ -52,7 +54,7 @@ class Node:
         self.node_parameters = self.operation.parameters_def_values
 
     def get_node_index(self):
-        self.index = self.name.split('##')[-1]
+        self.node_index = self.name.split('##')[-1]
 
     def generate_default_topics(self):
         for at in self.operation.attribute_types:
@@ -73,11 +75,31 @@ class Node:
                 self.topics_out[i] = topic
                 break
 
+    def remove_topic_in(self, topic):
+        if len(self.topics_in) == 1:
+            if self.topics_in[0] == topic:
+                self.topics_in[0] = 'NothingIn'
+        else:
+            for i, t in enumerate(self.topics_in):
+                if t == topic:
+                    self.topics_in[i] = ''
+                    break
+
+    def remove_topic_out(self, topic):
+        if len(self.topics_out) == 1:
+            if self.topics_out[0] == topic:
+                self.topics_out[0] = 'NothingOut'
+        else:
+            for i, t in enumerate(self.topics_out):
+                if t == topic:
+                    del self.topics_out[i]
+                    break
+
     def update_parameters(self):
-        attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.index)
+        attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.node_index)
         for i, parameter in enumerate(self.operation.parameters):
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
-        topic = self.operation.name + '##' + self.index
+        topic = self.operation.name + '##' + self.node_index
         gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
         #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
@@ -100,11 +122,11 @@ class Node:
                     output_type = False
                     static = True
 
-                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.index)
+                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
 
-                with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.index),
+                with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
                                            output=output_type, static=static):
-                    add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.index), default_value=attr)
+                    add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index), default_value=attr)
 
                     if 'Parameters' in attr:
                         for i, parameter in enumerate(self.operation.parameters):
@@ -128,7 +150,7 @@ class Node:
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)
 
-    def start_exec(self):
+    def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
@@ -142,18 +164,18 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name)
 
-        self.process_pid = subprocess.Popen(arguments_list)
-        atexit.register(kill_child, self.process_pid)
+        self.process = subprocess.Popen(arguments_list)
 
         # Wait until the worker sends a proof_of_life signal (i.e. it is up and running)
         its_alive = 'No'
         while its_alive != 'POL':
             its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
-            its_alive = its_alive.split('##')[-1]
-            time.sleep(0.1)
-        time.sleep(0.2)
+            if its_alive.split('##')[-3] in self.name:
+                its_alive = its_alive.split('##')[-1]
+            cv2.waitKey(1)
         self.update_parameters()
 
-    def stop_exec(self):
-        self.process_pid.kill()
-        self.process_pid = None
+
+    def stop_com_process(self):
+        self.process.kill()
+        self.process = None

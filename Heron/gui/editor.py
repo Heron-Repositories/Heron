@@ -7,6 +7,7 @@ import atexit
 import numpy as np
 import json
 import copy
+import gc
 from Heron.general_utils import kill_child, choose_color_according_to_operations_type, get_next_available_port_group
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
@@ -21,7 +22,7 @@ heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6000
 nodes_list = []
 panel_coordinates = [0, 0]
-forwarders = None
+forwarders: subprocess.Popen
 
 
 def generate_node_tree():
@@ -88,38 +89,53 @@ def on_add_node(sender, data):
     nodes_list.append(n)
 
 
-def on_link(sender, data):
+def on_link(sender, link):
     """
     When a link is created its out part is stored as a topic_out in the node with the output and as a topic_in in the
     node with the input
     :param sender: The node editor (not used)
-    :param data: The link list
+    :param link: The link list
     :return: Nothing
     """
-    output_node = data[0].split('##')[-2] + '##' +data[0].split('##')[-1]
-    input_node = data[1].split('##')[-2] + '##' + data[1].split('##')[-1]
+    output_node = link[0].split('##')[-2] + '##' + link[0].split('##')[-1]
+    input_node = link[1].split('##')[-2] + '##' + link[1].split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            n.add_topic_out(data[0])
+            n.add_topic_out(link[0])
         if input_node == n.name:
-            n.add_topic_in(data[0])
+            n.add_topic_in(link[0])
 
 
 # TODO: Define what happens when user deletes a link
-def on_delink():
-    pass
+def on_delink(sender, link):
+    print(link)
+    output_node = link[0].split('##')[-2] + '##' + link[0].split('##')[-1]
+    input_node = link[1].split('##')[-2] + '##' + link[1].split('##')[-1]
+    for n in nodes_list:
+        #print(n.name)
+        #print(n.topics_in)
+        #print(n.topics_out)
+        #print('-------')
+        if output_node == n.name:
+            n.remove_topic_out(link[0])
+        if input_node == n.name:
+            n.remove_topic_in(link[0])
+        #print(n.topics_in)
+        #print(n.topics_out)
+        #print('-------')
+        #print('-------')
 
 
-def start_forwarder_processes(path_to_com):
+def start_forwarders_process(path_to_com):
     """
-    This initialises the two processes that run the two forwarders connecting the data flow between com and worker
+    This initialises the two processes that run the two forwarders connecting the link flow between com and worker
     processes and the parameters flow between the same processes
     :param path_to_com: The path that the two python files that define the processes are
     :return: Nothing
     """
     global forwarders
 
-    forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'True', 'True', 'True'])
+    forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'])
     atexit.register(kill_child, forwarders.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
@@ -160,10 +176,10 @@ def on_start_graph(sender, data):
         path_to_com = Path(os.path.dirname(os.path.realpath(__file__)))
         path_to_com = os.path.join(path_to_com.parent, 'communication')
 
-        start_forwarder_processes(path_to_com)
+        start_forwarders_process(path_to_com)
 
         for n in nodes_list:
-            n.start_exec()
+            n.start_com_process()
 
         update_control_graph_buttons(True)
 
@@ -179,9 +195,9 @@ def on_end_graph(sender, data):
     global forwarders
 
     for n in nodes_list:
-        n.stop_exec()
+        n.stop_com_process()
 
-    forwarders.kill
+    forwarders.kill()
 
     with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
         add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
@@ -194,6 +210,21 @@ def on_end_graph(sender, data):
         delete_item('Killing processes')
     update_control_graph_buttons(False)
     delete_item('Progress bar')
+
+
+def on_keys_pressed(sender, key_value):
+    if key_value == 46:  # Pressed the Delete key
+        indices_to_remove = []
+        for node in get_selected_nodes("Node Editor##Editor"):
+            for i in np.arange(len(nodes_list)-1, -1, -1):
+                if nodes_list[i].name == node:
+                    nodes_list[i].remove_from_editor()
+                    indices_to_remove.append(i)
+        for i in indices_to_remove:
+            del nodes_list[i]
+
+        for link in get_selected_links("Node Editor##Editor"):
+            delete_node_link("Node Editor##Editor", link[0], link[1])
 
 
 def update_control_graph_buttons(is_graph_running):
@@ -252,8 +283,8 @@ def load_graph():
                     n = Node(name=value['name'])
                     op_dict = value['operation']
                     n.operation = op_list.create_operation_from_dictionary(op_dict)
-                    n.index = value['index']
-                    n.process_pid = value['process_pid']
+                    n.node_index = value['node_index']
+                    n.process = value['process']
                     n.topics_out = value['topics_out']
                     n.topics_in = value['topics_in']
                     n.starting_port = value['starting_port']
@@ -274,7 +305,7 @@ def load_graph():
     open_file_dialog(callback=on_file_select)
 
 
-# TODO: Add a UI asking the user if they are sure (and that all data will be lost)
+# TODO: Add a UI asking the user if they are sure (and that all link will be lost)
 def clear_editor():
     """
     Clear the editor of all nodes and links
@@ -371,6 +402,7 @@ with simple.window("Main Window"):
 
 # Button and mouse callback registers
 set_mouse_drag_callback(callback=on_drag, threshold=0.1)
+set_key_press_callback(callback=on_keys_pressed)
 
 default_style.set_style(heron_path)
 start_dearpygui(primary_window="Main Window")

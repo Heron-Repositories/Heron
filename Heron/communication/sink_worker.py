@@ -5,18 +5,16 @@ import pickle
 import os
 import signal
 import zmq
-import cv2
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
 from zmq.eventloop import ioloop, zmqstream
 
 
-class TransformWorker:
+class SinkWorker:
     def __init__(self, recv_topics_buffer, pull_port, work_function, end_of_life_function, parameters_topic, verbose):
 
         self.pull_data_port = pull_port
-        self.push_data_port = str(int(self.pull_data_port) + 1)
-        self.pull_heartbeat_port = str(int(self.pull_data_port) + 2)
+        self.pull_heartbeat_port = str(int(self.pull_data_port) + 1)
         self.work_function = work_function
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
@@ -24,17 +22,14 @@ class TransformWorker:
         self.recv_topics_buffer = recv_topics_buffer
 
         self.op_name = self.parameters_topic.split('##')[-2]
-        self.node_index = self.parameters_topic.split('##')[-1]
+        self.index = self.parameters_topic.split('##')[-1]
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
-        self.visualisation_on = False
-        self.visualisation_thread = threading.Thread(target=self.visualisation_loop,  daemon=True)
 
         self.context = None
         self.socket_pull_data = None
         self.stream_pull_data = None
-        self.socket_push_data = None
         self.socket_sub_parameters = None
         self.stream_parameters = None
         self.parameters = None
@@ -43,7 +38,6 @@ class TransformWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
-        self.worker_result = None
 
     def connect_sockets(self):
         """
@@ -53,7 +47,7 @@ class TransformWorker:
         """
         self.context = zmq.Context()
 
-        # Setup the socket and the stream that receives the link from the com to be worked upon
+        # Setup the socket and the stream that receives the data from the com to be worked upon
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
@@ -66,11 +60,6 @@ class TransformWorker:
         self.socket_sub_parameters.subscribe(self.parameters_topic)
         self.stream_parameters = zmqstream.ZMQStream(self.socket_sub_parameters)
         self.stream_parameters.on_recv(self.parameters_callback, copy=False)
-
-        # Setup the socket that sends the results to the com
-        self.socket_push_data = Socket(self.context, zmq.PUSH)
-        self.socket_push_data.set_hwm(1)
-        self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
 
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
@@ -93,10 +82,8 @@ class TransformWorker:
         :param data: The link received
         :return: Nothing
         """
-        data = [data[0].bytes, data[1].bytes, data[2].bytes]
-        results = self.work_function(data, self.parameters)
-        for array_in_list in results:
-            self.socket_push_data.send_array(array_in_list, copy=False)
+        data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
+        self.work_function(data, self.parameters)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -110,7 +97,7 @@ class TransformWorker:
             args = pickle.loads(args_pyobj)
             if args is not None:
                 self.parameters = args
-                print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+                # print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):
         """
@@ -142,38 +129,9 @@ class TransformWorker:
         that lets the node (in the gui_com process) that the worker is running and ready to receive parameter updates.
         :return: Nothing
         """
-        while self.worker_result is None:
-            cv2.waitKey(1)
-        print('Sending POL from {} {}'.format(self.op_name, self.node_index))
-        self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
-
-
-    def visualisation_loop(self):
-        """
-        When the visualisation parameter in a node is set to True then this loop starts in a new visualisation thread.
-        The thread terminates when the visualisation_on boolean is turned off
-        :return: Nothing
-        """
-        window_name = '{} {}'.format(self.op_name, self.node_index)
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-
-        while self.visualisation_on:
-            cv2.imshow(window_name, self.worker_result)
-            self.visualisation_on = True
-            cv2.waitKey(1)
-        cv2.destroyAllWindows()
-
-    def visualisation_toggle(self):
-        """
-        The function that is run at every cycle of the WORKER_FUNCTION to check if the visualisation_on bool is True or
-        not and turn on or off the visualisation_thread
-        :return: Nothing
-        """
-        if self.visualisation_on and not self.visualisation_thread.is_alive():
-            self.visualisation_on = True
-            self.visualisation_thread.start()
-        if not self.visualisation_on and not self.visualisation_thread.is_alive():
-            self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True)
+        for i in range(2):
+            self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
+            time.sleep(0.2)
 
     def start_ioloop(self):
         """

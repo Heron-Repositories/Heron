@@ -43,12 +43,12 @@ class SourceWorker:
     def connect_socket(self):
         """
         Sets up the sockets to do the communication with the source_com process through the forwarders
-        (for the data and the parameters).
+        (for the link and the parameters).
         :return: Nothing
         """
         self.context = zmq.Context()
 
-        # Setup the socket that pushes the data to the com
+        # Setup the socket that pushes the link to the com
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.set_hwm(1)
         self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.data_port))
@@ -135,14 +135,17 @@ class SourceWorker:
         The thread terminates when the visualisation_on boolean is turned off
         :return: Nothing
         """
-        while self.visualisation_on:
-            cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
 
-            width = cv2.getWindowImageRect("Camera")[2]
-            height = cv2.getWindowImageRect("Camera")[3]
+        while self.visualisation_on:
+            window_name = '{} {}'.format(self.name, self.index)
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+            width = cv2.getWindowImageRect(window_name)[2]
+            height = cv2.getWindowImageRect(window_name)[3]
+
             try:
-                image = cv2.resize(self.worker_result, (width, height), interpolation=cv2.INTER_AREA)
-                cv2.imshow('Camera', image)
+                image = cv2.resize(self.worker_result, (height, width), interpolation=cv2.INTER_AREA)
+                cv2.imshow(window_name, image)
                 cv2.waitKey(1)
             except:
                 pass
@@ -159,6 +162,16 @@ class SourceWorker:
             self.visualisation_thread.start()
         if not self.visualisation_on and not self.visualisation_thread.is_alive():
             self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True)
+
+    def set_new_visualisation_loop(self, new_visualisation_loop):
+        """
+        If a specific source_worker needs to do something else regarding visualisation then it needs to implement a
+        visualisation loop function and pass it here by giving it as an argument to this function
+        :param new_visualisation_loop: The new function that will deal with the node's visualisation
+        :return: Nothing
+        """
+        self.visualisation_loop = new_visualisation_loop
+        self.visualisation_thread = threading.Thread(target=new_visualisation_loop, daemon=True)
 
     def start_heartbeat_thread(self):
         """

@@ -11,20 +11,20 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Canny'
-NodeAttributeNames = ['Parameters', 'Frame In', 'Edges Out']
-NodeAttributeType = ['Static', 'Input', 'Output']
-ParameterNames = ['Visualisation', 'Min Value', 'Max Value']
-ParameterTypes = ['bool', 'int', 'int']
-ParametersDefaultValues = [False, 100, 200]
+BaseName = 'Save video'
+NodeAttributeNames = ['Parameters', 'Frame In']
+NodeAttributeType = ['Static', 'Input']
+ParameterNames = ['File name', 'Pixel Format In', 'Pixel Format Out', 'Fps']
+ParameterTypes = ['str', 'str', 'str', 'int']
+ParametersDefaultValues = ['output.avi', 'bayer_rggb8', 'rgb24', 120]
 
 # </editor-fold>
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    worker_exec = os.path.join(os.path.dirname(Exec), 'canny_worker.py')
-    canny_com = gu.start_the_transform_communications_process(worker_exec)
-    canny_com.start_ioloop()
+    worker_exec = os.path.join(os.path.dirname(Exec), 'save_video_worker.py')
+    save_video_com = gu.start_the_sink_communications_process(worker_exec)
+    save_video_com.start_ioloop()
 
 # </editor-fold>

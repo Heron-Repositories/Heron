@@ -16,7 +16,7 @@ def data_forwarder_loop():
 
     # if process is called with 'True' then it becomes verbose and sends all messages also to the capture port
     if debug_data:
-        print('Forwarder for data is in debug mode (capture is on)')
+        print('Forwarder for link is in debug mode (capture is on)')
 
     try:
         context = zmq.Context(1)

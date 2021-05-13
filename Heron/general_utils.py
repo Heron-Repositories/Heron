@@ -1,8 +1,16 @@
 
+import os
 import time
 import sys
+import signal
 from struct import *
+from Heron.communication.source_com import SourceCom
+from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
+from Heron.communication.transform_worker import TransformWorker
+from Heron.communication.sink_com import SinkCom
+from Heron.communication.sink_worker import SinkWorker
+
 
 
 def float_to_binary(num):
@@ -23,13 +31,11 @@ def accurate_delay(delay):
 
 
 def kill_child(child_pid):
-    print('KILL')
-    print(child_pid)
     try:
-        child_pid.kill()
+        os.kill(child_pid, signal.SIGTERM)
+        #print('Killed process {}'.format(child_pid))
     except:
-        print('Failed to kill process {}'.format(child_pid.pid))
-        pass
+        print('Failed to kill process {}'.format(child_pid))
 
 
 def choose_color_according_to_operations_type(operations_parent_name):
@@ -61,8 +67,8 @@ def parse_arguments_to_com(args):
     parsed.
     :param args: The argv returned by the sys.argv
     :return: port = the initial port for the com process,
-    receiving_topics = a list of the names of the topics the process receives (inputs) data at
-    sending_topics = a list of the names of the topics the process sends (outputs) data at
+    receiving_topics = a list of the names of the topics the process receives (inputs) link at
+    sending_topics = a list of the names of the topics the process sends (outputs) link at
     parameters_topic = the name of the topic the process receives parameter updates from the node
     """
     args = args[1:]
@@ -90,7 +96,7 @@ def parse_arguments_to_worker(args):
     :param args: The argv returned by the sys.argv
     :return: port = the initial port for the worker process,
     parameters_topic = the name of the topic the process receives parameter updates from the node
-    receiving_topics = a list of the names of the topics the process receives (inputs) data at
+    receiving_topics = a list of the names of the topics the process receives (inputs) link at
     verbose = the verbosity of the worker process (True or False)
     """
     args = args[1:]
@@ -105,14 +111,48 @@ def parse_arguments_to_worker(args):
     return port, parameters_topic, receiving_topics, verbose
 
 
-def start_the_communications_process(process_exec_file):
+def start_the_source_communications_process(process_exec_file):
+    """
+    Creates a SourceCom object for a source process
+    (i.e. initialises the worker process and keeps the zmq communication between the worker and the forwarders)
+    :return: The SourceCom object
+    """
+
+    push_port, _, sending_topics, parameters_topic = parse_arguments_to_com(sys.argv)
+
+    com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
+                           worker_exec=process_exec_file, verbose=False)
+
+    com_object.connect_sockets()
+    com_object.start_heartbeat_thread()
+    com_object.start_worker_process()
+
+    return com_object
+
+
+def start_the_source_worker_process(worker_function, end_of_life_function):
+    """
+    Creates a SourceWorker for a worker process of a Source
+    :param worker_function:
+    :return:
+    """
+    port, parameters_topic, _, verbose = parse_arguments_to_worker(sys.argv)
+    verbose = verbose == 'True'
+
+    worker_object = SourceWorker(port=port, parameters_topic=parameters_topic, end_of_life_function=end_of_life_function,
+                                 verbose=verbose)
+    worker_object.connect_socket()
+    worker_object.start_heartbeat_thread()
+    worker_object.start_parameters_thread()
+    worker_function(worker_object)
+
+
+def start_the_transform_communications_process(process_exec_file):
     """
     Creates a TransformCom object for a transformation process
     (i.e. initialises the worker process and keeps the zmq communication between the worker
     and the forwarder)
-    The push_port is the port that the canny_com uses to push data to the canny_worker.
-    It is called as a separate process.
-    :return: The com object
+    :return: The TransformCom object
     """
     push_port, receiving_topics, sending_topics, parameters_topic = parse_arguments_to_com(sys.argv)
 
@@ -123,3 +163,67 @@ def start_the_communications_process(process_exec_file):
     com_object.start_worker()
 
     return com_object
+
+
+def start_the_transform_worker_process(work_function, end_of_life_function):
+    """
+    Starts the _worker process of the Transform that grabs link from the _com process, does something with them
+    and sends them back to the _com process. It also grabs any updates of the parameters of the worker function
+    :return: The TransformWorker object
+    """
+
+    pull_port, parameters_topic, receiving_topics, verbose = parse_arguments_to_worker(sys.argv)
+    verbose = verbose == 'True'
+
+    buffer = {}
+    for rt in receiving_topics:
+        buffer[rt] = []
+
+    worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
+                                    end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
+                                    verbose=verbose)
+    worker_object.connect_sockets()
+
+    return worker_object
+
+
+def start_the_sink_communications_process(process_exec_file):
+    """
+    Creates a TransformCom object for a transformation process
+    (i.e. initialises the worker process and keeps the zmq communication between the worker
+    and the forwarder)
+    :return: The TransformCom object
+    """
+    push_port, receiving_topics, _, parameters_topic = parse_arguments_to_com(sys.argv)
+
+    com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
+                         push_port=push_port, worker_exec=process_exec_file, verbose=False)
+    com_object.connect_sockets()
+    com_object.start_heartbeat_thread()
+    com_object.start_worker()
+
+    return com_object
+
+
+def start_the_sink_worker_process(work_function, end_of_life_function):
+    """
+    Starts the _worker process of the Transform that grabs link from the _com process, does something with them
+    and sends them back to the _com process. It also grabs any updates of the parameters of the worker function
+    :return: The TransformWorker object
+    """
+
+    pull_port, parameters_topic, receiving_topics, verbose = parse_arguments_to_worker(sys.argv)
+    verbose = verbose == 'True'
+
+    buffer = {}
+    for rt in receiving_topics:
+        buffer[rt] = []
+
+    worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
+                               end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
+                               verbose=verbose)
+    worker_object.connect_sockets()
+
+    return worker_object
+
+

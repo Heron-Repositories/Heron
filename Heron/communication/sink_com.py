@@ -3,29 +3,23 @@ import subprocess
 import time
 import threading
 import zmq
-from zmq.eventloop import ioloop, zmqstream
 import os
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
-from Heron.communication import gui_com
-import numpy as np
 
 
-class TransformCom:
+class SinkCom:
 
-    def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True):
+    def __init__(self, receiving_topics, parameters_topic, push_port, worker_exec, verbose=True):
         self.receiving_topics = receiving_topics
-        self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
         self.push_data_port = push_port
-        self.pull_data_port = str(int(self.push_data_port) + 1)
-        self.push_heartbeat_port = str(int(self.push_data_port) + 2)
+        self.push_heartbeat_port = str(int(self.push_data_port) + 1)
         self.worker_exec = worker_exec
         self.verbose = verbose
 
         self.worker_pid = None
 
-        self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
         self.port_pub_parameters = ct.PARAMETERS_FORWARDER_SUBMIT_PORT
         self.poller = zmq.Poller()
@@ -34,8 +28,6 @@ class TransformCom:
         self.socket_sub_data = None
         self.stream_sub = None
         self.socket_push_data = None
-        self.socket_pull_data = None
-        self.socket_pub_data = None
         self.socket_push_heartbeat = None
 
         self.index = -1
@@ -46,7 +38,7 @@ class TransformCom:
         :return: Nothing
         """
         if self.verbose:
-            print('Starting Transform Node with PID = {}'.format(os.getpid()))
+            print('Starting Sink Node with PID = {}'.format(os.getpid()))
         self.context = zmq.Context()
 
         # Socket for subscribing to link from node connected to the input
@@ -56,23 +48,11 @@ class TransformCom:
         for rt in self.receiving_topics:
             self.socket_sub_data.setsockopt(zmq.SUBSCRIBE, rt.encode('ascii'))
         self.poller.register(self.socket_sub_data, zmq.POLLIN)
-        #print(self.socket_sub_data.get(zmq.SUBSCRIBE))
 
-        # Socket for pushing the link to the worker
+        # Socket for pushing the data to the worker
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.set_hwm(1)
         self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
-
-        # Socket for pulling transformed link from the worker
-        self.socket_pull_data = Socket(self.context, zmq.PULL)
-        self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        self.poller.register(self.socket_pull_data, zmq.POLLIN)
-
-        # Socket for publishing transformed link to other nodes
-        self.socket_pub_data = Socket(self.context, zmq.PUB)
-        self.socket_pub_data.set_hwm(len(self.sending_topics))
-        self.socket_pub_data.connect(r"tcp://localhost:{}".format(self.port_pub_data))
 
         # Socket for pushing the heartbeat to the worker
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
@@ -114,9 +94,7 @@ class TransformCom:
         self.worker_pid = subprocess.Popen(arguments_list)
 
         if self.verbose:
-            print('Transform from {} to {} worker com with PID = {}.'.format(self.receiving_topics,
-                                                                             self.sending_topics,
-                                                                             self.worker_pid.pid))
+            print('Sink from {} worker com with PID = {}.'.format(self.receiving_topics, self.worker_pid.pid))
 
     def get_sub_data(self):
         """
@@ -147,48 +125,23 @@ class TransformCom:
             # Get link from subsribed node
             t1 = time.perf_counter()
 
-            sockets_in = dict(self.poller.poll(timeout=1))
-            while not sockets_in:
-                sockets_in = dict(self.poller.poll(timeout=1))
+            sockets_in = dict(self.poller.poll(timeout=0))
+            #while not sockets_in:
+            #    sockets_in = dict(self.poller.poll(timeout=0))
+
+            #t2 = time.perf_counter()
 
             if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                 topic, data_index, data_time, messagedata = self.get_sub_data()
 
                 if self.verbose:
-                    print("-Transform from {} to {}, node_index {} at time {}".format(topic,
-                                                                                 self.sending_topics,
-                                                                                 data_index,
-                                                                                 data_time))
+                    print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
 
                 # Send link to be transformed to the worker
                 self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                self.socket_push_data.send_array(messagedata, copy=False)
-                t2 = time.perf_counter()
+                self.socket_push_data.send_array(messagedata, copy=True)
+                t3 = time.perf_counter()
 
-            # Get the transformed link (wait for the socket_pull_data to get some link from the worker)
-            sockets_in = dict(self.poller.poll(timeout=1))
-            while not sockets_in or self.socket_pull_data not in sockets_in \
-                    or sockets_in[self.socket_pull_data] != zmq.POLLIN:
-                sockets_in = dict(self.poller.poll(timeout=1))
-
-            new_message_data = []
-
-            for i in range(len(self.sending_topics)):
-                new_message_data.append(self.socket_pull_data.recv_array())
-            results_time = time.perf_counter()
-
-            if self.verbose:
-                print('--Results got back at time {}'.format(results_time))
-
-            # Publish the results. Each array in the list of arrays is published to its own sending topic
-            # (matched by order)
-            for i, st in enumerate(self.sending_topics):
-                self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send_array(new_message_data[i], copy=False)
-            t3 = time.perf_counter()
-
-            if self.verbose:
-                print("---Times to: i) transport link from worker to worker = {}, "
-                      "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+                if self.verbose:
+                    #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
+                    print("---Time to transport link from worker to worker = {}".format((t3 - t1) * 1000))
