@@ -21,8 +21,7 @@ def canny(data, parameters):
         min_val = canny_com.ParametersDefaultValues[1]
         max_val = canny_com.ParametersDefaultValues[2]
 
-
-    message = data[1:]  # link[0] is the topic
+    message = data[1:]  # data[0] is the topic
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
     try:
         worker_object.worker_result = cv2.Canny(image, min_val, max_val)

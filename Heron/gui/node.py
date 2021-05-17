@@ -104,12 +104,14 @@ class Node:
         gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
         #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
 
-    def put_on_editor(self):
+    def spawn_node_on_editor(self):
         with simple.node(name=self.name, parent='Node Editor##Editor',
                          x_pos=self.coordinates[0], y_pos=self.coordinates[1]):
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
             set_item_color(self.name, style=mvGuiCol_TitleBg, color=colour)
 
+            # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
+            # the node
             for i, attr in enumerate(self.operation.attributes):
 
                 if self.operation.attribute_types[i] == 'Input':
@@ -150,6 +152,17 @@ class Node:
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)
 
+            # Add the verbocity attribute
+            attr = 'Verbocity'
+            attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+            with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
+                                       output=False, static=True):
+                add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                         default_value=attr)
+
+                add_input_int('##{}'.format(attribute_name), default_value=0)
+                simple.set_item_width('##{}'.format(attribute_name), width=100)
+
     def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
@@ -164,9 +177,13 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name)
 
+        attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
+        verbocity = str(get_value('##{}'.format(attribute_name)) > 0)
+        arguments_list.append(verbocity)
+
         self.process = subprocess.Popen(arguments_list)
 
-        # Wait until the worker sends a proof_of_life signal (i.e. it is up and running)
+        # Wait until the worker sends a proof_of_life signal (i.e. it is up and running). Then update the parameters
         its_alive = 'No'
         while its_alive != 'POL':
             its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
@@ -174,8 +191,13 @@ class Node:
                 its_alive = its_alive.split('##')[-1]
             cv2.waitKey(1)
         self.update_parameters()
-
+        configure_item('##{}'.format(attribute_name), enabled=False)
 
     def stop_com_process(self):
         self.process.kill()
         self.process = None
+
+        attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
+        configure_item('##{}'.format(attribute_name), enabled=True)
+
+

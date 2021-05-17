@@ -11,7 +11,7 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Save video'
+BaseName = 'Save FFMPEG video'
 NodeAttributeNames = ['Parameters', 'Frame In']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['File name', 'Pixel Format In', 'Pixel Format Out', 'Fps']
@@ -23,7 +23,7 @@ ParametersDefaultValues = ['output.avi', 'bayer_rggb8', 'rgb24', 120]
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    worker_exec = os.path.join(os.path.dirname(Exec), 'save_video_worker.py')
+    worker_exec = os.path.join(os.path.dirname(Exec), 'save_ffmpeg_video_worker.py')
     save_video_com = gu.start_the_sink_communications_process(worker_exec)
     save_video_com.start_ioloop()
 

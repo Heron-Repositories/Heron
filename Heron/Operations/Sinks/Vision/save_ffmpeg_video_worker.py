@@ -2,7 +2,6 @@
 import numpy as np
 import time
 import ffmpeg
-import subprocess
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.communication.sink_worker import SinkWorker
@@ -13,13 +12,12 @@ output = None
 write_proc = None
 
 
-# bgr24
 def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, width, height):
     return(
         ffmpeg
         .input('pipe:', format='rawvideo', vcodec='rawvideo', r=fps, pix_fmt=pixel_format_in,
                 s='{}x{}'.format(width, height))
-        .output(out_filename, vcodec='h264_nvenc', pix_fmt=pixel_format_out, r=fps, preset='fast', bitrate='500M')
+        .output(out_filename, vcodec='h264_nvenc', pix_fmt=pixel_format_out, r=fps, preset='medium', bitrate='50M')
         .overwrite_output()
         .run_async(pipe_stdin=True)
     )

@@ -83,9 +83,10 @@ def parse_arguments_to_com(args):
     if num_of_sending_topics > 0:
         for k in range(num_of_sending_topics):
             sending_topics.append(args[k + num_of_receiving_topics + 3])
-    parameters_topic = args[-1]
+    parameters_topic = args[-2]
+    verbose = args[-1]
 
-    return port, receiving_topics, sending_topics, parameters_topic
+    return port, receiving_topics, sending_topics, parameters_topic, verbose
 
 
 def parse_arguments_to_worker(args):
@@ -118,10 +119,11 @@ def start_the_source_communications_process(process_exec_file):
     :return: The SourceCom object
     """
 
-    push_port, _, sending_topics, parameters_topic = parse_arguments_to_com(sys.argv)
+    push_port, _, sending_topics, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    verbose = verbose == 'True'
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
-                           worker_exec=process_exec_file, verbose=False)
+                           worker_exec=process_exec_file, verbose=verbose)
 
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
@@ -154,10 +156,11 @@ def start_the_transform_communications_process(process_exec_file):
     and the forwarder)
     :return: The TransformCom object
     """
-    push_port, receiving_topics, sending_topics, parameters_topic = parse_arguments_to_com(sys.argv)
+    push_port, receiving_topics, sending_topics, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    verbose = verbose == 'True'
 
     com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics, parameters_topic=parameters_topic,
-                              push_port=push_port, worker_exec=process_exec_file, verbose=False)
+                              push_port=push_port, worker_exec=process_exec_file, verbose=verbose)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -194,10 +197,11 @@ def start_the_sink_communications_process(process_exec_file):
     and the forwarder)
     :return: The TransformCom object
     """
-    push_port, receiving_topics, _, parameters_topic = parse_arguments_to_com(sys.argv)
+    push_port, receiving_topics, _, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    verbose = verbose == 'True'
 
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
-                         push_port=push_port, worker_exec=process_exec_file, verbose=False)
+                         push_port=push_port, worker_exec=process_exec_file, verbose=verbose)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()

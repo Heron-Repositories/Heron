@@ -84,7 +84,7 @@ def on_add_node(sender, data):
     # Create the Node
     name = operation.name + '##{}'.format(num_of_same_nodes)
     n = Node(name=name)
-    n.put_on_editor()
+    n.spawn_node_on_editor()
     n.starting_port = next(port_generator)
     nodes_list.append(n)
 
@@ -292,7 +292,7 @@ def load_graph():
                     n.num_of_outputs = value['num_of_outputs']
                     n.coordinates = value['coordinates']
                     n.node_parameters = value['node_parameters']
-                    n.put_on_editor()
+                    n.spawn_node_on_editor()
 
                     nodes_list.append(n)
 

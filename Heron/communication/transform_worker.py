@@ -110,7 +110,7 @@ class TransformWorker:
             args = pickle.loads(args_pyobj)
             if args is not None:
                 self.parameters = args
-                print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+                #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):
         """
