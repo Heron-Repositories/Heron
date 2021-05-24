@@ -97,7 +97,7 @@ def proof_of_life_forwarder_loop():
 
     except Exception as e:
         print(e)
-        print("bringing down Forwarder for Parameters")
+        print("bringing down Forwarder for Heartbeat")
 
 
 def main():

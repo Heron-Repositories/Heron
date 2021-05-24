@@ -15,7 +15,7 @@ Exec = os.path.realpath(__file__)
 Properties of the generated Node
 """
 BaseName = 'Name'
-NodeAttributeNames = ['Parameters', 'Output name']
+NodeAttributeNames = ['Parameters', 'Output node_name']
 NodeAttributeType = ['Static', 'Output']
 ParameterNames = ['Visualisation', 'Name of parameter 2', 'Name of parameter 3']
 ParameterTypes = ['bool', 'int', 'float']

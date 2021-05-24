@@ -63,7 +63,7 @@ for path, subdirs, files in os.walk(root):
 
 
 def create_operation_from_dictionary(op_dict):
-    op = Operation(name=op_dict['name'], full_filename=op_dict['full_filename'],
+    op = Operation(name=op_dict['node_name'], full_filename=op_dict['full_filename'],
                    attributes=op_dict['attributes'], attribute_types=op_dict['attribute_types'],
                    executable=op_dict['executable'], parent_dir=op_dict['parent_dir'], parameters=op_dict['parameters'],
                    parameter_types=op_dict['parameter_types'], parameters_def_values=op_dict['parameters_def_values'])

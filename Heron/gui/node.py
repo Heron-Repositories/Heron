@@ -1,4 +1,5 @@
 
+import os
 import cv2
 import subprocess
 import zmq
@@ -102,7 +103,7 @@ class Node:
         topic = self.operation.name + '##' + self.node_index
         gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
-        #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
+        #print('Node {} updating parameters {}'.format(self.node_name, self.node_parameters))
 
     def spawn_node_on_editor(self):
         with simple.node(name=self.name, parent='Node Editor##Editor',
@@ -159,9 +160,22 @@ class Node:
                                        output=False, static=True):
                 add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                          default_value=attr)
-
                 add_input_int('##{}'.format(attribute_name), default_value=0)
                 simple.set_item_width('##{}'.format(attribute_name), width=100)
+
+            # Add the extra input attribute
+            attr = 'Extra_Input'
+            attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+            with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
+                                       output=False, static=True):
+                add_same_line(spacing=40)
+                add_image_button('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                                 value=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir,
+                                                    'resources', 'Blue glass button square.png'),
+                                 callback=self.extra_input_window)
+
+    def extra_input_window(self):
+        print('hello')
 
     def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]

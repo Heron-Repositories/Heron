@@ -27,9 +27,9 @@ def canny(data, parameters):
         worker_object.worker_result = cv2.Canny(image, min_val, max_val)
     except:
         worker_object.worker_result = np.array((10, 10))
-        print('Canny {} operation failed'.format(worker_object.index))
+        print('Canny {} operation failed'.format(worker_object.node_index))
 
-    worker_object.visualisation_toggle()
+    worker_object.visualisation_loop_init()
 
     return [worker_object.worker_result]
 

@@ -69,7 +69,7 @@ def parse_arguments_to_com(args):
     :return: port = the initial port for the com process,
     receiving_topics = a list of the names of the topics the process receives (inputs) link at
     sending_topics = a list of the names of the topics the process sends (outputs) link at
-    parameters_topic = the name of the topic the process receives parameter updates from the node
+    parameters_topic = the node_name of the topic the process receives parameter updates from the node
     """
     args = args[1:]
     port = args[0]
@@ -96,7 +96,7 @@ def parse_arguments_to_worker(args):
     parsed.
     :param args: The argv returned by the sys.argv
     :return: port = the initial port for the worker process,
-    parameters_topic = the name of the topic the process receives parameter updates from the node
+    parameters_topic = the node_name of the topic the process receives parameter updates from the node
     receiving_topics = a list of the names of the topics the process receives (inputs) link at
     verbose = the verbosity of the worker process (True or False)
     """

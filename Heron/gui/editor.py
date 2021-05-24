@@ -30,12 +30,12 @@ def generate_node_tree():
     The function that looks into the Heron/Operations path and creates a list of tuples of
     directories where the first element in the tuple is a dir and the second is
     its parent dir. All names for the dirs are generated (using ## to separate the different
-    parts of the name) in such a way that can be used by dearpygui (i.e. they are
+    parts of the node_name) in such a way that can be used by dearpygui (i.e. they are
     unique and the first part before the first ## - which is the one that shows on a widget - is
     descriptive of the dir or the file).
     So one tuple would be ('Transforms##Operations##', 'Vision##Transforms##Operations##') which
-    would mean that a dir called Vision (with real name Vision##Transforms##Operations##) has as
-    its parent dir a dir called Transforms (with real name Transforms##Operations##).
+    would mean that a dir called Vision (with real node_name Vision##Transforms##Operations##) has as
+    its parent dir a dir called Transforms (with real node_name Transforms##Operations##).
     The returned list can be used in a tree_node widget
     :return: The list of tuples (parent dir, dir)
     """
@@ -62,7 +62,7 @@ def on_add_node(sender, data):
     """
     The callback that creates a Heron.gui.node.Node in the node editor for the operation defined by the button
     calling the callback.
-    :param sender: The button's name
+    :param sender: The button's node_name
     :param data: Not used
     :return: Nothing
     """
@@ -280,7 +280,7 @@ def load_graph():
             for key in raw_dict.keys():
                 if key != 'links':
                     value = raw_dict[key]
-                    n = Node(name=value['name'])
+                    n = Node(name=value['node_name'])
                     op_dict = value['operation']
                     n.operation = op_list.create_operation_from_dictionary(op_dict)
                     n.node_index = value['node_index']
@@ -367,33 +367,33 @@ with simple.window("Main Window"):
             add_menu_item('Save', callback=save_graph)
             add_menu_item('Load', callback=load_graph)
 
-    with simple.window('Node Selector'):
-        # Create the window of the Node selector
-        simple.set_window_pos('Node Selector', 10, 60)
-        simple.set_item_width('Node Selector', 300)
-        simple.set_item_height('Node Selector', 890)
+with simple.window('Node Selector'):
+    # Create the window of the Node selector
+    simple.set_window_pos('Node Selector', 10, 60)
+    simple.set_item_width('Node Selector', 300)
+    simple.set_item_height('Node Selector', 890)
 
-        node_tree = generate_node_tree()
-        base_name = node_tree[0][0]
+    node_tree = generate_node_tree()
+    base_name = node_tree[0][0]
 
-        with simple.tree_node(base_name, default_open=True):
-            # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
-            # tree_node widget
-            for parent, node in node_tree:
-                with simple.tree_node(node, parent=parent, default_open=True):
-                    for op in operations_list:
-                        if node == op.parent_dir:
-                            colour = choose_color_according_to_operations_type(node)
-                            add_button(op.name, width=150, height=30, callback=on_add_node)
-                            set_item_color(op.name, style=mvGuiCol_Button, color=colour)
+    with simple.tree_node(base_name, default_open=True):
+        # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
+        # tree_node widget
+        for parent, node in node_tree:
+            with simple.tree_node(node, parent=parent, default_open=True):
+                for op in operations_list:
+                    if node == op.parent_dir:
+                        colour = choose_color_according_to_operations_type(node)
+                        add_button(op.name, width=150, height=30, callback=on_add_node)
+                        set_item_color(op.name, style=mvGuiCol_Button, color=colour)
 
-    with simple.window("Node Editor", x_pos=int(get_main_window_size()[0]) - 1000, y_pos=0):
-        # The node editor
-        with simple.node_editor('Node Editor##Editor', link_callback=on_link, delink_callback=on_delink):
+with simple.window("Node Editor", x_pos=int(get_main_window_size()[0]) - 1000, y_pos=0):
+    # The node editor
+    with simple.node_editor('Node Editor##Editor', link_callback=on_link, delink_callback=on_delink):
 
-            simple.set_item_width('Node Editor', 1300)
-            simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 80))
-            simple.set_window_pos('Node Editor', 370, 30)
+        simple.set_item_width('Node Editor', 1300)
+        simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 80))
+        simple.set_window_pos('Node Editor', 370, 30)
 
 #simple.show_debug()
 #simple.show_logger()

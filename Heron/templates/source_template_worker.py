@@ -20,7 +20,7 @@ def worker_function(worker_object):
             except:
                 worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
 
-            worker_object.visualisation_toggle()
+            worker_object.visualisation_loop_init()
 
             cv2.waitKey(1)
 

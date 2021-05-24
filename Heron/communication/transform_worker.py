@@ -23,13 +23,14 @@ class TransformWorker:
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
 
+        self.node_name = parameters_topic.split('##')[-2]
         self.op_name = self.parameters_topic.split('##')[-2]
         self.node_index = self.parameters_topic.split('##')[-1]
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.visualisation_on = False
-        self.visualisation_thread = threading.Thread(target=self.visualisation_loop,  daemon=True)
+        self.visualisation_thread = None
 
         self.context = None
         self.socket_pull_data = None
@@ -147,33 +148,46 @@ class TransformWorker:
         print('Sending POL from {} {}'.format(self.op_name, self.node_index))
         self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
 
-
     def visualisation_loop(self):
         """
         When the visualisation parameter in a node is set to True then this loop starts in a new visualisation thread.
         The thread terminates when the visualisation_on boolean is turned off
         :return: Nothing
         """
-        window_name = '{} {}'.format(self.op_name, self.node_index)
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        window_showing = False
 
-        while self.visualisation_on:
-            cv2.imshow(window_name, self.worker_result)
-            self.visualisation_on = True
+        while True:
+            while self.visualisation_on:
+                if not window_showing:
+                    window_name = '{} {}'.format(self.node_name, self.node_index)
+                    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                    cv2.imshow(window_name, self.worker_result)
+                    cv2.waitKey(1)
+                    window_showing = True
+                if window_showing:
+                    width = cv2.getWindowImageRect(window_name)[2]
+                    height = cv2.getWindowImageRect(window_name)[3]
+                    try:
+                        image = cv2.resize(self.worker_result, (width, height), interpolation=cv2.INTER_AREA)
+                        cv2.imshow(window_name, image)
+                        cv2.waitKey(1)
+                    except Exception as e:
+                        print(e)
+            cv2.destroyAllWindows()
             cv2.waitKey(1)
-        cv2.destroyAllWindows()
+            window_showing = False
 
-    def visualisation_toggle(self):
+    def visualisation_loop_init(self):
         """
-        The function that is run at every cycle of the WORKER_FUNCTION to check if the visualisation_on bool is True or
-        not and turn on or off the visualisation_thread
+        The function that is run at every cycle of the WORKER_FUNCTION to check if the visualisation_on bool is True
+        for the first time. When that happens it starts the visualisation loop. The loop takes care of the showing
+        and hiding the visualisation window
         :return: Nothing
         """
-        if self.visualisation_on and not self.visualisation_thread.is_alive():
+        if self.visualisation_on and self.visualisation_thread is None:
+            self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True)
             self.visualisation_on = True
             self.visualisation_thread.start()
-        if not self.visualisation_on and not self.visualisation_thread.is_alive():
-            self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True)
 
     def start_ioloop(self):
         """

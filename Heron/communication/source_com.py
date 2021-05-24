@@ -5,7 +5,6 @@ import time
 import threading
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
-from Heron.communication import gui_com
 from Heron import general_utils as gu
 import subprocess
 from zmq.eventloop import ioloop, zmqstream
@@ -27,7 +26,7 @@ class SourceCom:
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
-        self.socket_pub_parameters = None
+        #self.socket_pub_parameters = None
         self.socket_pub_data = None
         self.socket_pull_data = None
         self.stream_pull_data = None

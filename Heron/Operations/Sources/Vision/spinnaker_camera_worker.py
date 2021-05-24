@@ -53,13 +53,13 @@ def setup_camera_and_start_acquisition(camera_index, pixel_format, fps):
         print('No cameras detected!')
         return False
 
-    # Get the camera with the required index
+    # Get the camera with the required node_index
     for i, camera in enumerate(cam_list):
         if i == camera_index:
             cam = camera
             print('Found camera {}'.format(i))
     if cam is None:
-        print("Didn't find camera with index {}".format(camera_index))
+        print("Didn't find camera with node_index {}".format(camera_index))
         return False
 
     try:
@@ -181,14 +181,14 @@ def new_visualisation():
     global worker_object
 
     while worker_object.visualisation_on:
-        window_name = '{} {}'.format(worker_object.name, worker_object.index)
+        window_name = '{} {}'.format(worker_object.node_name, worker_object.node_index)
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
         width = 400
         height = 200
         try:
             image = cv2.cvtColor(worker_object.worker_result, cv2.COLOR_BAYER_RG2RGB)
-            image = cv2.resize(image, (height, width), interpolation=cv2.INTER_AREA)
+            image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
             cv2.imshow(window_name, image)
             cv2.waitKey(1)
@@ -229,7 +229,7 @@ def run_spinnaker_camera(_worker_object):
         except:
             worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
 
-        worker_object.visualisation_toggle()
+        worker_object.visualisation_loop_init()
 
 
 def on_end_of_life():

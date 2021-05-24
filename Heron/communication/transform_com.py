@@ -3,12 +3,9 @@ import subprocess
 import time
 import threading
 import zmq
-from zmq.eventloop import ioloop, zmqstream
 import os
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
-from Heron.communication import gui_com
-import numpy as np
 
 
 class TransformCom:

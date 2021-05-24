@@ -14,7 +14,7 @@ Properties of the generated Node
 BaseName = 'Save FFMPEG video'
 NodeAttributeNames = ['Parameters', 'Frame In']
 NodeAttributeType = ['Static', 'Input']
-ParameterNames = ['File name', 'Pixel Format In', 'Pixel Format Out', 'Fps']
+ParameterNames = ['File node_name', 'Pixel Format In', 'Pixel Format Out', 'Fps']
 ParameterTypes = ['str', 'str', 'str', 'int']
 ParametersDefaultValues = ['output.avi', 'bayer_rggb8', 'rgb24', 120]
 
