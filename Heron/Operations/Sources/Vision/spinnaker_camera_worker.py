@@ -179,22 +179,30 @@ def grab_frame():
 
 def new_visualisation():
     global worker_object
+    window_showing = False
 
-    while worker_object.visualisation_on:
-        window_name = '{} {}'.format(worker_object.node_name, worker_object.node_index)
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-
-        width = 400
-        height = 200
-        try:
-            image = cv2.cvtColor(worker_object.worker_result, cv2.COLOR_BAYER_RG2RGB)
-            image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
-
-            cv2.imshow(window_name, image)
-            cv2.waitKey(1)
-        except:
-            pass
-    cv2.destroyAllWindows()
+    aspect_ratio = worker_object.worker_result.shape[0]/worker_object.worker_result.shape[1]
+    width = 400
+    height = int(width * aspect_ratio)
+    while True:
+        while worker_object.visualisation_on:
+            if not window_showing:
+                window_name = '{} {}'.format(worker_object.node_name, worker_object.node_index)
+                cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                cv2.imshow(window_name, worker_object.worker_result)
+                cv2.waitKey(1)
+                window_showing = True
+            if window_showing:
+                try:
+                    image = cv2.cvtColor(worker_object.worker_result, cv2.COLOR_BAYER_RG2RGB)
+                    image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
+                    cv2.imshow(window_name, image)
+                    cv2.waitKey(1)
+                except Exception as e:
+                    print(e)
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        window_showing = False
 
 
 def run_spinnaker_camera(_worker_object):
@@ -204,20 +212,20 @@ def run_spinnaker_camera(_worker_object):
     cam_index = None
     worker_object.set_new_visualisation_loop(new_visualisation)
 
-    if not recording_on:  # Get the parameters from the node
-        while not recording_on:
-            try:
-                cam_index = worker_object.parameters[1]
-                pixel_format = worker_object.parameters[2]
-                fps = int(worker_object.parameters[3])
-                recording_on = True
+    # Get the parameters from the node
+    while not recording_on:
+        try:
+            cam_index = worker_object.parameters[1]
+            pixel_format = worker_object.parameters[2]
+            fps = int(worker_object.parameters[3])
+            recording_on = True
 
-                print('Got Spinnaker camera parameters. Starting capture')
-            except:
-                cv2.waitKey(1)
+            print('Got Spinnaker camera parameters. Starting capture')
+        except:
+            cv2.waitKey(1)
 
-        if not setup_camera_and_start_acquisition(cam_index, pixel_format, fps):
-            recording_on = False
+    if not setup_camera_and_start_acquisition(cam_index, pixel_format, fps):
+        recording_on = False
 
     # The infinite loop that does the frame capture and push to the output of the node
     while recording_on:

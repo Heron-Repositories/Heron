@@ -178,7 +178,6 @@ class SourceWorker:
         :return: Nothing
         """
         self.visualisation_loop = new_visualisation_loop
-        self.visualisation_thread = threading.Thread(target=new_visualisation_loop, daemon=True)
 
     def start_heartbeat_thread(self):
         """

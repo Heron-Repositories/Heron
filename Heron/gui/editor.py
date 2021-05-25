@@ -280,7 +280,7 @@ def load_graph():
             for key in raw_dict.keys():
                 if key != 'links':
                     value = raw_dict[key]
-                    n = Node(name=value['node_name'])
+                    n = Node(name=value['name'])
                     op_dict = value['operation']
                     n.operation = op_list.create_operation_from_dictionary(op_dict)
                     n.node_index = value['node_index']

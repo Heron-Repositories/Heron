@@ -186,6 +186,8 @@ class TransformCom:
                 self.socket_pub_data.send_array(new_message_data[i], copy=False)
             t3 = time.perf_counter()
 
+            self.index = self.index + 1
+
             if self.verbose:
                 print("---Times to: i) transport link from worker to worker = {}, "
                       "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))

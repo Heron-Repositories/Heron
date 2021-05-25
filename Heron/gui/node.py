@@ -28,6 +28,7 @@ class Node:
         self.coordinates = [100, 100]
         self.node_parameters = None
 
+
         self.get_corresponding_operation()
         self.assign_default_parameters()
         self.get_numbers_of_inputs_and_outputs()
@@ -153,29 +154,77 @@ class Node:
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)
 
-            # Add the verbocity attribute
-            attr = 'Verbocity'
-            attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-            with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
-                                       output=False, static=True):
-                add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                         default_value=attr)
-                add_input_int('##{}'.format(attribute_name), default_value=0)
-                simple.set_item_width('##{}'.format(attribute_name), width=100)
-
-            # Add the extra input attribute
-            attr = 'Extra_Input'
-            attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-            with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
-                                       output=False, static=True):
-                add_same_line(spacing=40)
-                add_image_button('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                                 value=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir,
-                                                    'resources', 'Blue glass button square.png'),
-                                 callback=self.extra_input_window)
+            # Add the extra input button with its popup window for extra inputs like ssh and verbosity
+            self.extra_input_window()
 
     def extra_input_window(self):
-        print('hello')
+        attr = 'Extra_Input'
+        attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+        with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
+                                   output=False, static=True):
+
+            add_image_button('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                             value=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir,
+                                                'resources', 'Blue_glass_button_square_34x34.png'))
+            with simple.popup(popupparent='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                              name='Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                              mousebutton=mvMouseButton_Left):
+                with simple.child('##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                                  width=580, height=240):
+                    # Add the local ssh input
+                    add_dummy(height=10)
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_text('SSH local server IP')
+                    add_same_line()
+                    add_dummy(width=250)
+                    add_same_line()
+                    add_text('SSH local server Port')
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_input_text('##SSH local server IP##Extra input##{}##{}'.format(self.operation.name,
+                                                                                     self.node_index))
+                    add_same_line()
+                    add_input_int('##SSH local server port##Extra input##{}##{}'.format(self.operation.name,
+                                                                                     self.node_index), width=100)
+
+                    # Add the remote ssh input
+                    add_dummy(height=6)
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_text('SSH remote server IP')
+                    add_same_line()
+                    add_dummy(width=235)
+                    add_same_line()
+                    add_text('SSH remote server Port')
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_input_text(
+                        '##SSH remote server IP##Extra input##{}##{}'.format(self.operation.name, self.node_index))
+                    add_same_line()
+                    add_input_int('##SSH remote server port##Extra input##{}##{}'.format(self.operation.name,
+                                                                                        self.node_index), width=100)
+                    add_dummy(height=6)
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_text('SSH remote server worker script / executable')
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_input_text(
+                        '##SSH remote server script##Extra input##{}##{}'.format(self.operation.name, self.node_index))
+
+                    # Add the verbocity input
+                    add_dummy(height=6)
+                    add_dummy(width=10)
+                    add_same_line()
+                    attr = 'Verbocity'
+                    attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+                    add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                             default_value=attr)
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_input_int('##{}'.format(attribute_name), default_value=0)
+                    simple.set_item_width('##{}'.format(attribute_name), width=100)
 
     def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
