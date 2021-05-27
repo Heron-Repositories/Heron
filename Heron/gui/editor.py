@@ -7,6 +7,10 @@ import atexit
 import numpy as np
 import json
 import copy
+import sys
+heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+sys.path.append(heron_path)
+
 from Heron.general_utils import kill_child, choose_color_according_to_operations_type, get_next_available_port_group
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
@@ -18,7 +22,6 @@ import default_style
 
 operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
-heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6000
 nodes_list = []
 panel_coordinates = [0, 0]
