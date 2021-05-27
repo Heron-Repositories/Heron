@@ -1,0 +1,16 @@
+{
+    "0": {
+        "Name": "localhost",
+        "IP": "192.168.1.100",
+        "Port": 22,
+        "username": "user",
+        "password": "1234567890"
+    },
+    "1": {
+        "Name": "arena",
+        "IP": "192.168.1.102",
+        "Port": 22,
+        "username": "njsnarena",
+        "password": "1234567890"
+    }
+}

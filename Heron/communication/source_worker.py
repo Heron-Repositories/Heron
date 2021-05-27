@@ -58,12 +58,14 @@ class SourceWorker:
 
         # Setup the socket that receives the parameters of the worker function from the node
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
-        self.socket_sub_parameters.connect(r'tcp://localhost:{}'.format(self.port_sub_parameters))
+        self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
+        # TODO: Add ssh to local server
         self.socket_sub_parameters.subscribe(self.parameters_topic)
 
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
+        # TODO: Add ssh to local server
 
         # Setup the socket that sends (publishes) the fact that the worker is up and running to the node com so that it
         # can then update the parameters of the worker

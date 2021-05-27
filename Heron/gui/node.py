@@ -1,6 +1,8 @@
 
 import os
+from pathlib import Path
 import cv2
+import json
 import subprocess
 import zmq
 import numpy as np
@@ -28,12 +30,16 @@ class Node:
         self.coordinates = [100, 100]
         self.node_parameters = None
 
-
         self.get_corresponding_operation()
         self.assign_default_parameters()
         self.get_numbers_of_inputs_and_outputs()
         self.generate_default_topics()
         self.get_node_index()
+
+        self.ssh_server_id_and_names = None
+        self.get_ssh_server_names_and_ids()
+        self.ssh_local_server = self.ssh_server_id_and_names[0]
+        self.ssh_remote_server = self.ssh_server_id_and_names[0]
 
     def remove_from_editor(self):
         delete_item(self.name)
@@ -165,53 +171,38 @@ class Node:
 
             add_image_button('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                              value=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir,
-                                                'resources', 'Blue_glass_button_square_34x34.png'))
+                                                'resources', 'Blue_glass_button_square_34x34.png'),
+                             callback=self.update_ssh_combo_boxes)
             with simple.popup(popupparent='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                               name='Extra input##{}##{}'.format(self.operation.name, self.node_index),
                               mousebutton=mvMouseButton_Left):
+
                 with simple.child('##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                                  width=580, height=240):
+                                  width=360, height=120):
+
                     # Add the local ssh input
                     add_dummy(height=10)
                     add_dummy(width=10)
                     add_same_line()
-                    add_text('SSH local server IP')
-                    add_same_line()
-                    add_dummy(width=250)
-                    add_same_line()
-                    add_text('SSH local server Port')
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_input_text('##SSH local server IP##Extra input##{}##{}'.format(self.operation.name,
-                                                                                     self.node_index))
-                    add_same_line()
-                    add_input_int('##SSH local server port##Extra input##{}##{}'.format(self.operation.name,
-                                                                                     self.node_index), width=100)
+                    add_text('SSH local server')
 
-                    # Add the remote ssh input
-                    add_dummy(height=6)
+                    add_same_line()
+                    add_dummy(width=80)
+                    add_same_line()
+                    add_text('SSH remote server')
+
                     add_dummy(width=10)
                     add_same_line()
-                    add_text('SSH remote server IP')
+                    add_combo('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                                items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
+                                callback=self.assign_local_server)
                     add_same_line()
-                    add_dummy(width=235)
+                    add_dummy(width=40)
                     add_same_line()
-                    add_text('SSH remote server Port')
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_input_text(
-                        '##SSH remote server IP##Extra input##{}##{}'.format(self.operation.name, self.node_index))
-                    add_same_line()
-                    add_input_int('##SSH remote server port##Extra input##{}##{}'.format(self.operation.name,
-                                                                                        self.node_index), width=100)
-                    add_dummy(height=6)
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_text('SSH remote server worker script / executable')
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_input_text(
-                        '##SSH remote server script##Extra input##{}##{}'.format(self.operation.name, self.node_index))
+                    add_combo(
+                        '##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                        items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
+                        callback=self.assign_remote_server)
 
                     # Add the verbocity input
                     add_dummy(height=6)
@@ -225,6 +216,31 @@ class Node:
                     add_same_line()
                     add_input_int('##{}'.format(attribute_name), default_value=0)
                     simple.set_item_width('##{}'.format(attribute_name), width=100)
+
+    def get_ssh_server_names_and_ids(self):
+        ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
+                                     'ssh_info.json')
+        with open(ssh_info_file) as f:
+            ssh_info = json.load(f)
+        self.ssh_server_id_and_names = ['None']
+        for id in ssh_info:
+            self.ssh_server_id_and_names.append(id + ' ' + ssh_info[id]['Name'])
+
+    def update_ssh_combo_boxes(self):
+        self.get_ssh_server_names_and_ids()
+
+        if does_item_exist('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index)):
+            configure_item('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                           items=self.ssh_server_id_and_names)
+        if does_item_exist('##SSH remote server##Extra input##{}##{}'.format(self.operation.name, self.node_index)):
+            configure_item('##SSH remote server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                           items=self.ssh_server_id_and_names)
+
+    def assign_local_server(self, sender, data):
+        self.ssh_local_server = get_value(sender)
+
+    def assign_remote_server(self, sender, data):
+        self.ssh_remote_server = get_value(sender)
 
     def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]

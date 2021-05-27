@@ -7,11 +7,11 @@ import atexit
 import numpy as np
 import json
 import copy
-import gc
 from Heron.general_utils import kill_child, choose_color_according_to_operations_type, get_next_available_port_group
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron import constants as ct
+from Heron.gui import ssh_info_editor
 from dearpygui import simple
 from dearpygui.core import *
 import default_style
@@ -149,14 +149,15 @@ def get_links_dictionary():
     """
     links = np.array(get_links("Node Editor##Editor"))
     links_dict = {}
-    for l in range(len(links[:, 0])):
-        out = links[l, 0]
-        try:
-            inputs = links_dict[out]
-        except:
-            inputs = []
-        inputs.append(links[l, 1])
-        links_dict[out] = inputs
+    if len(links) > 0:
+        for l in range(len(links[:, 0])):
+            out = links[l, 0]
+            try:
+                inputs = links_dict[out]
+            except:
+                inputs = []
+            inputs.append(links[l, 1])
+            links_dict[out] = inputs
 
     return links_dict
 
@@ -292,6 +293,8 @@ def load_graph():
                     n.num_of_outputs = value['num_of_outputs']
                     n.coordinates = value['coordinates']
                     n.node_parameters = value['node_parameters']
+                    n.ssh_local_server = value['ssh_local_server']
+                    n.ssh_remote_server = value['ssh_remote_server']
                     n.spawn_node_on_editor()
 
                     nodes_list.append(n)
@@ -340,8 +343,8 @@ def on_drag(sender, data):
                 if n.name in sel:
                     n.coordinates = [get_item_configuration(sel)['x_pos'], get_item_configuration(sel)['y_pos']]
 
-    # If dragging on the canvas then move all nodes and update their stored coordinates
-    if len(get_selected_nodes('Node Editor##Editor')) == 0:
+    # If dragging on the canvas with Ctrl pressed then move all nodes and update their stored coordinates
+    if len(get_selected_nodes('Node Editor##Editor')) == 0 and is_key_down(17):
         panel_coordinates = [0, 0]
         panel_coordinates[0] = panel_coordinates[0] + data[1]
         panel_coordinates[1] = panel_coordinates[1] + data[2]
@@ -366,6 +369,9 @@ with simple.window("Main Window"):
             add_menu_item('New', callback=clear_editor)
             add_menu_item('Save', callback=save_graph)
             add_menu_item('Load', callback=load_graph)
+        with simple.menu('SSH'):
+            add_menu_item('Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
+            add_menu_item('Clear ssh info')
 
 with simple.window('Node Selector'):
     # Create the window of the Node selector

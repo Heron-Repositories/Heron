@@ -82,6 +82,7 @@ def proof_of_life_forwarder_loop():
         context = zmq.Context(1)
         frontend = context.socket(zmq.SUB)
         frontend.bind("tcp://*:{}".format(ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT))
+        # TODO: Add ssh to remote servers for all remote workers
         frontend.SUBSCRIBE = ""
 
         backend = context.socket(zmq.PUB)

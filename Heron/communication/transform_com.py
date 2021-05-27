@@ -53,7 +53,6 @@ class TransformCom:
         for rt in self.receiving_topics:
             self.socket_sub_data.setsockopt(zmq.SUBSCRIBE, rt.encode('ascii'))
         self.poller.register(self.socket_sub_data, zmq.POLLIN)
-        #print(self.socket_sub_data.get(zmq.SUBSCRIBE))
 
         # Socket for pushing the link to the worker
         self.socket_push_data = Socket(self.context, zmq.PUSH)
@@ -64,12 +63,13 @@ class TransformCom:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        # TODO: Add ssh to remote server
         self.poller.register(self.socket_pull_data, zmq.POLLIN)
 
         # Socket for publishing transformed link to other nodes
         self.socket_pub_data = Socket(self.context, zmq.PUB)
         self.socket_pub_data.set_hwm(len(self.sending_topics))
-        self.socket_pub_data.connect(r"tcp://localhost:{}".format(self.port_pub_data))
+        self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub_data))
 
         # Socket for pushing the heartbeat to the worker
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)

@@ -43,6 +43,7 @@ class SourceCom:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.data_port))
+        # TODO: Add ssh to remote server
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.on_receive_data_from_worker)
 
@@ -107,6 +108,7 @@ class SourceCom:
         :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui)
         :return: Nothing
         """
+        # TODO: Add possibility of starting script over ssh
         worker = subprocess.Popen(['python', self.worker, self.data_port, self.parameters_topic, str(0), str(self.verbose)])
 
         if self.verbose:

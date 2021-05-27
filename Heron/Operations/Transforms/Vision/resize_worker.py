@@ -14,20 +14,20 @@ def resize(data, parameters):
 
     try:
         worker_object.visualisation_on = parameters[0]
-        x_size = parameters[1]
-        y_size = parameters[2]
+        x_shape = parameters[1]
+        y_shape = parameters[2]
     except:
         worker_object.visualisation_on = resize_com.ParametersDefaultValues[0]
-        x_size = resize_com.ParametersDefaultValues[1]
-        y_size = resize_com.ParametersDefaultValues[2]
+        x_shape = resize_com.ParametersDefaultValues[1]
+        y_shape = resize_com.ParametersDefaultValues[2]
 
     message = data[1:]  # data[0] is the topic
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
     try:
-        worker_object.worker_result = cv2.resize(image, (int(x_size), int(y_size)))
+        worker_object.worker_result = cv2.resize(image, (x_shape, y_shape))
     except Exception as e:
         worker_object.worker_result = np.array((10, 10))
-        print('resize {} operation failed with exception {}'.format(worker_object.node_index, e))
+        print('cvtColor {} operation failed with exception {}'.format(worker_object.node_index, e))
 
     worker_object.visualisation_loop_init()
 

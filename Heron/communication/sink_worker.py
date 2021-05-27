@@ -51,12 +51,14 @@ class SinkWorker:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        # TODO: Add ssh to local server
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.data_callback, copy=False)
 
         # Setup the socket and the stream that receives the parameters of the worker function from the node (gui_com)
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
-        self.socket_sub_parameters.connect(r'tcp://localhost:{}'.format(self.port_sub_parameters))
+        self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
+        # TODO: Add ssh to local server
         self.socket_sub_parameters.subscribe(self.parameters_topic)
         self.stream_parameters = zmqstream.ZMQStream(self.socket_sub_parameters)
         self.stream_parameters.on_recv(self.parameters_callback, copy=False)
@@ -64,6 +66,7 @@ class SinkWorker:
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
+        # TODO: Add ssh to local server
         self.stream_heartbeat = zmqstream.ZMQStream(self.socket_pull_heartbeat)
         self.stream_heartbeat.on_recv(self.heartbeat_callback, copy=False)
 
