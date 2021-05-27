@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from importlib import import_module
 from dataclasses import dataclass
+from Heron.general_utils import full_split_path
 
 root = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'Operations')
 
@@ -43,7 +44,7 @@ for path, subdirs, files in os.walk(root):
 
             module = load_module(path)
 
-            temp =path.split('\\')
+            temp = full_split_path(path)
             i = -1
             parent = ''
             while temp[i] != 'Heron':
