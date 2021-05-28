@@ -8,24 +8,29 @@ import pickle
 import cv2
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
+from Heron.communication.ssh_com import SSHCom
 
 
 class SourceWorker:
-    def __init__(self, port, parameters_topic, end_of_life_function, verbose=False):
+    def __init__(self, port, parameters_topic, end_of_life_function, verbose=False,
+                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
         self.parameters_topic = parameters_topic
         self.data_port = port
-        self.heartbeat_port = str(int(self.data_port) + 1)
-        self.end_of_life_function=end_of_life_function
+        self.pull_heartbeat_port = str(int(self.data_port) + 1)
+        self.end_of_life_function = end_of_life_function
         self.verbose = verbose
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = parameters_topic.split('##')[-1]
+
+        self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
+                              ssh_local_password=ssh_local_password)
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.running_thread = True
         self.visualisation_on = False
-        self.visualisation_thread = None#threading.Thread(target=self.visualisation_loop, daemon=True)
+        self.visualisation_thread = None
 
         self.context = None
         self.socket_push_data = None
@@ -54,21 +59,23 @@ class SourceWorker:
         self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.data_port))
 
         if self.verbose:
-            print('Starting Source worker on port {}'.format(self.data_port))
+            print('Starting Source worker_exec on port {}'.format(self.data_port))
 
-        # Setup the socket that receives the parameters of the worker function from the node
+        # Setup the socket that receives the parameters of the worker_exec function from the node
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
         self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
-        # TODO: Add ssh to local server
+        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_sub_parameters,
+                                                        r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
         self.socket_sub_parameters.subscribe(self.parameters_topic)
 
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
-        self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
-        # TODO: Add ssh to local server
+        self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
+        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_heartbeat,
+                                                        r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
 
-        # Setup the socket that sends (publishes) the fact that the worker is up and running to the node com so that it
-        # can then update the parameters of the worker
+        # Setup the socket that sends (publishes) the fact that the worker_exec is up and running to the node com so that it
+        # can then update the parameters of the worker_exec
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
 
@@ -108,7 +115,7 @@ class SourceWorker:
     def heartbeat_loop(self):
         """
         The loop that reads the heartbeat 'PULSE' from the source_com. If it takes too long to receive the new one
-        it kills the worker process
+        it kills the worker_exec process
         :return: Nothing
         """
         while True:
@@ -123,13 +130,14 @@ class SourceWorker:
 
     def proof_of_life(self):
         """
-        When the worker process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
-        that lets the node (in the gui_com process) that the worker is running and ready to receive parameter updates.
+        When the worker_exec process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
+        that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
         for i in range(2):
             self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
-            time.sleep(0.2)
+            time.sleep(0.1)
+        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
 
     def visualisation_loop(self):
         """

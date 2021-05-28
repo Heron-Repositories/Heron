@@ -1,16 +1,17 @@
 
-import subprocess
 import time
 import threading
 import zmq
 import os
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
+from Heron.communication.ssh_com import SSHCom
 
 
 class TransformCom:
 
-    def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True):
+    def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True,
+                 ssh_local_server_id='None', ssh_remote_server_id='None'):
         self.receiving_topics = receiving_topics
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
@@ -19,8 +20,7 @@ class TransformCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
-
-        self.worker_pid = None
+        self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
@@ -54,16 +54,17 @@ class TransformCom:
             self.socket_sub_data.setsockopt(zmq.SUBSCRIBE, rt.encode('ascii'))
         self.poller.register(self.socket_sub_data, zmq.POLLIN)
 
-        # Socket for pushing the link to the worker
+        # Socket for pushing the link to the worker_exec
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.set_hwm(1)
         self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
 
-        # Socket for pulling transformed link from the worker
+        # Socket for pulling transformed link from the worker_exec
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        # TODO: Add ssh to remote server
+        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
+                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         self.poller.register(self.socket_pull_data, zmq.POLLIN)
 
         # Socket for publishing transformed link to other nodes
@@ -71,14 +72,14 @@ class TransformCom:
         self.socket_pub_data.set_hwm(len(self.sending_topics))
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub_data))
 
-        # Socket for pushing the heartbeat to the worker
+        # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
         self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def heartbeat_loop(self):
         """
-        The loop that send a 'PULSE' heartbeat to the worker process to keep it alive (every ct.HEARTBEAT_RATE seconds)
+        The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
         :return: Nothing
         """
         while True:
@@ -95,25 +96,33 @@ class TransformCom:
 
     def start_worker(self):
         """
-        Starts the worker process and then sends the parameters as are currently on the node to the process
-        :param parameters_list: The argument list that has all the parameters for the worker (as given in the node's gui).
-        The pull_data_port of the worker needs to be the push_data_port of the com (obviously)
+        Starts the worker_exec process and then sends the parameters as are currently on the node to the process
+        The pull_data_port of the worker_exec needs to be the push_data_port of the com (obviously).
+        The way the arguments are structured is defined by the way they are read by the process. For that see
+        general_utilities.parse_arguments_to_worker
         :return: Nothing
         """
-        arguments_list = ['python']
-        arguments_list.append(self.worker_exec)
+
+        if 'python' in self.worker_exec or '.py' not in self.worker_exec:
+            arguments_list = [self.worker_exec]
+        else:
+            arguments_list = ['python']
+            arguments_list.append(self.worker_exec)
+
         arguments_list.append(str(self.push_data_port))
         arguments_list.append(str(self.parameters_topic))
         arguments_list.append(str(len(self.receiving_topics)))
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])
-        arguments_list.append(str(self.verbose))
-        self.worker_pid = subprocess.Popen(arguments_list)
+        arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
+
+        #self.worker_pid = subprocess.Popen(arguments_list)
+        worker_pid = self.ssh_com.start_process(arguments_list)
 
         if self.verbose:
-            print('Transform from {} to {} worker com with PID = {}.'.format(self.receiving_topics,
-                                                                             self.sending_topics,
-                                                                             self.worker_pid.pid))
+            print('Transform from {} to {} worker_exec com with PID = {}.'.format(self.receiving_topics,
+                                                                                  self.sending_topics,
+                                                                                  worker_pid))
 
     def get_sub_data(self):
         """
@@ -157,12 +166,12 @@ class TransformCom:
                                                                                  data_index,
                                                                                  data_time))
 
-                # Send link to be transformed to the worker
+                # Send link to be transformed to the worker_exec
                 self.socket_push_data.send(topic, flags=zmq.SNDMORE)
                 self.socket_push_data.send_array(messagedata, copy=False)
                 t2 = time.perf_counter()
 
-            # Get the transformed link (wait for the socket_pull_data to get some link from the worker)
+            # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
             sockets_in = dict(self.poller.poll(timeout=1))
             while not sockets_in or self.socket_pull_data not in sockets_in \
                     or sockets_in[self.socket_pull_data] != zmq.POLLIN:
@@ -189,5 +198,5 @@ class TransformCom:
             self.index = self.index + 1
 
             if self.verbose:
-                print("---Times to: i) transport link from worker to worker = {}, "
+                print("---Times to: i) transport link from worker_exec to worker_exec = {}, "
                       "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))

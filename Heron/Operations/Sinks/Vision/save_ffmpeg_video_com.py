@@ -17,14 +17,13 @@ NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['File node_name', 'Pixel Format In', 'Pixel Format Out', 'Fps']
 ParameterTypes = ['str', 'str', 'str', 'int']
 ParametersDefaultValues = ['output.avi', 'bayer_rggb8', 'rgb24', 120]
-
+WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'save_ffmpeg_video_worker.py')
 # </editor-fold>
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    worker_exec = os.path.join(os.path.dirname(Exec), 'save_ffmpeg_video_worker.py')
-    save_video_com = gu.start_the_sink_communications_process(worker_exec)
+    save_video_com = gu.start_the_sink_communications_process()
     save_video_com.start_ioloop()
 
 # </editor-fold>

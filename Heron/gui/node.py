@@ -29,6 +29,7 @@ class Node:
         self.num_of_outputs = 0
         self.coordinates = [100, 100]
         self.node_parameters = None
+        self.verbose = 0
 
         self.get_corresponding_operation()
         self.assign_default_parameters()
@@ -40,6 +41,7 @@ class Node:
         self.get_ssh_server_names_and_ids()
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
+        self.worker_executable = self.operation.worker_exec
 
     def remove_from_editor(self):
         delete_item(self.name)
@@ -178,7 +180,7 @@ class Node:
                               mousebutton=mvMouseButton_Left):
 
                 with simple.child('##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                                  width=360, height=120):
+                                  width=430, height=180):
 
                     # Add the local ssh input
                     add_dummy(height=10)
@@ -194,15 +196,37 @@ class Node:
                     add_dummy(width=10)
                     add_same_line()
                     add_combo('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                                items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
-                                callback=self.assign_local_server)
+                              items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
+                              callback=self.assign_local_server,
+                              tip='Add the details of the ssh server running on\n the machine that is running the '
+                                  'editor.')
                     add_same_line()
                     add_dummy(width=40)
                     add_same_line()
                     add_combo(
                         '##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
                         items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
-                        callback=self.assign_remote_server)
+                        callback=self.assign_remote_server,
+                        tip='Add the details of the ssh server that is running on\n the machine that will run the '
+                            'worker process of the node.')
+
+                    add_dummy(height=10)
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_text('Python script (or executable) of worker process')
+
+                    add_dummy(width=10)
+                    add_same_line()
+                    add_input_text(
+                        '##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                        width=400, default_value=self.worker_executable, callback=self.assign_worker_executable,
+                        tip='Input either the full path of the python script (e.g. /my files/my_script.py) \nor the  '
+                            'python command and the script (e.g. pyhton3 /my files/my_script.p) \nor an executable '
+                            'file that the system knows how to handle\n(and which speaks the Heron communication '
+                            'protocol).\nThe default script is the one that comes with the {} operation.\nIf no command'
+                            ' is given with a python script (.py) then Heron will try to run it with the command python'
+                            '.\nHeron will look locally first for the script/executable.\nIf it is not found then it '
+                            'will assume it resides in the remote machine.'.format(self.name.split('##')[0]))
 
                     # Add the verbocity input
                     add_dummy(height=6)
@@ -214,8 +238,11 @@ class Node:
                              default_value=attr)
                     add_dummy(width=10)
                     add_same_line()
-                    add_input_int('##{}'.format(attribute_name), default_value=0)
+                    add_input_int('##{}'.format(attribute_name), default_value=self.verbose, callback=self.update_verbosity)
                     simple.set_item_width('##{}'.format(attribute_name), width=100)
+
+    def update_verbosity(self, sender, data):
+        self.verbose = get_value(sender)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
@@ -242,6 +269,9 @@ class Node:
     def assign_remote_server(self, sender, data):
         self.ssh_remote_server = get_value(sender)
 
+    def assign_worker_executable(self, sender, data):
+        self.worker_executable = get_value(sender)
+
     def start_com_process(self):
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
@@ -257,12 +287,15 @@ class Node:
         arguments_list.append(self.name)
 
         attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
-        verbocity = str(get_value('##{}'.format(attribute_name)) > 0)
+        verbocity = str(self.verbose > 0)
         arguments_list.append(verbocity)
+        arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
+        arguments_list.append(self.ssh_remote_server.split(' ')[0])
+        arguments_list.append(self.worker_executable)
 
         self.process = subprocess.Popen(arguments_list)
 
-        # Wait until the worker sends a proof_of_life signal (i.e. it is up and running). Then update the parameters
+        # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running). Then update the parameters
         its_alive = 'No'
         while its_alive != 'POL':
             its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()

@@ -13,6 +13,11 @@ from Heron.communication.sink_worker import SinkWorker
 
 
 def full_split_path(path):
+    """
+    Splits a path to its constituent folders and returns a list of all of the folders
+    :param path: The path string
+    :return: The list of strings of folders
+    """
     allparts = []
     while 1:
         parts = os.path.split(path)
@@ -27,6 +32,7 @@ def full_split_path(path):
             allparts.insert(0, parts[1])
     return allparts
 
+
 def float_to_binary(num):
     return bin( unpack('I', pack('f', num))[0] )
 
@@ -37,14 +43,22 @@ def binary_to_float(binary):
 
 
 def accurate_delay(delay):
-    ''' Function to provide accurate time delay in millisecond
-    '''
+    """
+    Function to provide accurate time delay in millisecond
+    :param delay: Delay in milliseconds
+    :return: Nothing
+    """
     target_time = time.perf_counter() + delay/1000
     while time.perf_counter() < target_time:
         pass
 
 
 def kill_child(child_pid):
+    """
+    Kill the child_pid process
+    :param child_pid: the pid of the process to die
+    :return: Nothing
+    """
     try:
         os.kill(child_pid, signal.SIGTERM)
         #print('Killed process {}'.format(child_pid))
@@ -53,6 +67,11 @@ def kill_child(child_pid):
 
 
 def choose_color_according_to_operations_type(operations_parent_name):
+    """
+    Returns a colour to colour the operations list in the gui according to the type they belong to
+    :param operations_parent_name: Name of operation (it included the type)
+    :return: The colour
+    """
     colour = [255, 255, 255, 100]
     if 'Sources' in operations_parent_name:
         colour = [0, 0, 255, 100]
@@ -67,7 +86,7 @@ def choose_color_according_to_operations_type(operations_parent_name):
 def get_next_available_port_group(starting_port, step):
     """
     A generator that creates the next port jumping over ports at a step of ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
-    :return:
+    :return: A new int +step larger than the previous one returned
     """
     while True:
         yield str(starting_port)
@@ -84,6 +103,10 @@ def parse_arguments_to_com(args):
     receiving_topics = a list of the names of the topics the process receives (inputs) link at
     sending_topics = a list of the names of the topics the process sends (outputs) link at
     parameters_topic = the node_name of the topic the process receives parameter updates from the node
+    verbose = Whether to print out comments while running
+    ssh_local_server = The ID of the local ssh server (see ssh_info.json) if the node is to run its worker_exec over ssh
+    ssh_remote_server = The ID of the remote ssh server (see ssh_info.json) if the node is to run its worker_exec over ssh
+    worker_exec = The python script (or executable) of the worker_exec process
     """
     args = args[1:]
     port = args[0]
@@ -97,22 +120,29 @@ def parse_arguments_to_com(args):
     if num_of_sending_topics > 0:
         for k in range(num_of_sending_topics):
             sending_topics.append(args[k + num_of_receiving_topics + 3])
-    parameters_topic = args[-2]
-    verbose = args[-1]
+    parameters_topic = args[-5]
+    verbose = args[-4]
+    ssh_local_server = args[-3]
+    ssh_remote_server = args[-2]
+    worker_exec = args[-1]
 
-    return port, receiving_topics, sending_topics, parameters_topic, verbose
+    return port, receiving_topics, sending_topics, parameters_topic, verbose, \
+        ssh_local_server, ssh_remote_server, worker_exec
 
 
 def parse_arguments_to_worker(args):
     """
     Turns the list of argv arguments that is send to a com process (by the editor) into appropriate list of strings
-    and lists (of topics). It is up to the com's start_worker function to create a list of argv that can be properly
-    parsed.
+    and lists (of topics). It is up to the com's start_worker function (in the *Com.start_worker functions) to create a
+    list of argv that can be properly parsed.
     :param args: The argv returned by the sys.argv
-    :return: port = the initial port for the worker process,
+    :return: port = the initial port for the worker_exec process,
     parameters_topic = the node_name of the topic the process receives parameter updates from the node
     receiving_topics = a list of the names of the topics the process receives (inputs) link at
-    verbose = the verbosity of the worker process (True or False)
+    verbose = the verbosity of the worker_exec process (True or False)
+    ssh_local_ip =
+    ssh_local_username =
+    ssh_local_password =
     """
     args = args[1:]
     port = args[0]
@@ -121,23 +151,28 @@ def parse_arguments_to_worker(args):
     receiving_topics = []
     for i in range(num_of_receiving_topics):
         receiving_topics.append(args[i+3])
-    verbose = args[-1]
+    verbose = args[-4]
+    ssh_local_ip = args[-3]
+    ssh_local_username = args[-2]
+    ssh_local_password = args[-1]
 
-    return port, parameters_topic, receiving_topics, verbose
+    return port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username,ssh_local_password
 
 
-def start_the_source_communications_process(process_exec_file):
+def start_the_source_communications_process():
     """
     Creates a SourceCom object for a source process
-    (i.e. initialises the worker process and keeps the zmq communication between the worker and the forwarders)
+    (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec and the forwarders)
     :return: The SourceCom object
     """
 
-    push_port, _, sending_topics, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    push_port, _, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec =\
+        parse_arguments_to_com(sys.argv)
     verbose = verbose == 'True'
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
-                           worker_exec=process_exec_file, verbose=verbose)
+                           worker_exec=worker_exec, verbose=verbose, ssh_local_server_id=ssh_local_server_id,
+                           ssh_remote_server_id=ssh_remote_server_id)
 
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
@@ -148,33 +183,38 @@ def start_the_source_communications_process(process_exec_file):
 
 def start_the_source_worker_process(worker_function, end_of_life_function):
     """
-    Creates a SourceWorker for a worker process of a Source
+    Creates a SourceWorker for a worker_exec process of a Source
     :param worker_function:
     :return:
     """
-    port, parameters_topic, _, verbose = parse_arguments_to_worker(sys.argv)
+    port, parameters_topic, _, verbose, ssh_local_ip, ssh_local_username, ssh_local_password =\
+        parse_arguments_to_worker(sys.argv)
     verbose = verbose == 'True'
 
     worker_object = SourceWorker(port=port, parameters_topic=parameters_topic, end_of_life_function=end_of_life_function,
-                                 verbose=verbose)
+                                 verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
+                                 ssh_local_password=ssh_local_password)
     worker_object.connect_socket()
     worker_object.start_heartbeat_thread()
     worker_object.start_parameters_thread()
     worker_function(worker_object)
 
 
-def start_the_transform_communications_process(process_exec_file):
+def start_the_transform_communications_process():
     """
     Creates a TransformCom object for a transformation process
-    (i.e. initialises the worker process and keeps the zmq communication between the worker
+    (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec
     and the forwarder)
     :return: The TransformCom object
     """
-    push_port, receiving_topics, sending_topics, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    push_port, receiving_topics, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id,\
+        worker_exec = parse_arguments_to_com(sys.argv)
     verbose = verbose == 'True'
 
-    com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics, parameters_topic=parameters_topic,
-                              push_port=push_port, worker_exec=process_exec_file, verbose=verbose)
+    com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,
+                              parameters_topic=parameters_topic, push_port=push_port, worker_exec=worker_exec,
+                              verbose=verbose, ssh_local_server_id=ssh_local_server_id,
+                              ssh_remote_server_id=ssh_remote_server_id)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -185,11 +225,12 @@ def start_the_transform_communications_process(process_exec_file):
 def start_the_transform_worker_process(work_function, end_of_life_function):
     """
     Starts the _worker process of the Transform that grabs link from the _com process, does something with them
-    and sends them back to the _com process. It also grabs any updates of the parameters of the worker function
+    and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
     :return: The TransformWorker object
     """
 
-    pull_port, parameters_topic, receiving_topics, verbose = parse_arguments_to_worker(sys.argv)
+    pull_port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username, \
+        ssh_local_password = parse_arguments_to_worker(sys.argv)
     verbose = verbose == 'True'
 
     buffer = {}
@@ -198,24 +239,28 @@ def start_the_transform_worker_process(work_function, end_of_life_function):
 
     worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
                                     end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                                    verbose=verbose)
+                                    verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
+                                    ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()
 
     return worker_object
 
 
-def start_the_sink_communications_process(process_exec_file):
+def start_the_sink_communications_process():
     """
     Creates a TransformCom object for a transformation process
-    (i.e. initialises the worker process and keeps the zmq communication between the worker
+    (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec
     and the forwarder)
     :return: The TransformCom object
     """
-    push_port, receiving_topics, _, parameters_topic, verbose = parse_arguments_to_com(sys.argv)
+    push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec = \
+        parse_arguments_to_com(sys.argv)
     verbose = verbose == 'True'
 
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
-                         push_port=push_port, worker_exec=process_exec_file, verbose=verbose)
+                         push_port=push_port, worker_exec=worker_exec, verbose=verbose,
+                         ssh_local_server_id = ssh_local_server_id, ssh_remote_server_id = ssh_remote_server_id
+    )
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -226,11 +271,12 @@ def start_the_sink_communications_process(process_exec_file):
 def start_the_sink_worker_process(work_function, end_of_life_function):
     """
     Starts the _worker process of the Transform that grabs link from the _com process, does something with them
-    and sends them back to the _com process. It also grabs any updates of the parameters of the worker function
+    and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
     :return: The TransformWorker object
     """
 
-    pull_port, parameters_topic, receiving_topics, verbose = parse_arguments_to_worker(sys.argv)
+    pull_port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username, \
+        ssh_local_password = parse_arguments_to_worker(sys.argv)
     verbose = verbose == 'True'
 
     buffer = {}
@@ -239,7 +285,8 @@ def start_the_sink_worker_process(work_function, end_of_life_function):
 
     worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
                                end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                               verbose=verbose)
+                               verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
+                               ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()
 
     return worker_object

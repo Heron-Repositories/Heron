@@ -17,14 +17,13 @@ NodeAttributeType = ['Static', 'Input', 'Output']
 ParameterNames = ['Visualisation', 'cvt Enum']
 ParameterTypes = ['bool', 'str']
 ParametersDefaultValues = [False, 'COLOR_RGB2RGBA']
-
+WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'cvtColor_worker.py')
 # </editor-fold>
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    worker_exec = os.path.join(os.path.dirname(Exec), 'cvtColor_worker.py')
-    canny_com = gu.start_the_transform_communications_process(worker_exec)
+    canny_com = gu.start_the_transform_communications_process()
     canny_com.start_ioloop()
 
 # </editor-fold>

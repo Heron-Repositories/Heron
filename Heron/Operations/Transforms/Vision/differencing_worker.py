@@ -37,6 +37,7 @@ def differencing(data, parameters):
                       format(np.shape(worker_object.recv_topics_buffer[all_topics[0]]),
                              np.shape(worker_object.recv_topics_buffer[all_topics[1]])))
             worker_object.worker_result = worker_object.recv_topics_buffer[all_topics[0]]
+
         if frame2_minus_frame1:
             worker_object.worker_result = worker_object.recv_topics_buffer[all_topics[1]] -\
                                           worker_object.recv_topics_buffer[all_topics[0]]

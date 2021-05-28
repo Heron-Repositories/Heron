@@ -5,13 +5,15 @@ import pickle
 import os
 import signal
 import zmq
+from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
-from zmq.eventloop import ioloop, zmqstream
+from Heron.communication.ssh_com import SSHCom
 
 
 class SinkWorker:
-    def __init__(self, recv_topics_buffer, pull_port, work_function, end_of_life_function, parameters_topic, verbose):
+    def __init__(self, recv_topics_buffer, pull_port, work_function, end_of_life_function, parameters_topic, verbose,
+                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
         self.pull_heartbeat_port = str(int(self.pull_data_port) + 1)
@@ -21,8 +23,11 @@ class SinkWorker:
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
 
-        self.op_name = self.parameters_topic.split('##')[-2]
-        self.index = self.parameters_topic.split('##')[-1]
+        self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
+                              ssh_local_password=ssh_local_password)
+
+        self.node_name = self.parameters_topic.split('##')[-2]
+        self.node_index = self.parameters_topic.split('##')[-1]
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
@@ -51,14 +56,16 @@ class SinkWorker:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        # TODO: Add ssh to local server
+        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_data,
+                                                        r'tcp://127.0.0.1:{}'.format(self.pull_data_port))
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.data_callback, copy=False)
 
-        # Setup the socket and the stream that receives the parameters of the worker function from the node (gui_com)
+        # Setup the socket and the stream that receives the parameters of the worker_exec function from the node (gui_com)
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
         self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
-        # TODO: Add ssh to local server
+        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_sub_parameters,
+                                                        r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
         self.socket_sub_parameters.subscribe(self.parameters_topic)
         self.stream_parameters = zmqstream.ZMQStream(self.socket_sub_parameters)
         self.stream_parameters.on_recv(self.parameters_callback, copy=False)
@@ -66,20 +73,21 @@ class SinkWorker:
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
-        # TODO: Add ssh to local server
+        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_heartbeat,
+                                                        r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
         self.stream_heartbeat = zmqstream.ZMQStream(self.socket_pull_heartbeat)
         self.stream_heartbeat.on_recv(self.heartbeat_callback, copy=False)
 
-        # Setup the socket that sends (publishes) the fact that the worker is up and running to the node com so that it
-        # can then update the parameters of the worker
+        # Setup the socket that sends (publishes) the fact that the worker_exec is up and running to the node com so that it
+        # can then update the parameters of the worker_exec
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
 
     def data_callback(self, data):
         """
         The callback that is called when link is send from the previous com process this com process is connected to
-        (receives link from and shares a common topic) and pushes the link to the worker.
-        The link are a three zmq.Frame list. The first is the topic (used for the worker to distinguish which input the
+        (receives link from and shares a common topic) and pushes the link to the worker_exec.
+        The link are a three zmq.Frame list. The first is the topic (used for the worker_exec to distinguish which input the
         link have come from in the case of multiple input nodes). The other two items are the details and the link load
         of the numpy array coming from the previous node).
         :param data: The link received
@@ -90,7 +98,7 @@ class SinkWorker:
 
     def parameters_callback(self, parameters_in_bytes):
         """
-        The callback called when there is an update of the parameters (worker function's parameters) from the node
+        The callback called when there is an update of the parameters (worker_exec function's parameters) from the node
         (send by the gui_com)
         :param parameters_in_bytes:
         :return:
@@ -122,19 +130,20 @@ class SinkWorker:
                 #print('At {}, CT = {}, time of pulse = {}'.format(self.parameters_topic, current_time, self.time_of_pulse))
                 pid = os.getpid()
                 self.end_of_life_function()
-                print('Killing {} with pid {}'.format(self.parameters_topic, pid))
+                print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
                 os.kill(pid, signal.SIGTERM)
             time.sleep(ct.HEARTBEAT_RATE)
 
     def proof_of_life(self):
         """
-        When the worker process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
-        that lets the node (in the gui_com process) that the worker is running and ready to receive parameter updates.
+        When the worker_exec process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
+        that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
         for i in range(2):
             self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
-            time.sleep(0.2)
+            time.sleep(0.1)
+        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
 
     def start_ioloop(self):
         """

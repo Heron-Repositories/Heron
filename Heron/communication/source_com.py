@@ -1,32 +1,32 @@
 
 import zmq
-import atexit
 import time
 import threading
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
-from Heron import general_utils as gu
-import subprocess
 from zmq.eventloop import ioloop, zmqstream
+from Heron.communication.ssh_com import SSHCom
+
 
 
 class SourceCom:
-    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose=False):
+    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose=False,
+                 ssh_local_server_id='None', ssh_remote_server_id='None'):
         self.sending_topics = sending_topics
         self.sending_topic = self.sending_topics[0]  # TODO need to deal with multiple outputs
         self.parameters_topic = parameters_topic
-        self.data_port = port
-        self.heartbeat_port = str(int(self.data_port) + 1)
-        self.worker = worker_exec
+        self.pull_data_port = port
+        self.heartbeat_port = str(int(self.pull_data_port) + 1)
+        self.worker_exec = worker_exec
         self.context = zmq.Context()
         self.index = 0
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
         self.verbose = verbose
+        self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
-        #self.socket_pub_parameters = None
         self.socket_pub_data = None
         self.socket_pull_data = None
         self.stream_pull_data = None
@@ -39,11 +39,12 @@ class SourceCom:
         :return: Nothing
         """
 
-        # Socket for pulling the data from the worker
+        # Socket for pulling the data from the worker_exec
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.data_port))
-        # TODO: Add ssh to remote server
+        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
+                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.on_receive_data_from_worker)
 
@@ -52,15 +53,15 @@ class SourceCom:
         self.socket_pub_data.set_hwm(1)
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub))
 
-        # Socket for pushing the heartbeat to the worker
-        # Socket for publishing the heartbeat to the worker
+        # Socket for pushing the heartbeat to the worker_exec
+        # Socket for publishing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
         self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def on_receive_data_from_worker(self, msg):
         """
-        The callback that runs every time link is received from the worker process. It takes the link and passes it
+        The callback that runs every time link is received from the worker_exec process. It takes the link and passes it
         onto the link forwarder
         :param msg: The link packet (carrying the actual link (np array))
         :return:
@@ -87,7 +88,7 @@ class SourceCom:
 
     def heartbeat_loop(self):
         """
-        Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker so that it stays alive
+        Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker_exec so that it stays alive
         :return: Nothing
         """
         while True:
@@ -104,16 +105,29 @@ class SourceCom:
 
     def start_worker_process(self):
         """
-        Starts the worker process and then sends the parameters as are currently on the node to the process
-        :param arguments_list: The argument list that has all the parameters for the worker (as given in the node's gui)
+        Starts the worker_exec process and then sends the parameters as are currently on the node to the process
+        The pull_data_port of the worker_exec needs to be the push_data_port of the com (obviously).
+        The way the arguments are structured is defined by the way they are read by the process. For that see
+        general_utilities.parse_arguments_to_worker
         :return: Nothing
         """
-        # TODO: Add possibility of starting script over ssh
-        worker = subprocess.Popen(['python', self.worker, self.data_port, self.parameters_topic, str(0), str(self.verbose)])
+        if 'python' in self.worker_exec or '.py' not in self.worker_exec:
+            arguments_list = [self.worker_exec]
+        else:
+            arguments_list = ['python']
+            arguments_list.append(self.worker_exec)
+
+        arguments_list.append(str(self.pull_data_port))
+        arguments_list.append(str(self.parameters_topic))
+        arguments_list.append(str(0))
+        arguments_list.append(str(self.verbose))
+        arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
+
+        #worker = subprocess.Popen(arguments_list)
+        worker_pid = self.ssh_com.start_process(arguments_list)
 
         if self.verbose:
-            print('Source {} PID = {}.'.format(self.sending_topic, worker.pid))
-        atexit.register(gu.kill_child, worker.pid)
+            print('Source {} PID = {}.'.format(self.sending_topic, worker_pid))
 
     def start_ioloop(self):
         """

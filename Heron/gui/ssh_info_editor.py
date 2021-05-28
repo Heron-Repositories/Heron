@@ -103,6 +103,9 @@ class Table:
         self.ssh_info[id][col_name] = get_value(f"##{self.name}_{row}_{col}")
 
 
+ssh_table: Table
+
+
 def edit_ssh_info():
     global ssh_table
 

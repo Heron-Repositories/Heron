@@ -108,7 +108,7 @@ def on_link(sender, link):
             n.add_topic_in(link[0])
 
 
-# TODO: Define what happens when user deletes a link
+# TODO: Define what happens when user deletes a link.
 def on_delink(sender, link):
     print(link)
     output_node = link[0].split('##')[-2] + '##' + link[0].split('##')[-1]
@@ -130,7 +130,7 @@ def on_delink(sender, link):
 
 def start_forwarders_process(path_to_com):
     """
-    This initialises the two processes that run the two forwarders connecting the link flow between com and worker
+    This initialises the two processes that run the two forwarders connecting the link flow between com and worker_exec
     processes and the parameters flow between the same processes
     :param path_to_com: The path that the two python files that define the processes are
     :return: Nothing
@@ -204,7 +204,7 @@ def on_end_graph(sender, data):
 
     with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
         add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
-                         overlay='Closing worker processes')
+                         overlay='Closing worker_exec processes')
         t = 0
         while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
             set_value('Killing processes', t/(ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
@@ -260,7 +260,7 @@ def save_graph():
 
         node_dict['links'] = get_links_dictionary()
         with open(save_to, 'w+') as file:
-            json.dump(node_dict, file)
+            json.dump(node_dict, file, indent=4)
 
     open_file_dialog(callback=on_file_select)
 
@@ -297,6 +297,7 @@ def load_graph():
                     n.node_parameters = value['node_parameters']
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
+                    n.verbose = value['verbose']
                     n.spawn_node_on_editor()
 
                     nodes_list.append(n)
