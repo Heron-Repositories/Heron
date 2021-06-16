@@ -1,8 +1,14 @@
 
+import sys
+from os import path
+current_dir = path.dirname(path.abspath(__file__))
+while path.split(current_dir)[-1] != r'Heron':
+    current_dir = path.dirname(current_dir)
+sys.path.insert(0, path.dirname(current_dir))
+
 import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision import camera_com
-
 recording_on = False
 capture = None
 
@@ -24,7 +30,6 @@ def run_camera(worker_object):
     while True:
         ret, worker_object.worker_result = capture.read()
         worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
-
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:

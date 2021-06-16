@@ -1,4 +1,7 @@
 
+import platform
+import signal
+import os
 import zmq
 import time
 import threading
@@ -6,7 +9,6 @@ from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.ssh_com import SSHCom
-
 
 
 class SourceCom:
@@ -18,45 +20,51 @@ class SourceCom:
         self.pull_data_port = port
         self.heartbeat_port = str(int(self.pull_data_port) + 1)
         self.worker_exec = worker_exec
-        self.context = zmq.Context()
         self.index = 0
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
         self.verbose = verbose
+        self.heartbeat_loop_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
+        self.context = None
         self.socket_pub_data = None
         self.socket_pull_data = None
         self.stream_pull_data = None
         self.socket_push_heartbeat = None
         self.average_sending_time = 0
 
+
     def connect_sockets(self):
         """
         Start the required sockets to communicate with the link forwarder and the source_com processes
         :return: Nothing
         """
+        if self.verbose:
+            print('Starting Source Node with PID = {}'.format(os.getpid()))
+        self.context = zmq.Context()
 
         # Socket for pulling the data from the worker_exec
         self.socket_pull_data = Socket(self.context, zmq.PULL)
+        self.socket_pull_data.setsockopt(zmq.LINGER, 0)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
-                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.on_receive_data_from_worker)
 
         # Socket for publishing the data to the data forwarder
         self.socket_pub_data = Socket(self.context, zmq.PUB)
+        self.socket_pub_data.setsockopt(zmq.LINGER, 0)
         self.socket_pub_data.set_hwm(1)
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub))
 
-        # Socket for pushing the heartbeat to the worker_exec
         # Socket for publishing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
-        self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
+        self.socket_push_heartbeat.setsockopt(zmq.LINGER, 0)
+        self.socket_push_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def on_receive_data_from_worker(self, msg):
@@ -91,7 +99,7 @@ class SourceCom:
         Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker_exec so that it stays alive
         :return: Nothing
         """
-        while True:
+        while self.heartbeat_loop_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -125,9 +133,11 @@ class SourceCom:
 
         #worker = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
+        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
+                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
 
         if self.verbose:
-            print('Source {} PID = {}.'.format(self.sending_topic, worker_pid))
+            print('Starting Source worker {} with PID = {}.'.format(self.worker_exec, worker_pid))
 
     def start_ioloop(self):
         """
@@ -135,6 +145,25 @@ class SourceCom:
         :return: Nothing
         """
         ioloop.IOLoop.instance().start()
+
+    def on_kill(self, signal, frame):
+        """
+        The function that is called when the parent process sends a SIGBREAK (windows) or SIGTERM (linux) signal.
+        It needs signal and frame as parameters
+        :param signal: The signal received
+        :param frame: I haven't got a clue
+        :return: Nothing
+        """
+        try:
+            self.heartbeat_loop_running = False
+            self.stream_pull_data.close(linger=0)
+            self.socket_pull_data.close()
+            self.socket_pub_data.close()
+            self.socket_push_heartbeat.close()
+        except Exception as e:
+            print('Trying to kill Source com {} failed with error: {}'.format(self.sending_topic, e))
+        finally:
+            self.context.term()
 
 
 

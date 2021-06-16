@@ -1,4 +1,5 @@
 
+import platform
 import os
 import time
 import sys
@@ -91,6 +92,23 @@ def get_next_available_port_group(starting_port, step):
     while True:
         yield str(starting_port)
         starting_port = starting_port + step
+
+
+def add_heron_to_pythonpath():
+    heron_path = os.Path(os.path.dirname(os.path.realpath(__file__)))
+    #print(heron_path)
+
+
+def register_exit_signals(function_to_register):
+    """
+    In windows it registers a function to the SIGBREAK signal, while in linux to the SIGTERM signal
+    :param function_to_register: The function to register
+    :return: Nothing
+    """
+    if platform.system() == 'Windows':
+        signal.signal(signal.SIGBREAK, function_to_register)
+    elif platform.system() == 'Linux':
+        signal.signal(signal.SIGTERM, function_to_register)
 
 
 def parse_arguments_to_com(args):
@@ -259,8 +277,7 @@ def start_the_sink_communications_process():
 
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
                          push_port=push_port, worker_exec=worker_exec, verbose=verbose,
-                         ssh_local_server_id = ssh_local_server_id, ssh_remote_server_id = ssh_remote_server_id
-    )
+                         ssh_local_server_id = ssh_local_server_id, ssh_remote_server_id = ssh_remote_server_id)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()

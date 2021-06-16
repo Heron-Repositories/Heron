@@ -11,21 +11,21 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Canny'
-NodeAttributeNames = ['Parameters', 'Frame In', 'Edges Out']
+BaseName = 'Nothing'
+NodeAttributeNames = ['Parameters', 'In', 'Out']
 NodeAttributeType = ['Static', 'Input', 'Output']
-ParameterNames = ['Visualisation', 'Min Value', 'Max Value']
-ParameterTypes = ['bool', 'int', 'int']
-ParametersDefaultValues = [False, 100, 200]
-WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'canny_worker.py')
+ParameterNames = ['Visualisation']
+ParameterTypes = ['bool']
+ParametersDefaultValues = [False]
+WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'nothing_worker.py')
 
 # </editor-fold>
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    canny_com = gu.start_the_transform_communications_process()
-    gu.register_exit_signals(canny_com.on_kill)
-    canny_com.start_ioloop()
+    nothing_com = gu.start_the_transform_communications_process()
+    gu.register_exit_signals(nothing_com.on_kill)
+    nothing_com.start_ioloop()
 
 # </editor-fold>

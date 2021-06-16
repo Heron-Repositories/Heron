@@ -1,5 +1,6 @@
 
-import subprocess
+import atexit
+import signal
 import time
 import threading
 import zmq
@@ -19,6 +20,7 @@ class SinkCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 1)
         self.worker_exec = worker_exec
         self.verbose = verbose
+        self.heartbeat_loop_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
@@ -33,6 +35,9 @@ class SinkCom:
 
         self.index = -1
 
+        atexit.register(self.on_kill)
+        signal.signal(signal.SIGTERM, self.on_kill)
+
     def connect_sockets(self):
         """
         Start the required sockets to communicate with the link forwarder and the worker_com processes
@@ -42,8 +47,9 @@ class SinkCom:
             print('Starting Sink Node with PID = {}'.format(os.getpid()))
         self.context = zmq.Context()
 
-        # Socket for subscribing to link from node connected to the input
+        # Socket for subscribing to data from nodes connected to the input
         self.socket_sub_data = Socket(self.context, zmq.SUB)
+        self.socket_sub_data.setsockopt(zmq.LINGER, 0)
         self.socket_sub_data.set_hwm(len(self.receiving_topics))
         self.socket_sub_data.connect("tcp://127.0.0.1:{}".format(self.port_sub_data))
         for rt in self.receiving_topics:
@@ -52,12 +58,14 @@ class SinkCom:
 
         # Socket for pushing the data to the worker_exec
         self.socket_push_data = Socket(self.context, zmq.PUSH)
+        self.socket_push_data.setsockopt(zmq.LINGER, 0)
         self.socket_push_data.set_hwm(1)
-        self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
+        self.socket_push_data.bind(r"tcp://127.0.0.1:{}".format(self.push_data_port))
 
         # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
-        self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
+        self.socket_push_heartbeat.setsockopt(zmq.LINGER, 0)
+        self.socket_push_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def heartbeat_loop(self):
@@ -65,7 +73,7 @@ class SinkCom:
         The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
         :return: Nothing
         """
-        while True:
+        while self.heartbeat_loop_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -104,7 +112,8 @@ class SinkCom:
         worker_pid = self.ssh_com.start_process(arguments_list)
 
         if self.verbose:
-            print('Sink from {} worker_exec com with PID = {}.'.format(self.receiving_topics, worker_pid))
+            print('Starting Sink worker {} with PID = {} getting data from .'.format(self.worker_exec,
+                                                                                     self.receiving_topics, worker_pid))
 
     def get_sub_data(self):
         """
@@ -149,9 +158,21 @@ class SinkCom:
 
                 # Send link to be transformed to the worker_exec
                 self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                self.socket_push_data.send_array(messagedata, copy=True)
+                self.socket_push_data.send_array(messagedata, copy=False)
                 t3 = time.perf_counter()
 
                 if self.verbose:
                     #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
                     print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
+
+    def on_kill(self):
+        try:
+            self.heartbeat_loop_running = False
+            self.poller.unregister(socket=self.socket_sub_data)
+            self.socket_sub_data.close()
+            self.socket_push_data.close()
+            self.socket_push_heartbeat.close()
+        except Exception as e:
+            print('Trying to kill Sink com {} failed with error: {}'.format(self.sending_topic, e))
+        finally:
+            self.context.term()

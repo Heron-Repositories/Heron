@@ -1,4 +1,6 @@
 
+import platform
+import signal
 import time
 import subprocess
 import os
@@ -137,7 +139,8 @@ def start_forwarders_process(path_to_com):
     """
     global forwarders
 
-    forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'])
+    forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'],
+                                  creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
     atexit.register(kill_child, forwarders.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
@@ -200,7 +203,10 @@ def on_end_graph(sender, data):
     for n in nodes_list:
         n.stop_com_process()
 
-    forwarders.kill()
+    if platform.system() == 'Windows':
+        forwarders.send_signal(signal.CTRL_BREAK_EVENT)
+    elif platform.system() == 'Linux':
+        forwarders.terminate()
 
     with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
         add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
@@ -213,6 +219,9 @@ def on_end_graph(sender, data):
         delete_item('Killing processes')
     update_control_graph_buttons(False)
     delete_item('Progress bar')
+
+    forwarders.kill()
+    del forwarders
 
 
 def on_keys_pressed(sender, key_value):
@@ -298,6 +307,7 @@ def load_graph():
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
                     n.verbose = value['verbose']
+                    n.worker_executable = value['worker_executable']
                     n.spawn_node_on_editor()
 
                     nodes_list.append(n)

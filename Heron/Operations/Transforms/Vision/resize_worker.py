@@ -27,7 +27,7 @@ def resize(data, parameters):
         worker_object.worker_result = cv2.resize(image, (x_shape, y_shape))
     except Exception as e:
         worker_object.worker_result = np.array((10, 10))
-        print('cvtColor {} operation failed with exception {}'.format(worker_object.node_index, e))
+        print('resize {} operation failed with exception {}'.format(worker_object.node_index, e))
 
     worker_object.visualisation_loop_init()
 

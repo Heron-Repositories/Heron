@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-from Heron.Operations.Transforms.Vision import canny_com
+from Heron.Operations.Transforms.Vision import cvtColor_com
 from Heron.communication.transform_worker import TransformWorker
 
 worker_object: TransformWorker
@@ -16,8 +16,8 @@ def cvtColor(data, parameters):
         worker_object.visualisation_on = parameters[0]
         color_conv_string = parameters[1]
     except:
-        worker_object.visualisation_on = canny_com.ParametersDefaultValues[0]
-        color_conv_string = canny_com.ParametersDefaultValues[1]
+        worker_object.visualisation_on = cvtColor_com.ParametersDefaultValues[0]
+        color_conv_string = cvtColor_com.ParametersDefaultValues[1]
 
     message = data[1:]  # data[0] is the topic
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)

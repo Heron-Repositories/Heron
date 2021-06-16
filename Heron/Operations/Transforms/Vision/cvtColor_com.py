@@ -23,7 +23,8 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'cvtColor_worker.p
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    canny_com = gu.start_the_transform_communications_process()
-    canny_com.start_ioloop()
+    cvtColor_com = gu.start_the_transform_communications_process()
+    gu.register_exit_signals(cvtColor_com.on_kill)
+    cvtColor_com.start_ioloop()
 
 # </editor-fold>

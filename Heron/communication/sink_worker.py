@@ -54,8 +54,9 @@ class SinkWorker:
 
         # Setup the socket and the stream that receives the data from the com to be worked upon
         self.socket_pull_data = Socket(self.context, zmq.PULL)
+        self.socket_pull_data.setsockopt(zmq.LINGER, 0)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_data,
                                                         r'tcp://127.0.0.1:{}'.format(self.pull_data_port))
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
@@ -63,6 +64,7 @@ class SinkWorker:
 
         # Setup the socket and the stream that receives the parameters of the worker_exec function from the node (gui_com)
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
+        self.socket_sub_parameters.setsockopt(zmq.LINGER, 0)
         self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
         self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_sub_parameters,
                                                         r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
@@ -72,7 +74,8 @@ class SinkWorker:
 
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
-        self.socket_pull_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
+        self.socket_pull_heartbeat.setsockopt(zmq.LINGER, 0)
+        self.socket_pull_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
         self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_heartbeat,
                                                         r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
         self.stream_heartbeat = zmqstream.ZMQStream(self.socket_pull_heartbeat)
@@ -81,7 +84,12 @@ class SinkWorker:
         # Setup the socket that sends (publishes) the fact that the worker_exec is up and running to the node com so that it
         # can then update the parameters of the worker_exec
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
-        self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
+        self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
+        if self.ssh_com.ssh_local_ip == 'None':
+            self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
+        else:
+            self.socket_pub_proof_of_life.connect(
+                r'tcp://{}:{}'.format(self.ssh_com.ssh_local_ip, self.port_pub_proof_of_life))
 
     def data_callback(self, data):
         """
@@ -127,10 +135,9 @@ class SinkWorker:
         while True:
             current_time = time.perf_counter()
             if current_time - self.time_of_pulse > ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
-                #print('At {}, CT = {}, time of pulse = {}'.format(self.parameters_topic, current_time, self.time_of_pulse))
                 pid = os.getpid()
                 self.end_of_life_function()
-                print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
+                self.on_kill(pid)
                 os.kill(pid, signal.SIGTERM)
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -159,7 +166,18 @@ class SinkWorker:
         ioloop.IOLoop.instance().start()
         print('!!! WORKER {} HAS STOPPED'.format(self.parameters_topic))
 
-
+    def on_kill(self, pid):
+        print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
+        try:
+            self.socket_pull_data.close()
+            self.socket_sub_parameters.close()
+            self.socket_pull_heartbeat.close()
+            self.socket_pub_proof_of_life.close()
+        except Exception as e:
+            print('Trying to kill Transform worker {} failed with error: {}'.format(self.node_name, e))
+        finally:
+            self.context.term()
+            self.ssh_com.kill_tunneling_processes()
 
 
 

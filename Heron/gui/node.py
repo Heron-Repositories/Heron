@@ -1,5 +1,8 @@
 
+import platform
+import signal
 import os
+import time
 from pathlib import Path
 import cv2
 import json
@@ -293,19 +296,28 @@ class Node:
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)
 
-        self.process = subprocess.Popen(arguments_list)
+        self.process = subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+        #print('Pid of Com {} {} = {}'.format(self.name, self.node_index, self.process.pid))
+        # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).
+        self.wait_for_proof_of_life()
+        # Then update the parameters
+        self.update_parameters()
+        configure_item('##{}'.format(attribute_name), enabled=False)
 
-        # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running). Then update the parameters
+    def wait_for_proof_of_life(self):
         its_alive = 'No'
         while its_alive != 'POL':
             its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
             if its_alive.split('##')[-3] in self.name:
                 its_alive = its_alive.split('##')[-1]
             cv2.waitKey(1)
-        self.update_parameters()
-        configure_item('##{}'.format(attribute_name), enabled=False)
 
     def stop_com_process(self):
+        if platform.system() == 'Windows':
+            self.process.send_signal(signal.CTRL_BREAK_EVENT)
+        elif platform.system() == 'Linux':
+            self.process.terminate()
+        time.sleep(0.5)
         self.process.kill()
         self.process = None
 

@@ -1,4 +1,6 @@
 
+import atexit
+import signal
 import time
 import threading
 import zmq
@@ -20,6 +22,7 @@ class TransformCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
+        self.heartbeat_loop_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
@@ -37,6 +40,9 @@ class TransformCom:
 
         self.index = -1
 
+        atexit.register(self.on_kill)
+        signal.signal(signal.SIGTERM, self.on_kill)
+
     def connect_sockets(self):
         """
         Start the required sockets to communicate with the link forwarder and the worker_com processes
@@ -46,35 +52,38 @@ class TransformCom:
             print('Starting Transform Node with PID = {}'.format(os.getpid()))
         self.context = zmq.Context()
 
-        # Socket for subscribing to link from node connected to the input
+        # Socket for subscribing to data from node connected to the input
         self.socket_sub_data = Socket(self.context, zmq.SUB)
+        self.socket_sub_data.setsockopt(zmq.LINGER, 0)
         self.socket_sub_data.set_hwm(len(self.receiving_topics))
         self.socket_sub_data.connect("tcp://127.0.0.1:{}".format(self.port_sub_data))
         for rt in self.receiving_topics:
             self.socket_sub_data.setsockopt(zmq.SUBSCRIBE, rt.encode('ascii'))
         self.poller.register(self.socket_sub_data, zmq.POLLIN)
 
-        # Socket for pushing the link to the worker_exec
+        # Socket for pushing the data to the worker_exec
         self.socket_push_data = Socket(self.context, zmq.PUSH)
+        self.socket_push_data.setsockopt(zmq.LINGER, 0)
         self.socket_push_data.set_hwm(1)
-        self.socket_push_data.connect(r"tcp://127.0.0.1:{}".format(self.push_data_port))
+        self.socket_push_data.bind(r"tcp://127.0.0.1:{}".format(self.push_data_port))
 
-        # Socket for pulling transformed link from the worker_exec
+        # Socket for pulling transformed data from the worker_exec
         self.socket_pull_data = Socket(self.context, zmq.PULL)
+        self.socket_pull_data.setsockopt(zmq.LINGER, 0)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.bind(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
-                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+        self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+
         self.poller.register(self.socket_pull_data, zmq.POLLIN)
 
-        # Socket for publishing transformed link to other nodes
+        # Socket for publishing transformed data to the data forwarder
         self.socket_pub_data = Socket(self.context, zmq.PUB)
+        self.socket_pub_data.setsockopt(zmq.LINGER, 0)
         self.socket_pub_data.set_hwm(len(self.sending_topics))
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub_data))
 
         # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
-        self.socket_push_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
+        self.socket_push_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def heartbeat_loop(self):
@@ -82,7 +91,7 @@ class TransformCom:
         The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
         :return: Nothing
         """
-        while True:
+        while self.heartbeat_loop_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -119,10 +128,13 @@ class TransformCom:
         #self.worker_pid = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
 
+        self.ssh_com.connect_socket_to_remote_ssh_tunnel(self.socket_pull_data,
+                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         if self.verbose:
-            print('Transform from {} to {} worker_exec com with PID = {}.'.format(self.receiving_topics,
-                                                                                  self.sending_topics,
-                                                                                  worker_pid))
+            print('Starting Transform worker {} with PID = {} transforming from {} to {}.'.format(self.worker_exec,
+                                                                                                  worker_pid,
+                                                                                                  self.receiving_topics,
+                                                                                                  self.sending_topics))
 
     def get_sub_data(self):
         """
@@ -162,9 +174,9 @@ class TransformCom:
 
                 if self.verbose:
                     print("-Transform from {} to {}, node_index {} at time {}".format(topic,
-                                                                                 self.sending_topics,
-                                                                                 data_index,
-                                                                                 data_time))
+                                                                                      self.sending_topics,
+                                                                                      data_index,
+                                                                                      data_time))
 
                 # Send link to be transformed to the worker_exec
                 self.socket_push_data.send(topic, flags=zmq.SNDMORE)
@@ -178,7 +190,6 @@ class TransformCom:
                 sockets_in = dict(self.poller.poll(timeout=1))
 
             new_message_data = []
-
             for i in range(len(self.sending_topics)):
                 new_message_data.append(self.socket_pull_data.recv_array())
             results_time = time.perf_counter()
@@ -200,3 +211,25 @@ class TransformCom:
             if self.verbose:
                 print("---Times to: i) transport link from worker_exec to worker_exec = {}, "
                       "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+
+    def on_kill(self, signal, frame):
+        """
+        The function that is called when the parent process sends a SIGBREAK (windows) or SIGTERM (linux) signal.
+        It needs signal and frame as parameters
+        :param signal: The signal received
+        :param frame: I haven't got a clue
+        :return: Nothing
+        """
+        try:
+            self.heartbeat_loop_running = False
+            self.poller.unregister(socket=self.socket_sub_data)
+            self.poller.unregister(socket=self.socket_pull_data)
+            self.socket_sub_data.close()
+            self.socket_push_data.close()
+            self.socket_pull_data.close()
+            self.socket_pub_data.close()
+            self.socket_push_heartbeat.close()
+        except Exception as e:
+            print('Trying to kill Transform com {} failed with error: {}'.format(self.sending_topic, e))
+        finally:
+            self.context.term()

@@ -35,7 +35,8 @@ def canny(data, parameters):
 
 
 def on_end_of_life():
-    pass
+    global worker_object
+    del worker_object
 
 
 if __name__ == "__main__":

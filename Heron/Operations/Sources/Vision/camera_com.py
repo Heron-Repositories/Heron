@@ -1,4 +1,6 @@
 
+import platform
+import signal
 import os
 from Heron import general_utils as gu
 
@@ -24,6 +26,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'camera_worker.py'
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    spin_camera_com = gu.start_the_source_communications_process()
-    spin_camera_com.start_ioloop()
+    camera_com = gu.start_the_source_communications_process()
+    gu.register_exit_signals(camera_com.on_kill)
+    camera_com.start_ioloop()
 # </editor-fold>
