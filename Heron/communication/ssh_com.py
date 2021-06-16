@@ -3,11 +3,14 @@ import logging
 import paramiko
 import json
 import os
-import time
 from pathlib import Path
 import subprocess
 import threading
 import zmq.ssh
+heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), encoding='utf-8', level=logging.DEBUG,
+                    format = '%(asctime)s %(message)s', datefmt='%H:%M:%S')
+
 
 class SSHCom:
     def __init__(self, worker_exec=None, local_server_id=None, remote_server_id=None,
@@ -60,12 +63,13 @@ class SSHCom:
         if self.ssh_local_ip != 'None':
             logging.debug('ssh local with port : {}'.format(socket_ip))
             try:
-                tunnelling_pids = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.ssh_local_username, self.ssh_local_ip),
-                                          password=self.ssh_local_password,
-                                          paramiko=True)
-                logging.debug(tunnelling_pids)
-                for pid in tunnelling_pids:
-                    self.tunnelling_processes_pids.append(pid)
+                tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.ssh_local_username, self.ssh_local_ip),
+                                                            password=self.ssh_local_password,
+                                                            paramiko=True)
+                print(1)
+                print(tunnelling_pid)
+                logging.debug(tunnelling_pid)
+                self.tunnelling_processes_pids.append(tunnelling_pid.pid)
                 logging.debug('connected')
             except Exception as e:
                 logging.debug(e)
@@ -73,13 +77,14 @@ class SSHCom:
     def connect_socket_to_remote_ssh_tunnel(self, socket, socket_ip):
         if self.remote_server_id != 'None':
             logging.debug('ssh remote : ')
-            tunnelling_pids = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.remote_server_info['username'],
+            tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.remote_server_info['username'],
                                                                         self.remote_server_info['IP']),
-                                      password=self.remote_server_info['password'],
-                                      paramiko=True)
-            logging.debug(tunnelling_pids)
-            for pid in tunnelling_pids:
-                self.tunnelling_processes_pids.append(pid)
+                                                        password=self.remote_server_info['password'],
+                                                        paramiko=True)
+            print(2)
+            logging.debug(tunnelling_pid)
+            print(tunnelling_pid)
+            self.tunnelling_processes_pids.append(tunnelling_pid.pid)
 
     def add_local_server_info_to_arguments(self, arguments_list):
         arguments_list.append(self.local_server_info['IP'])

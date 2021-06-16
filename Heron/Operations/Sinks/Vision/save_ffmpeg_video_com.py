@@ -24,6 +24,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'save_ffmpeg_video
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
     save_video_com = gu.start_the_sink_communications_process()
+    gu.register_exit_signals(save_video_com.on_kill)
     save_video_com.start_ioloop()
 
 # </editor-fold>

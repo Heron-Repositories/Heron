@@ -1,6 +1,14 @@
 
+import sys
+from os import path
 import cv2
 import numpy as np
+
+current_dir = path.dirname(path.abspath(__file__))
+while path.split(current_dir)[-1] != r'Heron':
+    current_dir = path.dirname(current_dir)
+sys.path.insert(0, path.dirname(current_dir))
+
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.Operations.Transforms.Vision import cvtColor_com

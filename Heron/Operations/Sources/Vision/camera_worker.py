@@ -1,6 +1,7 @@
 
 import sys
 from os import path
+
 current_dir = path.dirname(path.abspath(__file__))
 while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)

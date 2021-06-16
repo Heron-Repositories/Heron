@@ -165,7 +165,7 @@ class SinkCom:
                     #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
                     print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
 
-    def on_kill(self):
+    def on_kill(self, signal, frame):
         try:
             self.heartbeat_loop_running = False
             self.poller.unregister(socket=self.socket_sub_data)
