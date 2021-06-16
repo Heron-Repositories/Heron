@@ -24,7 +24,7 @@ class SourceCom:
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
         self.verbose = verbose
-        self.heartbeat_loop_running = True
+        self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
@@ -99,7 +99,7 @@ class SourceCom:
         Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker_exec so that it stays alive
         :return: Nothing
         """
-        while self.heartbeat_loop_running:
+        while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -155,7 +155,7 @@ class SourceCom:
         :return: Nothing
         """
         try:
-            self.heartbeat_loop_running = False
+            self.all_loops_running = False
             self.stream_pull_data.close(linger=0)
             self.socket_pull_data.close()
             self.socket_pub_data.close()

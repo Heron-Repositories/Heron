@@ -20,7 +20,7 @@ class SinkCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 1)
         self.worker_exec = worker_exec
         self.verbose = verbose
-        self.heartbeat_loop_running = True
+        self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
@@ -73,7 +73,7 @@ class SinkCom:
         The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
         :return: Nothing
         """
-        while self.heartbeat_loop_running:
+        while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -140,7 +140,7 @@ class SinkCom:
         publishes the transformed link to the link forwarder with this nodes' topic
         :return: Nothing
         """
-        while True:
+        while self.all_loops_running:
             # Get link from subsribed node
             t1 = time.perf_counter()
 
@@ -167,7 +167,7 @@ class SinkCom:
 
     def on_kill(self, signal, frame):
         try:
-            self.heartbeat_loop_running = False
+            self.all_loops_running = False
             self.poller.unregister(socket=self.socket_sub_data)
             self.socket_sub_data.close()
             self.socket_push_data.close()

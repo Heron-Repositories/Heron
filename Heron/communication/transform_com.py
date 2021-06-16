@@ -22,7 +22,7 @@ class TransformCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
-        self.heartbeat_loop_running = True
+        self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
@@ -39,9 +39,6 @@ class TransformCom:
         self.socket_push_heartbeat = None
 
         self.index = -1
-
-        atexit.register(self.on_kill)
-        signal.signal(signal.SIGTERM, self.on_kill)
 
     def connect_sockets(self):
         """
@@ -91,7 +88,7 @@ class TransformCom:
         The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
         :return: Nothing
         """
-        while self.heartbeat_loop_running:
+        while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
             time.sleep(ct.HEARTBEAT_RATE)
 
@@ -161,7 +158,7 @@ class TransformCom:
         publishes the transformed link to the link forwarder with this nodes' topic
         :return: Nothing
         """
-        while True:
+        while self.all_loops_running:
             # Get link from subsribed node
             t1 = time.perf_counter()
 
@@ -187,7 +184,10 @@ class TransformCom:
             sockets_in = dict(self.poller.poll(timeout=1))
             while not sockets_in or self.socket_pull_data not in sockets_in \
                     or sockets_in[self.socket_pull_data] != zmq.POLLIN:
-                sockets_in = dict(self.poller.poll(timeout=1))
+                try:
+                    sockets_in = dict(self.poller.poll(timeout=1))
+                except:
+                    pass  # When the poller is unregistered at kill time the above line will give an error
 
             new_message_data = []
             for i in range(len(self.sending_topics)):
@@ -221,7 +221,7 @@ class TransformCom:
         :return: Nothing
         """
         try:
-            self.heartbeat_loop_running = False
+            self.all_loops_running = False
             self.poller.unregister(socket=self.socket_sub_data)
             self.poller.unregister(socket=self.socket_pull_data)
             self.socket_sub_data.close()

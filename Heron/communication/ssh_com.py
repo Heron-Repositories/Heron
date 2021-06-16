@@ -1,5 +1,7 @@
 
 import logging
+import signal
+import platform
 import paramiko
 import json
 import os
@@ -8,7 +10,7 @@ import subprocess
 import threading
 import zmq.ssh
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), encoding='utf-8', level=logging.DEBUG,
+logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.DEBUG,
                     format = '%(asctime)s %(message)s', datefmt='%H:%M:%S')
 
 
@@ -66,8 +68,6 @@ class SSHCom:
                 tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.ssh_local_username, self.ssh_local_ip),
                                                             password=self.ssh_local_password,
                                                             paramiko=True)
-                print(1)
-                print(tunnelling_pid)
                 logging.debug(tunnelling_pid)
                 self.tunnelling_processes_pids.append(tunnelling_pid.pid)
                 logging.debug('connected')
@@ -81,9 +81,7 @@ class SSHCom:
                                                                         self.remote_server_info['IP']),
                                                         password=self.remote_server_info['password'],
                                                         paramiko=True)
-            print(2)
             logging.debug(tunnelling_pid)
-            print(tunnelling_pid)
             self.tunnelling_processes_pids.append(tunnelling_pid.pid)
 
     def add_local_server_info_to_arguments(self, arguments_list):
@@ -127,7 +125,13 @@ class SSHCom:
             return 'Remote unknown pid'
 
     def kill_tunneling_processes(self):
-        print(self.tunnelling_processes_pids)
-        for _, pid in self.tunnelling_processes_pids:
-            os.kill(pid)
+        logging.debug('KILLING THE PROCESSES {}'.format(self.tunnelling_processes_pids))
+        if platform.system() == 'Windows':
+            signal_to_send = signal.SIGBREAK
+        elif platform.system() == 'Linux':
+            signal_to_send = signal.SIGTERM
+        for pid in self.tunnelling_processes_pids:
+            os.kill(pid, signal_to_send)
+        pid = os.getpid()
+        os.kill(pid, signal_to_send)
 
