@@ -94,16 +94,16 @@ class SSHCom:
                     logging.debug('=== Using normal sockets (not SSH) connecting to tcp://{}:{}'
                                   .format(self.ssh_local_ip, socket_port))
                     socket.connect(r"tcp://{}:{}".format(self.ssh_local_ip, socket_port))
-                if self.ssh_local_password == 'None' or skip_ssh:
+                else:
                     logging.debug('=== Using SSH connecting to {} -> {}:{}'.
                                   format(self.ssh_local_ip, socket_ip, socket_port))
-                    tunnelling_pid = zmq.ssh.tunnel_connection(socket, '{}:{}'.format(socket_ip, socket_port),
-                                                               "{}@{}".format(self.ssh_local_username,
-                                                                              self.ssh_local_ip),
-                                                               password=self.ssh_local_password,
-                                                               paramiko=True)
-                    logging.debug('PID of generated tunneling process = {}'.format(tunnelling_pid))
-                    self.tunnelling_processes_pids.append(tunnelling_pid.pid)
+                    tunneling_process = zmq.ssh.tunnel_connection(socket, '{}:{}'.format(socket_ip, socket_port),
+                                                                  "{}@{}".format(self.ssh_local_username,
+                                                                                 self.ssh_local_ip),
+                                                                  password=self.ssh_local_password,
+                                                                  paramiko=True)
+                    logging.debug('PID of generated tunneling process = {}'.format(tunneling_process.pid))
+                    self.tunnelling_processes_pids.append(tunneling_process.pid)
             except Exception as e:
                 logging.debug("=== Failed to connect with error: {}".format(e))
             finally:
