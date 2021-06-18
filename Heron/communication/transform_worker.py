@@ -62,19 +62,15 @@ class TransformWorker:
         self.socket_pull_data = Socket(self.context, zmq.PULL)
         self.socket_pull_data.setsockopt(zmq.LINGER, 0)
         self.socket_pull_data.set_hwm(1)
-        self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_data,
-                                                        r'tcp://127.0.0.1:{}'.format(self.pull_data_port))
+        self.ssh_com.connect_socket_to_local(self.socket_pull_data, r'tcp://127.0.0.1', self.pull_data_port)
         self.stream_pull_data = zmqstream.ZMQStream(self.socket_pull_data)
         self.stream_pull_data.on_recv(self.data_callback, copy=False)
 
         # Setup the socket and the stream that receives the parameters of the worker_exec function from the node (gui_com)
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
         self.socket_sub_parameters.setsockopt(zmq.LINGER, 0)
-        self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
+        self.ssh_com.connect_socket_to_local(self.socket_sub_parameters, r'tcp://127.0.0.1', self.port_sub_parameters)
         self.socket_sub_parameters.subscribe(self.parameters_topic)
-        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_sub_parameters,
-                                                        r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
         self.stream_parameters = zmqstream.ZMQStream(self.socket_sub_parameters)
         self.stream_parameters.on_recv(self.parameters_callback, copy=False)
 
@@ -87,9 +83,7 @@ class TransformWorker:
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.setsockopt(zmq.LINGER, 0)
-        self.socket_pull_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
-        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_heartbeat,
-                                                        r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
+        self.ssh_com.connect_socket_to_local(self.socket_pull_heartbeat, r'tcp://127.0.0.1', self.pull_heartbeat_port)
         self.stream_heartbeat = zmqstream.ZMQStream(self.socket_pull_heartbeat)
         self.stream_heartbeat.on_recv(self.heartbeat_callback, copy=False)
 
@@ -97,11 +91,8 @@ class TransformWorker:
         # can then update the parameters of the worker_exec
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
-        if self.ssh_com.ssh_local_ip == 'None':
-            self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
-        else:
-            self.socket_pub_proof_of_life.connect(
-                r'tcp://{}:{}'.format(self.ssh_com.ssh_local_ip, self.port_pub_proof_of_life))
+        self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
+                                             self.port_pub_proof_of_life, skip_ssh=True)
 
     def data_callback(self, data):
         """

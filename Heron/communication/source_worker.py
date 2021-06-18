@@ -59,10 +59,8 @@ class SourceWorker:
         # Setup the socket that receives the parameters of the worker_exec function from the node
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
         self.socket_sub_parameters.setsockopt(zmq.LINGER, 0)
-        self.socket_sub_parameters.connect(r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
         self.socket_sub_parameters.subscribe(self.parameters_topic)
-        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_sub_parameters,
-                                                        r'tcp://127.0.0.1:{}'.format(self.port_sub_parameters))
+        self.ssh_com.connect_socket_to_local(self.socket_sub_parameters, r'tcp://127.0.0.1', self.port_sub_parameters)
         self.socket_sub_parameters.subscribe(self.parameters_topic)
 
         # Setup the socket that pushes the data to the com
@@ -74,19 +72,14 @@ class SourceWorker:
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.setsockopt(zmq.LINGER, 0)
-        self.socket_pull_heartbeat.connect(r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
-        self.ssh_com.connect_socket_to_local_ssh_tunnel(self.socket_pull_heartbeat,
-                                                        r'tcp://127.0.0.1:{}'.format(self.pull_heartbeat_port))
+        self.ssh_com.connect_socket_to_local(self.socket_pull_heartbeat, r'tcp://127.0.0.1', self.pull_heartbeat_port)
 
         # Setup the socket that publishes the fact that the worker_exec is up and running to the node com so that it
-        # can then update the parameters of the worker_exec
+        # can then update the parameters of the worker_exec.
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
-        if self.ssh_com.ssh_local_ip == 'None':
-            self.socket_pub_proof_of_life.connect(r'tcp://127.0.0.1:{}'.format(self.port_pub_proof_of_life))
-        else:
-            self.socket_pub_proof_of_life.connect(
-                r'tcp://{}:{}'.format(self.ssh_com.ssh_local_ip, self.port_pub_proof_of_life))
+        self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
+                                             self.port_pub_proof_of_life, skip_ssh=True)
 
     def update_parameters(self):
         """

@@ -1,6 +1,11 @@
 
-import zmq
-from Heron.communication.socket_for_serialization import Socket
+import logging
+import os
+from pathlib import Path
+
+heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.DEBUG,
+                    format='%(asctime)s %(message)s', datefmt='%H:%M:%S')
 
 DATA_FORWARDER_SUBMIT_PORT = '5560'
 DATA_FORWARDER_PUBLISH_PORT = '5561'

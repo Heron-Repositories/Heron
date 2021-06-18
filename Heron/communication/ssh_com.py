@@ -9,9 +9,6 @@ from pathlib import Path
 import subprocess
 import threading
 import zmq.ssh
-heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.DEBUG,
-                    format = '%(asctime)s %(message)s', datefmt='%H:%M:%S')
 
 
 class SSHCom:
@@ -61,22 +58,57 @@ class SSHCom:
 
         return result
 
-    def connect_socket_to_local_ssh_tunnel(self, socket, socket_ip):
-        if self.ssh_local_ip != 'None':
-            logging.debug('ssh local with port : {}'.format(socket_ip))
-            try:
-                tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.ssh_local_username, self.ssh_local_ip),
-                                                            password=self.ssh_local_password,
-                                                            paramiko=True)
-                logging.debug(tunnelling_pid)
-                self.tunnelling_processes_pids.append(tunnelling_pid.pid)
-                logging.debug('connected')
-            except Exception as e:
-                logging.debug(e)
+    def connect_socket_to_local(self, socket, socket_ip, socket_port, skip_ssh=False):
+        """
+        Connects a socket to an IP and a port at the computer that is running the editor (local). It has three possible
+        behaviours:
 
-    def connect_socket_to_remote_ssh_tunnel(self, socket, socket_ip):
+        1) If the node hasn't been set up as a remote node (i.e. has not been given the ip addresses for an SSH remote
+        and an SSH local server) then the worker function runs locally and the socket is connected to the local ip
+        (probably 127.0.0.1) and the correct port for the job.
+
+        2) If the node is a remote running node (i.e. has ip addresses for the SSH remote and SSH local servers) then
+        it has two possible behaviours:
+
+        2a) If there is no local SSH running (denoted by the password of the local SSH server being None) then
+        the socket is connected ("normally") to the ip address of the local computer (i.e. the ip address of the
+        local SSH server given on the node's extra info) and the corresponding port for the job.
+
+        2b) If there is a local SSH server actually running (there is a password associated with it in the SSH
+        info page of the editor) then the socket is connected through an ssh tunnel
+
+        :param socket: The socket to connect
+        :param socket_ip: The localhost ip address used by Heron (probably 127.0.0.1)
+        :param socket_port: The port to connect to
+        :param skip_ssh: If true then the connection doesn't use an ssh tunnel even if there is an SSH server running
+        locally. This is used for the case of sockets that do proof of life (and connect to the local proof of life
+        forwarder).
+        :return: Nothing
+        """
+        if self.ssh_local_ip == 'None':
+            socket.connect("{}:{}".format(socket_ip, socket_port))
+        else:
+            logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_ip))
+            if self.ssh_local_password != 'None' or skip_ssh:
+                logging.debug('=== Using normal sockets (not ssh)')
+                socket.connect(r"tcp://{}:{}".format(self.ssh_local_ip, socket_port))
+            else:
+                logging.debug('=== Using ssh')
+                try:
+                    tunnelling_pid = zmq.ssh.tunnel_connection(socket, '{}:{}'.format(socket_ip, socket_port),
+                                                               "{}@{}".format(self.ssh_local_username,
+                                                                              self.ssh_local_ip),
+                                                               password=self.ssh_local_password,
+                                                               paramiko=True)
+                    logging.debug(tunnelling_pid)
+                    self.tunnelling_processes_pids.append(tunnelling_pid.pid)
+                    logging.debug('connected')
+                except Exception as e:
+                    logging.debug(e)
+
+    def connect_socket_to_remote(self, socket, socket_ip):
         if self.remote_server_id != 'None':
-            logging.debug('ssh remote : ')
+            logging.debug('ssh remote with port : {}'.format(socket_ip))
             tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.remote_server_info['username'],
                                                                         self.remote_server_info['IP']),
                                                         password=self.remote_server_info['password'],
