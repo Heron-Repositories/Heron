@@ -148,8 +148,9 @@ class TransformWorker:
 
     def proof_of_life(self):
         """
-        When the worker_exec process starts it sends to the gui_com (through the proof_of_life_forwarder thread) a signal
-        that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
+        When the worker_exec process starts AND ONCE IT HAS RECEIVED ITS FIRST BUNCH OF DATA, it sends to the gui_com
+        (through the proof_of_life_forwarder thread) a signal that lets the node (in the gui_com process) that the
+        worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
 
@@ -191,7 +192,7 @@ class TransformWorker:
         """
         The function that is run at every cycle of the WORKER_FUNCTION to check if the visualisation_on bool is True
         for the first time. When that happens it starts the visualisation loop. The loop takes care of the showing
-        and hiding the visualisation window
+        and hiding of the visualisation window
         :return: Nothing
         """
         if self.visualisation_on and self.visualisation_thread is None:
@@ -216,6 +217,7 @@ class TransformWorker:
     def on_kill(self, pid):
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
         try:
+            self.visualisation_on = False
             self.socket_pull_data.close()
             self.socket_sub_parameters.close()
             self.socket_push_data.close()

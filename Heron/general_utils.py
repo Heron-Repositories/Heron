@@ -54,19 +54,6 @@ def accurate_delay(delay):
         pass
 
 
-def kill_child(child_pid):
-    """
-    Kill the child_pid process
-    :param child_pid: the pid of the process to die
-    :return: Nothing
-    """
-    try:
-        os.kill(child_pid, signal.SIGTERM)
-        #print('Killed process {}'.format(child_pid))
-    except:
-        print('Failed to kill process {}'.format(child_pid))
-
-
 def choose_color_according_to_operations_type(operations_parent_name):
     """
     Returns a colour to colour the operations list in the gui according to the type they belong to

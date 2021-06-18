@@ -1,10 +1,10 @@
 {
     "0": {
         "Name": "localhost",
-        "IP": "192.168.1.100",
+        "IP": "192.168.1.101",
         "Port": 22,
         "username": "user",
-        "password": "1234567890"
+        "password": "None"
     },
     "1": {
         "Name": "arena",
@@ -12,12 +12,5 @@
         "Port": 22,
         "username": "njsnarena",
         "password": "1234567890"
-    },
-    "2": {
-        "Name": "EIT",
-        "IP": "192.168.1.103",
-        "Port": 22,
-        "username": "KAMPFF-LAB-EIT",
-        "password": "IntelSys!"
     }
 }

@@ -205,6 +205,7 @@ class SourceWorker:
     def on_kill(self, pid):
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
         try:
+            self.visualisation_on = False
             self.socket_sub_parameters.close()
             self.socket_push_data.close()
             self.socket_pull_heartbeat.close()

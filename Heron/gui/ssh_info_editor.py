@@ -42,11 +42,21 @@ class Table:
                 if type(item) is int:
                     add_input_int(item_name, default_value=item, width=-1, step=0, callback=self.on_edit)
                 if type(item) is float:
-                    add_input_float(item_name, default_value=item, width=-1, step=0, allback=self.on_edit)
+                    add_input_float(item_name, default_value=item, width=-1, step=0, callback=self.on_edit)
                 if type(item) is bool:
                     add_checkbox(item_name, default_value=False)
                 if i == 1:
                     configure_item(item_name, enabled=False)
+                if i == 6:
+                    configure_item(item_name, default_value='None')
+                    configure_item(item_name, tip='If the password is "None" for the local machine\'s IP then the \n'
+                                                  'local machine does not need to run an SSH server and the \n'
+                                                  'communication between computers happens through normal sockets. \n'
+                                                  'If there is a password other than "None" then Heron assumes an \n'
+                                                  'SSH server is running on the local machine and all data and \n'
+                                                  'parameters are passed through SSH tunnels.\nWARNING! '
+                                                  'The SSH tunneling is slow and results in constant dropping of\n'
+                                                  'data packets!')
                 self.column += 1
             self.num_of_rows += 1
         add_separator(name=f"##{self.name}_{self.row}_sep", parent=self.name)

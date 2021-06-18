@@ -11,7 +11,7 @@ import json
 import copy
 import sys
 sys.path.insert(0, '../../')
-from Heron.general_utils import kill_child, choose_color_according_to_operations_type, get_next_available_port_group
+from Heron.general_utils import choose_color_according_to_operations_type, get_next_available_port_group
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron import constants as ct
@@ -141,7 +141,7 @@ def start_forwarders_process(path_to_com):
 
     forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'],
                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-    atexit.register(kill_child, forwarders.pid)
+    #atexit.register(kill_child, forwarders.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
     print('Forwarders PID = {}'.format(forwarders.pid))
@@ -384,7 +384,6 @@ with simple.window("Main Window"):
             add_menu_item('Load', callback=load_graph)
         with simple.menu('SSH'):
             add_menu_item('Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
-            add_menu_item('Clear ssh info')
 
 with simple.window('Node Selector'):
     # Create the window of the Node selector

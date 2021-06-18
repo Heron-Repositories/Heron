@@ -64,7 +64,7 @@ class SourceCom:
         # Socket for publishing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
         self.socket_push_heartbeat.setsockopt(zmq.LINGER, 0)
-        self.socket_push_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.heartbeat_port))
+        self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def on_receive_data_from_worker(self, msg):

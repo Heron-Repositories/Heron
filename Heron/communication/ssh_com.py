@@ -88,31 +88,35 @@ class SSHCom:
         if self.ssh_local_ip == 'None':
             socket.connect("{}:{}".format(socket_ip, socket_port))
         else:
-            logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_ip))
-            if self.ssh_local_password != 'None' or skip_ssh:
-                logging.debug('=== Using normal sockets (not ssh)')
-                socket.connect(r"tcp://{}:{}".format(self.ssh_local_ip, socket_port))
-            else:
-                logging.debug('=== Using ssh')
-                try:
+            logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_port))
+            try:
+                if self.ssh_local_password == 'None' or skip_ssh:
+                    logging.debug('=== Using normal sockets (not SSH) connecting to tcp://{}:{}'
+                                  .format(self.ssh_local_ip, socket_port))
+                    socket.connect(r"tcp://{}:{}".format(self.ssh_local_ip, socket_port))
+                if self.ssh_local_password == 'None' or skip_ssh:
+                    logging.debug('=== Using SSH connecting to {} -> {}:{}'.
+                                  format(self.ssh_local_ip, socket_ip, socket_port))
                     tunnelling_pid = zmq.ssh.tunnel_connection(socket, '{}:{}'.format(socket_ip, socket_port),
                                                                "{}@{}".format(self.ssh_local_username,
                                                                               self.ssh_local_ip),
                                                                password=self.ssh_local_password,
                                                                paramiko=True)
-                    logging.debug(tunnelling_pid)
+                    logging.debug('PID of generated tunneling process = {}'.format(tunnelling_pid))
                     self.tunnelling_processes_pids.append(tunnelling_pid.pid)
-                    logging.debug('connected')
-                except Exception as e:
-                    logging.debug(e)
+            except Exception as e:
+                logging.debug("=== Failed to connect with error: {}".format(e))
+            finally:
+                logging.debug('=== Connected')
 
     def connect_socket_to_remote(self, socket, socket_ip):
         if self.remote_server_id != 'None':
             logging.debug('ssh remote with port : {}'.format(socket_ip))
-            tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".format(self.remote_server_info['username'],
-                                                                        self.remote_server_info['IP']),
-                                                        password=self.remote_server_info['password'],
-                                                        paramiko=True)
+            tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".
+                                                       format(self.remote_server_info['username'],
+                                                              self.remote_server_info['IP']),
+                                                       password=self.remote_server_info['password'],
+                                                       paramiko=True)
             logging.debug(tunnelling_pid)
             self.tunnelling_processes_pids.append(tunnelling_pid.pid)
 
@@ -131,11 +135,11 @@ class SSHCom:
 
     def remote_stderr_thread(self):
         for line in self.stderr:
-            print(line)
+            print('// REMOTE COMPUTER {} ERROR: {}'.format(self.remote_server_info['IP'], line))
 
     def remote_stdout_thread(self):
         for line in self.stdout:
-            print(line)
+            print('// REMOTE COMPUTER {} SAYS: {}'.format(self.remote_server_info['IP'], line))
 
     def start_process(self, arguments_list):
 

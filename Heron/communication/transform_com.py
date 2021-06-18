@@ -62,7 +62,7 @@ class TransformCom:
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.setsockopt(zmq.LINGER, 0)
         self.socket_push_data.set_hwm(1)
-        self.socket_push_data.bind(r"tcp://127.0.0.1:{}".format(self.push_data_port))
+        self.socket_push_data.bind(r"tcp://*:{}".format(self.push_data_port))
 
         # Socket for pulling transformed data from the worker_exec
         self.socket_pull_data = Socket(self.context, zmq.PULL)
@@ -80,7 +80,7 @@ class TransformCom:
 
         # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
-        self.socket_push_heartbeat.bind(r'tcp://127.0.0.1:{}'.format(self.push_heartbeat_port))
+        self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
     def heartbeat_loop(self):
@@ -128,7 +128,7 @@ class TransformCom:
         self.ssh_com.connect_socket_to_remote(self.socket_pull_data,
                                                          r"tcp://127.0.0.1:{}".format(self.pull_data_port))
         if self.verbose:
-            print('Starting Transform worker {} with PID = {} transforming from {} to {}.'.format(self.worker_exec,
+            print('Starting Transform worker {}, with PID = {}, transforming from {} to {}.'.format(self.worker_exec,
                                                                                                   worker_pid,
                                                                                                   self.receiving_topics,
                                                                                                   self.sending_topics))
