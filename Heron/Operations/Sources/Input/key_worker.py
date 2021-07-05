@@ -2,7 +2,7 @@
 import sys
 from os import path
 import time
-import dearpygui.dearpygui as dpg
+import numpy as np
 
 current_dir = path.dirname(path.abspath(__file__))
 while path.split(current_dir)[-1] != r'Heron':
@@ -11,35 +11,76 @@ sys.path.insert(0, path.dirname(current_dir))
 
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Input import key_com
+from Heron.communication.source_worker import SourceWorker
+from pynput.keyboard import Listener
 
-capturing_key_on = False
+
+worker_object: SourceWorker
+listener: Listener
+key_pressed_and_released = [None, None]
+new_input_for_vis = False
 
 
-def capture_key_press(worker_object):
-    global capturing_key_on
+def on_key_pressed(key):
+    global key_pressed_and_released
+    key_pressed_and_released[0] = key.char
 
-    if not capturing_key_on:  # Get the parameters from the node
-        while not capturing_key_on:
-            try:
-                key = worker_object.parameters[1]
-                capturing_key_on = True
-            except:
-                time.sleep(0.1)
+
+def on_key_released(key):
+    global key_pressed_and_released
+    global new_input_for_vis
+    key_pressed_and_released[1] = key.char
+    new_input_for_vis = key.char
+
+
+def visualisation_to_stdout():
+    global worker_object
+    global new_input_for_vis
+    global key_pressed_and_released
+    while True:
+        while worker_object.visualisation_on:
+            if new_input_for_vis:
+                print(new_input_for_vis)
+                if new_input_for_vis == worker_object.worker_result:
+                    print('Outputing :{}'.format(worker_object.worker_result))
+                new_input_for_vis = False
+
+
+def start_key_press_capture(_worker_object):
+    global worker_object
+    global key_pressed_and_released
+    global listener
+
+    worker_object = _worker_object
+    waiting_for_key = None
+    worker_object.set_new_visualisation_loop(visualisation_to_stdout)
+
+    while waiting_for_key is None:
+        try:
+            waiting_for_key = str(worker_object.parameters[1])
+        except:
+            time.sleep(0.1)
+
+    listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
+    listener.start()
 
     while True:
-        worker_object.worker_result = np.array([dpg.is_key_pressed(key)])
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        if key_pressed_and_released[0] == waiting_for_key and \
+           key_pressed_and_released[1] == waiting_for_key:
+            worker_object.worker_result = np.array([waiting_for_key])
+            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+            worker_object.visualisation_loop_init()
+            key_pressed_and_released = [None, None]
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
             worker_object.visualisation_on = key_com.ParametersDefaultValues[0]
 
-        worker_object.visualisation_loop_init()
-
 
 def on_end_of_life():
-    pass
+    global listener
+    listener.stop()
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(capture_key_press(), on_end_of_life)
+    gu.start_the_source_worker_process(start_key_press_capture, on_end_of_life)

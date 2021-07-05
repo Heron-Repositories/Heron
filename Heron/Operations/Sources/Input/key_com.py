@@ -17,7 +17,7 @@ BaseName = 'Key Press'
 NodeAttributeNames = ['Parameters', 'Key Out']
 NodeAttributeType = ['Static', 'Output']
 ParameterNames = ['Visualisation', 'Key']
-ParameterTypes = ['bool', 'int']
+ParameterTypes = ['bool', 'str']
 ParametersDefaultValues = [False, 'a']
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'key_worker.py')
 # </editor-fold>
