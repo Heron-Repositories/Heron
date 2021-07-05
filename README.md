@@ -25,13 +25,13 @@ Important note. The whole of the Heron repo must be found in all the computers t
 
 The library requirements of Heron are:
 
-pyzmq
+pyzmq >= 22.x
 
 numpy
 
-dearpygui
+dearpygui = 0.6.415 (The latest 0.8.x is a release that breaks everything. We are working on transitioning to it).
 
-opencv (optional but highly reccomented unless you want to rewrite the visualisation part)
+opencv = 4.x (optional but highly reccomented unless you want to rewrite the visualisation part)
 
 paramikro (required if the multiple computers fuctionality is utilised)
 
