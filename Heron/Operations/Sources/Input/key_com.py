@@ -1,4 +1,5 @@
 
+
 import os
 from Heron import general_utils as gu
 
@@ -12,19 +13,19 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Camera'
-NodeAttributeNames = ['Parameters', 'Frame Out']
+BaseName = 'Key Press'
+NodeAttributeNames = ['Parameters', 'Key Out']
 NodeAttributeType = ['Static', 'Output']
-ParameterNames = ['Visualisation', 'Cam Index']
+ParameterNames = ['Visualisation', 'Key']
 ParameterTypes = ['bool', 'int']
-ParametersDefaultValues = [False, 0]
-WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'camera_worker.py')
+ParametersDefaultValues = [False, 'a']
+WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'key_worker.py')
 # </editor-fold>
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    camera_com = gu.start_the_source_communications_process()
-    gu.register_exit_signals(camera_com.on_kill)
-    camera_com.start_ioloop()
+    key_com = gu.start_the_source_communications_process()
+    gu.register_exit_signals(key_com.on_kill)
+    key_com.start_ioloop()
 # </editor-fold>

@@ -1,9 +1,8 @@
 
 
 import os
-import sys
 from Heron import general_utils as gu
-from Heron.communication.transform_com import TransformCom
+
 Exec = os.path.realpath(__file__)
 
 
