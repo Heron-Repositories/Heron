@@ -35,6 +35,8 @@ opencv = 4.x (optional but highly reccomented unless you want to rewrite the vis
 
 paramikro (required if the multiple computers fuctionality is utilised)
 
+pynput
+
 
 ## Use
 
