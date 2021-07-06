@@ -11,7 +11,7 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Save FFMPEG video'
+BaseName = 'Save_FFMPEG_video'
 NodeAttributeNames = ['Parameters', 'Frame In']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['File node_name', 'Pixel Format In', 'Pixel Format Out', 'Fps']

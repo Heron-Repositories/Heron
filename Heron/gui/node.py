@@ -32,19 +32,21 @@ class Node:
         self.num_of_outputs = 0
         self.coordinates = [100, 100]
         self.node_parameters = None
+        self.node_parameters_combos_items = []
         self.verbose = 0
 
         self.get_corresponding_operation()
+        self.get_node_index()
         self.assign_default_parameters()
         self.get_numbers_of_inputs_and_outputs()
         self.generate_default_topics()
-        self.get_node_index()
 
         self.ssh_server_id_and_names = None
         self.get_ssh_server_names_and_ids()
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
+
 
     def remove_from_editor(self):
         delete_item(self.name)
@@ -65,6 +67,12 @@ class Node:
 
     def assign_default_parameters(self):
         self.node_parameters = self.operation.parameters_def_values
+
+        for default_parameter in self.operation.parameters_def_values:
+            if type(default_parameter) == list:
+                self.node_parameters_combos_items.append(default_parameter)
+            else:
+                self.node_parameters_combos_items.append(None)
 
     def get_node_index(self):
         self.node_index = self.name.split('##')[-1]
@@ -111,6 +119,11 @@ class Node:
     def update_parameters(self):
         attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.node_index)
         for i, parameter in enumerate(self.operation.parameters):
+            config = get_item_configuration('{}##{}'.format(parameter, attribute_name))
+            try:
+                list_items = config['items']
+            except:
+                pass
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
         topic = self.operation.name + '##' + self.node_index
         gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
@@ -163,8 +176,8 @@ class Node:
                                              callback=self.update_parameters)
                             elif self.operation.parameter_types[i] == 'list':
                                 add_combo('{}##{}'.format(parameter, attribute_name),
-                                          items=self.operation.parameters_def_values[i],
-                                          default_value=self.operation.parameters_def_values[i][0],
+                                          items=self.node_parameters_combos_items[i],
+                                          default_value=self.node_parameters[i][0],
                                           callback=self.update_parameters)
                             simple.set_item_width('{}##{}'.format(parameter, attribute_name), width=100)
 

@@ -134,7 +134,7 @@ class SourceCom:
         #worker = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
         self.ssh_com.connect_socket_to_remote(self.socket_pull_data,
-                                                         r"tcp://127.0.0.1:{}".format(self.pull_data_port))
+                                              r"tcp://127.0.0.1:{}".format(self.pull_data_port))
 
         if self.verbose:
             print('Starting Source worker {} with PID = {}.'.format(self.worker_exec, worker_pid))

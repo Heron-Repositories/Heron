@@ -15,7 +15,7 @@ class Operation:
     attributes: list
     attribute_types: list
     parameters: list
-    parameter_types:list
+    parameter_types: list
     parameters_def_values: list
     executable: str
     parent_dir: str

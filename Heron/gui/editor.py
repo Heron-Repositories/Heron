@@ -304,6 +304,7 @@ def load_graph():
                     n.num_of_outputs = value['num_of_outputs']
                     n.coordinates = value['coordinates']
                     n.node_parameters = value['node_parameters']
+                    n.node_parameters_combos_items = value['node_parameters_combos_items']
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
                     n.verbose = value['verbose']

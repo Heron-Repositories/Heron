@@ -11,7 +11,7 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'NearZero Gimbal Controller'
+BaseName = 'NearZero_Gimbal_Controller'
 NodeAttributeNames = ['Parameters', 'Command In']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['Use pylibi2c', 'I2C Address', 'Motor', 'Position OR Rotation', 'Value', 'Current']
