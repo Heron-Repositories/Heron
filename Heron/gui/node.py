@@ -85,12 +85,14 @@ class Node:
                 self.topics_out.append('NothingOut')
 
     def add_topic_in(self, topic):
+        topic = topic.replace(' ', '_')
         for i, t in enumerate(self.topics_in):
             if t == 'NothingIn':
                 self.topics_in[i] = topic
                 break
 
     def add_topic_out(self, topic):
+        topic = topic.replace(' ', '_')
         for i, t in enumerate(self.topics_out):
             if t == 'NothingOut':
                 self.topics_out[i] = topic

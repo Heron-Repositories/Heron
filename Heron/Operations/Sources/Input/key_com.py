@@ -13,7 +13,7 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'Key_Press'
+BaseName = 'Key Press'
 NodeAttributeNames = ['Parameters', 'Key Out']
 NodeAttributeType = ['Static', 'Output']
 ParameterNames = ['Visualisation', 'Key']
