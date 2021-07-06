@@ -307,7 +307,7 @@ class Node:
         if 'Output' in self.operation.attribute_types:
             for topic_out in self.topics_out:
                 arguments_list.append(topic_out)
-        arguments_list.append(self.name)
+        arguments_list.append(self.name.replace(" ", "_"))
 
         attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
         verbocity = str(self.verbose > 0)
