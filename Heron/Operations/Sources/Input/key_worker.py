@@ -69,12 +69,13 @@ def start_key_press_capture(_worker_object):
            key_pressed_and_released[1] == waiting_for_key:
             worker_object.worker_result = np.array([waiting_for_key])
             worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
-            worker_object.visualisation_loop_init()
             key_pressed_and_released = [None, None]
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
             worker_object.visualisation_on = key_com.ParametersDefaultValues[0]
+
+        worker_object.visualisation_loop_init()
 
 
 def on_end_of_life():

@@ -161,6 +161,11 @@ class Node:
                                 add_checkbox('{}##{}'.format(parameter, attribute_name),
                                              default_value=self.node_parameters[i],
                                              callback=self.update_parameters)
+                            elif self.operation.parameter_types[i] == 'list':
+                                add_combo('{}##{}'.format(parameter, attribute_name),
+                                          items=self.operation.parameters_def_values[i],
+                                          default_value=self.operation.parameters_def_values[i][0],
+                                          callback=self.update_parameters)
                             simple.set_item_width('{}##{}'.format(parameter, attribute_name), width=100)
 
                     add_spacing(name='##Spacing##'+attribute_name, count=3)

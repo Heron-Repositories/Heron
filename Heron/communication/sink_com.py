@@ -35,7 +35,7 @@ class SinkCom:
 
         self.index = -1
 
-        atexit.register(self.on_kill)
+        atexit.register(self.on_kill, None, None)
         signal.signal(signal.SIGTERM, self.on_kill)
 
     def connect_sockets(self):
@@ -168,11 +168,11 @@ class SinkCom:
     def on_kill(self, signal, frame):
         try:
             self.all_loops_running = False
-            self.poller.unregister(socket=self.socket_sub_data)
+            #self.poller.unregister(socket=self.socket_sub_data)
             self.socket_sub_data.close()
             self.socket_push_data.close()
             self.socket_push_heartbeat.close()
         except Exception as e:
-            print('Trying to kill Sink com {} failed with error: {}'.format(self.sending_topic, e))
+            print('Trying to kill Sink com {} failed with error: {}'.format(self.worker_exec, e))
         finally:
             self.context.term()
