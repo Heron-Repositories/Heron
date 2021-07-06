@@ -121,13 +121,9 @@ class Node:
     def update_parameters(self):
         attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.node_index)
         for i, parameter in enumerate(self.operation.parameters):
-            config = get_item_configuration('{}##{}'.format(parameter, attribute_name))
-            try:
-                list_items = config['items']
-            except:
-                pass
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
         topic = self.operation.name + '##' + self.node_index
+        topic = topic.replace(' ', '_')
         gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
         gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
         #print('Node {} updating parameters {}'.format(self.node_name, self.node_parameters))
@@ -328,7 +324,8 @@ class Node:
         its_alive = 'No'
         while its_alive != 'POL':
             its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
-            if its_alive.split('##')[-3] in self.name:
+            its_alive_name_part = its_alive.split('##')[-3]
+            if its_alive_name_part in self.name or its_alive_name_part.replace('_', ' ') in self.name:
                 its_alive = its_alive.split('##')[-1]
             cv2.waitKey(1)
 

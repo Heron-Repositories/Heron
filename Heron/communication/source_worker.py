@@ -139,7 +139,7 @@ class SourceWorker:
         for i in range(2):
             self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
             time.sleep(0.1)
-        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
+        #print('Sending POL {} from {} {}'.format(self.node_name, self.node_index))
 
     def visualisation_loop(self):
         """

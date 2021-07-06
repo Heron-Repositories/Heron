@@ -54,13 +54,11 @@ def start_key_press_capture(_worker_object):
     worker_object = _worker_object
     waiting_for_key = None
     worker_object.set_new_visualisation_loop(visualisation_to_stdout)
-
     while waiting_for_key is None:
         try:
             waiting_for_key = str(worker_object.parameters[1])
         except:
             time.sleep(0.1)
-
     listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
     listener.start()
 
