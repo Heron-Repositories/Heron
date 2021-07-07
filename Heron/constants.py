@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 
-heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+heron_path = Path(os.path.dirname(os.path.realpath(__file__)))
 logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.DEBUG,
                     format='%(asctime)s %(message)s', datefmt='%H:%M:%S')
 

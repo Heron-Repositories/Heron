@@ -22,6 +22,8 @@ class SinkWorker:
         self.parameters_topic = parameters_topic
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
+        self.visualisation_on = False
+        self.loops_on = True
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -107,7 +109,7 @@ class SinkWorker:
             args = pickle.loads(args_pyobj)
             if args is not None:
                 self.parameters = args
-                # print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+                print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):
         """
@@ -123,7 +125,7 @@ class SinkWorker:
         If it is then the current process is killed
         :return: Nothing
         """
-        while True:
+        while self.loops_on:
             current_time = time.perf_counter()
             if current_time - self.time_of_pulse > ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
                 pid = os.getpid()
@@ -141,6 +143,7 @@ class SinkWorker:
         for i in range(2):
             self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
             time.sleep(0.1)
+        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
 
     def start_ioloop(self):
         """
@@ -160,6 +163,10 @@ class SinkWorker:
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
         try:
             self.visualisation_on = False
+            self.loops_on = False
+            self.stream_pull_data.close()
+            self.stream_parameters.close()
+            self.stream_heartbeat.close()
             self.socket_pull_data.close()
             self.socket_sub_parameters.close()
             self.socket_pull_heartbeat.close()

@@ -23,9 +23,9 @@ Properties of the generated Node
 BaseName = 'Spinnaker Camera'
 NodeAttributeNames = ['Parameters', 'Frame Out']
 NodeAttributeType = ['Static', 'Output']
-ParameterNames = ['Visualisation', 'Cam_Index', 'Pixel Format', 'FPS']
-ParameterTypes = ['bool', 'int', 'str', 'float']
-ParametersDefaultValues = [False, 0, 'BayerRG8', 120.0]
+ParameterNames = ['Visualisation', 'Cam_Index', 'Trigger Mode', 'Pixel Format', 'FPS']
+ParameterTypes = ['bool', 'int', 'bool', 'str', 'float']
+ParametersDefaultValues = [False, 0, True, 'BayerRG8', 120.0]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'spinnaker_camera_worker.py')
 # </editor-fold>
 

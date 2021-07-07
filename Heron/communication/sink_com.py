@@ -108,6 +108,8 @@ class SinkCom:
         arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
+        print('---{}'.format(self.push_data_port))
+
         #self.worker_pid = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
 
@@ -143,27 +145,29 @@ class SinkCom:
         while self.all_loops_running:
             # Get link from subsribed node
             t1 = time.perf_counter()
+            try:
+                sockets_in = dict(self.poller.poll(timeout=0))
+                #while not sockets_in:
+                #    sockets_in = dict(self.poller.poll(timeout=0))
 
-            sockets_in = dict(self.poller.poll(timeout=0))
-            #while not sockets_in:
-            #    sockets_in = dict(self.poller.poll(timeout=0))
+                #t2 = time.perf_counter()
 
-            #t2 = time.perf_counter()
+                if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                    topic, data_index, data_time, messagedata = self.get_sub_data()
 
-            if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
-                topic, data_index, data_time, messagedata = self.get_sub_data()
+                    if self.verbose:
+                        print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
 
-                if self.verbose:
-                    print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
+                    # Send link to be transformed to the worker_exec
+                    self.socket_push_data.send(topic, flags=zmq.SNDMORE)
+                    self.socket_push_data.send_array(messagedata, copy=False)
+                    t3 = time.perf_counter()
 
-                # Send link to be transformed to the worker_exec
-                self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                self.socket_push_data.send_array(messagedata, copy=False)
-                t3 = time.perf_counter()
-
-                if self.verbose:
-                    #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
-                    print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
+                    if self.verbose:
+                        #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
+                        print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
+            except:
+                pass
 
     def on_kill(self, signal, frame):
         try:

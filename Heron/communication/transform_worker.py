@@ -35,6 +35,7 @@ class TransformWorker:
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.visualisation_on = False
         self.visualisation_thread = None
+        self.loops_on = True
 
         self.context = None
         self.socket_pull_data = None
@@ -137,7 +138,7 @@ class TransformWorker:
         If it is then the current process is killed
         :return: Nothing
         """
-        while True:
+        while self.loops_on:
             current_time = time.perf_counter()
             if current_time - self.time_of_pulse > ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
                 pid = os.getpid()
@@ -218,6 +219,10 @@ class TransformWorker:
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
         try:
             self.visualisation_on = False
+            self.loops_on = False
+            self.stream_pull_data.close()
+            self.stream_parameters.close()
+            self.stream_heartbeat.close()
             self.socket_pull_data.close()
             self.socket_sub_parameters.close()
             self.socket_push_data.close()

@@ -23,13 +23,13 @@ current = None
 
 
 def initialise_near_zero_controller(i2c_address):
+    import pylibi2c
     motor_controller = pylibi2c.I2CDevice('/dev/i2c-1', i2c_address)
     motor_controller.delay = 10
     motor_controller.page_bytes = 16
     motor_controller.flags = pylibi2c.I2C_M_IGNORE_NAK
 
     return motor_controller
-
 
 
 def move_motor(data, parameters):
@@ -41,25 +41,26 @@ def move_motor(data, parameters):
     global pos_or_rot
     global value
     global current
-
+    print(parameters)
     start = time.perf_counter()
     # Once the parameters are received at the starting of the graph then they cannot be updated any more.
     if need_parameters:
         try:
+            print('Starting NZ Controller {}'.format(worker_object.node_index))
             use_pylibi2c = parameters[0]
             i2c_address = int(parameters[1], base=16)
             motor = parameters[2]
             pos_or_rot = parameters[3]
             if pos_or_rot == 'r':
-                pos_or_rot == 'v'
+                pos_or_rot = 'v'
             value = parameters[4]
             current = parameters[5]
             if use_pylibi2c:
-                import pylibi2c
                 motor_controller = initialise_near_zero_controller(i2c_address)
 
             need_parameters = False
-        except:
+        except Exception as e:
+            print('NZ Controller {} failed to get params with error: {}'.format(worker_object.node_index, e))
             return
     if not need_parameters:
         message = data[1:]  # data[0] is the topic
@@ -68,7 +69,7 @@ def move_motor(data, parameters):
             command = '{}{}+{}c{}'.format(motor, pos_or_rot, value, current)
             if use_pylibi2c:
                 motor_controller.write(0x0, command)
-            print('Moving with command {}'.format(command))
+            print('Moving controller {} with command {}'.format(worker_object.node_index, command))
 
     end = time.perf_counter()
     #print('ooooTime of frame receive = {}, saved = {}, dif = {}'.format(start, end, end-start))

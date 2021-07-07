@@ -29,6 +29,7 @@ class SourceWorker:
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.running_thread = True
+        self.loops_on = True
         self.visualisation_on = False
         self.visualisation_thread = None
 
@@ -102,7 +103,7 @@ class SourceWorker:
         The loop that updates the arguments (self.parameters)
         :return: Nothing
         """
-        while True:
+        while self.loops_on:
             self.update_parameters()
             time.sleep(0.2)
 
@@ -120,7 +121,7 @@ class SourceWorker:
         it kills the worker_exec process
         :return: Nothing
         """
-        while True:
+        while self.loops_on:
             if self.socket_pull_heartbeat.poll(timeout=(1000 * ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH)):
                 self.socket_pull_heartbeat.recv()
             else:
@@ -139,7 +140,7 @@ class SourceWorker:
         for i in range(2):
             self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
             time.sleep(0.1)
-        #print('Sending POL {} from {} {}'.format(self.node_name, self.node_index))
+        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
 
     def visualisation_loop(self):
         """
@@ -150,7 +151,7 @@ class SourceWorker:
         window_showing = False
 
         while True:
-            while self.visualisation_on:
+            while self.visualisation_on :
                 if not window_showing:
                     window_name = '{} {}'.format(self.node_name, self.node_index)
                     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
@@ -205,6 +206,7 @@ class SourceWorker:
     def on_kill(self, pid):
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
         try:
+            self.loops_on = False
             self.visualisation_on = False
             self.socket_sub_parameters.close()
             self.socket_push_data.close()

@@ -29,7 +29,7 @@ nodemap_tldevice = None
 sNodemap = None
 
 
-def setup_camera_and_start_acquisition(camera_index, pixel_format, fps):
+def setup_camera_and_start_acquisition(camera_index, trigger, pixel_format, fps):
     """
     This function sets up the camera
 
@@ -105,7 +105,7 @@ def setup_camera_and_start_acquisition(camera_index, pixel_format, fps):
         # Setup Acquisition to Continuous
         node_acquisition_mode = PySpin.CEnumerationPtr(nodemap.GetNode('AcquisitionMode'))
         if not PySpin.IsAvailable(node_acquisition_mode) or not PySpin.IsWritable(node_acquisition_mode):
-            print('Unable to set acquisition mode to continuous (enum retrieval). Aborting...')
+            print('Unable to find acquisition mode (enum retrieval). Aborting...')
             return False
 
         # Retrieve entry node from enumeration node
@@ -117,6 +117,27 @@ def setup_camera_and_start_acquisition(camera_index, pixel_format, fps):
 
         acquisition_mode_continuous = node_acquisition_mode_continuous.GetValue()
         node_acquisition_mode.SetIntValue(acquisition_mode_continuous)
+        # ------------------------------
+
+        # ------------------------------
+        # Setup Trigger Mode
+        node_trigger_mode = PySpin.CEnumerationPtr(nodemap.GetNode('TriggerMode'))
+        if not PySpin.IsAvailable(node_trigger_mode) or not PySpin.IsWritable(node_trigger_mode):
+            print('Unable to find trigger mode (enum retrieval). Aborting...')
+            return False
+
+        # Retrieve entry node from enumeration node
+        if trigger:
+            print(1)
+            node_trigger_mode_on = node_trigger_mode.GetEntryByName('On')
+        else:
+            node_trigger_mode_on = node_trigger_mode.GetEntryByName('Off')
+        if not PySpin.IsAvailable(node_trigger_mode_on) or not PySpin.IsReadable(node_trigger_mode_on):
+            print('Unable to set trigger mode to On (entry retrieval). Aborting...')
+            return False
+
+        trigger_mode_on = node_trigger_mode_on.GetValue()
+        node_trigger_mode.SetIntValue(trigger_mode_on)
         # ------------------------------
 
         # ------------------------------
@@ -134,12 +155,14 @@ def setup_camera_and_start_acquisition(camera_index, pixel_format, fps):
         node_pixel_format_enum.SetIntValue(pixel_format_BayerRG8)
         # ------------------------------
 
-        # ------------------------------
-        # Set Acquisition Frame Rate
-        node_acqFrameRate_float = PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate"))
-        node_acqFrameRate_float.SetValue(fps)
-        print('Running Spinnaker Camera with {} FPS'.format(node_acqFrameRate_float.GetValue()))
-        # ------------------------------
+        if not trigger:
+            print(2)
+            # ------------------------------
+            # Set Acquisition Frame Rate
+            node_acqFrameRate_float = PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate"))
+            node_acqFrameRate_float.SetValue(fps)
+            print('Running Spinnaker Camera with {} FPS'.format(node_acqFrameRate_float.GetValue()))
+            # ------------------------------
 
         # ------------------------------
         #  Begin acquiring images
@@ -179,7 +202,7 @@ def grab_frame():
 
     except PySpin.SpinnakerException as ex:
         print('Error capturing frame from Spinnaker camera: {}'.format(ex))
-        return False
+        return None
 
     return image_data
 
@@ -223,28 +246,30 @@ def run_spinnaker_camera(_worker_object):
     while not recording_on:
         try:
             cam_index = worker_object.parameters[1]
-            pixel_format = worker_object.parameters[2]
-            fps = int(worker_object.parameters[3])
+            trigger = worker_object.parameters[2]
+            pixel_format = worker_object.parameters[3]
+            fps = int(worker_object.parameters[4])
             recording_on = True
 
-            print('Got Spinnaker camera parameters. Starting capture')
+            print('Got Spinnaker camera with Trigger = {}. Starting capture'.format(trigger))
         except:
             cv2.waitKey(1)
 
-    if not setup_camera_and_start_acquisition(cam_index, pixel_format, fps):
+    if not setup_camera_and_start_acquisition(cam_index, trigger, pixel_format, fps):
         recording_on = False
 
     # The infinite loop that does the frame capture and push to the output of the node
     while recording_on:
         worker_object.worker_result = grab_frame()
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        if worker_object.worker_result is not None:
+            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
 
-        try:
-            worker_object.visualisation_on = worker_object.parameters[0]
-        except:
-            worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
+            try:
+                worker_object.visualisation_on = worker_object.parameters[0]
+            except:
+                worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
 
-        worker_object.visualisation_loop_init()
+            worker_object.visualisation_loop_init()
 
 
 def on_end_of_life():

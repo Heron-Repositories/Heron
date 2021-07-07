@@ -162,55 +162,58 @@ class TransformCom:
             # Get link from subsribed node
             t1 = time.perf_counter()
 
-            sockets_in = dict(self.poller.poll(timeout=1))
-            while not sockets_in:
+            try:
                 sockets_in = dict(self.poller.poll(timeout=1))
+                while not sockets_in:
+                    sockets_in = dict(self.poller.poll(timeout=1))
 
-            if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
-                topic, data_index, data_time, messagedata = self.get_sub_data()
+                if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                    topic, data_index, data_time, messagedata = self.get_sub_data()
+
+                    if self.verbose:
+                        print("-Transform from {} to {}, node_index {} at time {}".format(topic,
+                                                                                          self.sending_topics,
+                                                                                          data_index,
+                                                                                          data_time))
+
+                    # Send link to be transformed to the worker_exec
+                    self.socket_push_data.send(topic, flags=zmq.SNDMORE)
+                    self.socket_push_data.send_array(messagedata, copy=False)
+                    t2 = time.perf_counter()
+
+                # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
+                sockets_in = dict(self.poller.poll(timeout=1))
+                while not sockets_in or self.socket_pull_data not in sockets_in \
+                        or sockets_in[self.socket_pull_data] != zmq.POLLIN:
+                    try:
+                        sockets_in = dict(self.poller.poll(timeout=1))
+                    except:
+                        pass  # When the poller is unregistered at kill time the above line will give an error
+
+                new_message_data = []
+                for i in range(len(self.sending_topics)):
+                    new_message_data.append(self.socket_pull_data.recv_array())
+                results_time = time.perf_counter()
 
                 if self.verbose:
-                    print("-Transform from {} to {}, node_index {} at time {}".format(topic,
-                                                                                      self.sending_topics,
-                                                                                      data_index,
-                                                                                      data_time))
+                    print('--Results got back at time {}'.format(results_time))
 
-                # Send link to be transformed to the worker_exec
-                self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                self.socket_push_data.send_array(messagedata, copy=False)
-                t2 = time.perf_counter()
+                # Publish the results. Each array in the list of arrays is published to its own sending topic
+                # (matched by order)
+                for i, st in enumerate(self.sending_topics):
+                    self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+                    self.socket_pub_data.send_array(new_message_data[i], copy=False)
+                t3 = time.perf_counter()
 
-            # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
-            sockets_in = dict(self.poller.poll(timeout=1))
-            while not sockets_in or self.socket_pull_data not in sockets_in \
-                    or sockets_in[self.socket_pull_data] != zmq.POLLIN:
-                try:
-                    sockets_in = dict(self.poller.poll(timeout=1))
-                except:
-                    pass  # When the poller is unregistered at kill time the above line will give an error
+                self.index = self.index + 1
 
-            new_message_data = []
-            for i in range(len(self.sending_topics)):
-                new_message_data.append(self.socket_pull_data.recv_array())
-            results_time = time.perf_counter()
-
-            if self.verbose:
-                print('--Results got back at time {}'.format(results_time))
-
-            # Publish the results. Each array in the list of arrays is published to its own sending topic
-            # (matched by order)
-            for i, st in enumerate(self.sending_topics):
-                self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send_array(new_message_data[i], copy=False)
-            t3 = time.perf_counter()
-
-            self.index = self.index + 1
-
-            if self.verbose:
-                print("---Times to: i) transport link from worker_exec to worker_exec = {}, "
-                      "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+                if self.verbose:
+                    print("---Times to: i) transport link from worker_exec to worker_exec = {}, "
+                          "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+            except:
+                pass
 
     def on_kill(self, signal, frame):
         """
