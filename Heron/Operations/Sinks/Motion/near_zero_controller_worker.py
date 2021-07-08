@@ -11,6 +11,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.communication.sink_worker import SinkWorker
+from Heron.Operations.Sinks.Motion import near_zero_controller_com
 
 worker_object: SinkWorker
 need_parameters = True
@@ -41,35 +42,34 @@ def move_motor(data, parameters):
     global pos_or_rot
     global value
     global current
-    print(parameters)
-    start = time.perf_counter()
-    # Once the parameters are received at the starting of the graph then they cannot be updated any more.
-    if need_parameters:
-        try:
-            print('Starting NZ Controller {}'.format(worker_object.node_index))
-            use_pylibi2c = parameters[0]
-            i2c_address = int(parameters[1], base=16)
-            motor = parameters[2]
-            pos_or_rot = parameters[3]
-            if pos_or_rot == 'r':
-                pos_or_rot = 'v'
-            value = parameters[4]
-            current = parameters[5]
-            if use_pylibi2c:
-                motor_controller = initialise_near_zero_controller(i2c_address)
 
-            need_parameters = False
-        except Exception as e:
-            print('NZ Controller {} failed to get params with error: {}'.format(worker_object.node_index, e))
-            return
-    if not need_parameters:
-        message = data[1:]  # data[0] is the topic
-        message = Socket.reconstruct_array_from_bytes_message_cv2correction(message)[0]
-        if int(message):
-            command = '{}{}+{}c{}'.format(motor, pos_or_rot, value, current)
-            if use_pylibi2c:
-                motor_controller.write(0x0, command)
-            print('Moving controller {} with command {}'.format(worker_object.node_index, command))
+    start = time.perf_counter()
+    try:
+        use_pylibi2c = parameters[0]
+        i2c_address = int(parameters[1], base=16)
+        motor = parameters[2]
+        pos_or_rot = parameters[3]
+        value = parameters[4]
+        current = parameters[5]
+    except:
+        use_pylibi2c = near_zero_controller_com.ParametersDefaultValues[0]
+        i2c_address = int(near_zero_controller_com.ParametersDefaultValues[1], base=16)
+        motor = near_zero_controller_com.ParametersDefaultValues[2]
+        pos_or_rot = near_zero_controller_com.ParametersDefaultValues[3]
+        value = near_zero_controller_com.ParametersDefaultValues[4]
+        current = near_zero_controller_com.ParametersDefaultValues[5]
+    if pos_or_rot == 'r':
+        pos_or_rot = 'v'
+    if use_pylibi2c:
+        motor_controller = initialise_near_zero_controller(i2c_address)
+
+    message = data[1:]  # data[0] is the topic
+    message = Socket.reconstruct_array_from_bytes_message_cv2correction(message)[0]
+    if int(message):
+        command = '{}{}+{}c{}'.format(motor, pos_or_rot, value, current)
+        if use_pylibi2c:
+            motor_controller.write(0x0, command)
+        print('Moving controller {} with command {}'.format(worker_object.node_index, command))
 
     end = time.perf_counter()
     #print('ooooTime of frame receive = {}, saved = {}, dif = {}'.format(start, end, end-start))

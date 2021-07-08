@@ -93,7 +93,7 @@ class SourceWorker:
             args = pickle.loads(parameters_in_bytes)
             self.parameters = args
             # print('TOPIC {}'.format(topic))
-            # print('--Source {} binary parameters {}'.format(self.parameters_topic, parameters_in_bytes))
+            #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
             # print(args)
         except zmq.Again as e:
             pass
@@ -130,6 +130,7 @@ class SourceWorker:
                 self.on_kill(pid)
                 os.kill(pid, signal.SIGTERM)
             time.sleep(int(ct.HEARTBEAT_RATE))
+        self.socket_pull_heartbeat.close()
 
     def proof_of_life(self):
         """
@@ -137,10 +138,14 @@ class SourceWorker:
         that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
-        for i in range(2):
-            self.socket_pub_proof_of_life.send_string(self.parameters_topic + '##' + 'POL')
+        print('---Sending POL {}'.format('topic = {}, msg = POL'.format(self.parameters_topic.encode('ascii'))))
+        for i in range(100):
+            try:
+                self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
+                self.socket_pub_proof_of_life.send_string('POL')
+            except:
+                pass
             time.sleep(0.1)
-        print('Sending POL from {} {}'.format(self.node_name, self.node_index))
 
     def visualisation_loop(self):
         """
@@ -210,7 +215,6 @@ class SourceWorker:
             self.visualisation_on = False
             self.socket_sub_parameters.close()
             self.socket_push_data.close()
-            self.socket_pull_heartbeat.close()
             self.socket_pub_proof_of_life.close()
         except Exception as e:
             print('Trying to kill Source worker {} failed with error: {}'.format(self.node_name, e))

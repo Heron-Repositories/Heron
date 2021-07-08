@@ -142,7 +142,6 @@ class SSHCom:
             print('// REMOTE COMPUTER {} SAYS: {}'.format(self.remote_server_info['IP'], line))
 
     def start_process(self, arguments_list):
-        print(arguments_list)
         if self.remote_server_id == 'None':
             return subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP).pid
         else:

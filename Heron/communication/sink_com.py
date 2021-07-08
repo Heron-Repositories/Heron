@@ -108,8 +108,6 @@ class SinkCom:
         arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
-        print('---{}'.format(self.push_data_port))
-
         #self.worker_pid = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
 

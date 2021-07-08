@@ -130,7 +130,7 @@ def proof_of_life_forwarder_loop():
         all_sockets.append(frontend, backend)
 
     except Exception as e:
-        print("Closing down Forwarder for Heartbeat because {}\n".format(e))
+        print("Closing down Forwarder for Proof of Life because {}\n".format(e))
 
 
 def close_all_sockets(signal, frame):

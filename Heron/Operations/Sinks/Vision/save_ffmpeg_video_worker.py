@@ -13,6 +13,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.communication.sink_worker import SinkWorker
+from Heron.Operations.Sinks.Vision import save_ffmpeg_video_com
 
 worker_object: SinkWorker
 need_parameters = True
@@ -50,10 +51,14 @@ def save_video(data, parameters):
             pixel_format_out = parameters[2]
             fps = parameters[3]
             need_parameters = False
-            print('Starting video saving')
         except:
-            return
+            file_name = save_ffmpeg_video_com.ParametersDefaultValues[0]
+            pixel_format_in = save_ffmpeg_video_com.ParametersDefaultValues[1]
+            pixel_format_out = save_ffmpeg_video_com.ParametersDefaultValues[2]
+            fps = save_ffmpeg_video_com.ParametersDefaultValues[3]
+            need_parameters = False
     else:
+        print('Starting video saving')
         message = data[1:]  # data[0] is the topic
         image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
         size = image.shape
@@ -68,8 +73,6 @@ def save_video(data, parameters):
 
 
 def on_end_of_life():
-    #global output
-    #output.release()
     global write_proc
     try:
         write_proc.stdin.close()

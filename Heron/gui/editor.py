@@ -263,6 +263,9 @@ def save_graph():
         save_to = os.path.join(data[0], data[1])
         node_dict = {}
         for n in nodes_list:
+            n.socket_pub_parameters = None
+            n.socket_sub_proof_of_life = None
+            n.context = None
             n = copy.deepcopy(n)
             node_dict[n.name] = n.__dict__
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
@@ -308,6 +311,9 @@ def load_graph():
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
                     n.verbose = value['verbose']
+                    n.context = value['context']
+                    n.socket_pub_parameters = value['socket_pub_parameters']
+                    n.socket_sub_proof_of_life = value['socket_sub_proof_of_life']
                     n.worker_executable = value['worker_executable']
                     n.spawn_node_on_editor()
 

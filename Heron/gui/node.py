@@ -4,16 +4,17 @@ import signal
 import os
 import time
 from pathlib import Path
-import cv2
 import json
 import subprocess
 import zmq
 import numpy as np
+import copy
 from dearpygui import simple
 from dearpygui.core import *
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
-from Heron.communication import gui_com
+from Heron.communication.socket_for_serialization import Socket
+from Heron import constants as ct
 
 operations_list = op.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
@@ -34,6 +35,9 @@ class Node:
         self.node_parameters = None
         self.node_parameters_combos_items = []
         self.verbose = 0
+        self.context = None
+        self.socket_pub_parameters = None
+        self.socket_sub_proof_of_life = None
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -47,6 +51,17 @@ class Node:
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
 
+    def initialise_parameters_socket(self):
+        self.socket_pub_parameters = Socket(self.context, zmq.PUB)
+        self.socket_pub_parameters.setsockopt(zmq.LINGER, 0)
+        self.socket_pub_parameters.connect(r"tcp://127.0.0.1:{}".format(ct.PARAMETERS_FORWARDER_SUBMIT_PORT))
+
+    def initialise_proof_of_life_socket(self):
+        self.socket_sub_proof_of_life = self.context.socket(zmq.SUB)
+        self.socket_sub_proof_of_life.setsockopt(zmq.LINGER, 0)
+        self.socket_sub_proof_of_life.connect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
+        self.socket_sub_proof_of_life.setsockopt(zmq.SUBSCRIBE,
+                                                 '{}'.format(self.name.replace(' ', '_')).encode('ascii'))
 
     def remove_from_editor(self):
         delete_item(self.name)
@@ -62,12 +77,11 @@ class Node:
         name = self.name.split('##')[0]
         for op in operations_list:
             if op.name == name:
-                self.operation = op
+                self.operation = copy.deepcopy(op)
                 break
 
     def assign_default_parameters(self):
         self.node_parameters = self.operation.parameters_def_values
-
         for default_parameter in self.operation.parameters_def_values:
             if type(default_parameter) == list:
                 self.node_parameters_combos_items.append(default_parameter)
@@ -124,11 +138,13 @@ class Node:
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
         topic = self.operation.name + '##' + self.node_index
         topic = topic.replace(' ', '_')
-        gui_com.SOCKET_PUB_PARAMETERS.send_string(topic, flags=zmq.SNDMORE)
-        gui_com.SOCKET_PUB_PARAMETERS.send_pyobj(self.node_parameters)
-        #print('Node {} updating parameters {}'.format(self.node_name, self.node_parameters))
+        self.socket_pub_parameters.send_string(topic, flags=zmq.SNDMORE)
+        self.socket_pub_parameters.send_pyobj(self.node_parameters)
+        #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
 
     def spawn_node_on_editor(self):
+        self.context = zmq.Context()
+        self.initialise_parameters_socket()
         with simple.node(name=self.name, parent='Node Editor##Editor',
                          x_pos=self.coordinates[0], y_pos=self.coordinates[1]):
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
@@ -292,6 +308,8 @@ class Node:
         self.worker_executable = get_value(sender)
 
     def start_com_process(self):
+        self.initialise_proof_of_life_socket()
+
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
@@ -313,23 +331,24 @@ class Node:
         arguments_list.append(self.worker_executable)
 
         self.process = subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
         #print('Pid of Com {} {} = {}'.format(self.name, self.node_index, self.process.pid))
         # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).
         self.wait_for_proof_of_life()
+
         # Then update the parameters
         self.update_parameters()
         configure_item('##{}'.format(attribute_name), enabled=False)
 
     def wait_for_proof_of_life(self):
-        its_alive = 'No'
-        while its_alive != 'POL':
-            its_alive = gui_com.SOCKET_SUB_PROOF_OF_LIFE.recv_string()
-            its_alive_name_part = its_alive.split('##')[-3]
-            if its_alive_name_part in self.name or its_alive_name_part.replace('_', ' ') in self.name:
-                its_alive = its_alive.split('##')[-1]
-            cv2.waitKey(1)
+        self.socket_sub_proof_of_life.recv()
+        self.socket_sub_proof_of_life.recv_string()
+        print('ooo Received POL from {} {}'.format(self.name, self.node_index))
 
     def stop_com_process(self):
+        self.socket_sub_proof_of_life.disconnect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
+        self.socket_sub_proof_of_life.close()
+
         if platform.system() == 'Windows':
             self.process.send_signal(signal.CTRL_BREAK_EVENT)
         elif platform.system() == 'Linux':
