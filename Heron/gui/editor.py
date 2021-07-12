@@ -46,16 +46,19 @@ def generate_node_tree():
     path_to_nodes = os.path.join(heron_path, 'Operations')
     node_dirs = []
     for d in os.walk(path_to_nodes):
-        if len(d[1]) > 0 and '__pycache__' not in d[1]:
+        if len(d[1]) > 0:
             temp = d[0].split('\\')
             i = -1
             parent = ''
             while temp[i] != 'Heron':
                 parent = parent + temp[i] + '##'
                 i = i - 1
-            for dir in d[1]:
-                dir_name = dir + '##' + parent
-                node_dirs.append((parent, dir_name))
+            if len(d[1]) > 1 and '__pycache__' not in d[1]:
+                for dir in d[1]:
+                    if dir != '__pycache__':
+                        dir_name = dir + '##' + parent
+                        node_dirs.append((parent, dir_name))
+
     return node_dirs
 
 
@@ -401,16 +404,22 @@ with simple.window('Node Selector'):
     node_tree = generate_node_tree()
     base_name = node_tree[0][0]
 
-    with simple.tree_node(base_name, default_open=True):
+    with simple.tree_node(base_name, parent='Node Selector', default_open=True):
+        pass
         # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
         # tree_node widget
+        print(operations_list)
         for parent, node in node_tree:
+            print(parent)
+            print(node)
+            print('--------')
             with simple.tree_node(node, parent=parent, default_open=True):
                 for op in operations_list:
                     if node == op.parent_dir:
                         colour = choose_color_according_to_operations_type(node)
                         add_button(op.name, width=150, height=30, callback=on_add_node)
                         set_item_color(op.name, style=mvGuiCol_Button, color=colour)
+
 
 with simple.window("Node Editor", x_pos=int(get_main_window_size()[0]) - 1000, y_pos=0):
     # The node editor

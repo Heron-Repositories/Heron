@@ -57,6 +57,8 @@ class Node:
         self.socket_pub_parameters.connect(r"tcp://127.0.0.1:{}".format(ct.PARAMETERS_FORWARDER_SUBMIT_PORT))
 
     def initialise_proof_of_life_socket(self):
+        if self.context is None:
+            self.context = zmq.Context()
         self.socket_sub_proof_of_life = self.context.socket(zmq.SUB)
         self.socket_sub_proof_of_life.setsockopt(zmq.LINGER, 0)
         self.socket_sub_proof_of_life.connect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
@@ -145,6 +147,7 @@ class Node:
     def spawn_node_on_editor(self):
         self.context = zmq.Context()
         self.initialise_parameters_socket()
+        print(self.context, self.socket_pub_parameters)
         with simple.node(name=self.name, parent='Node Editor##Editor',
                          x_pos=self.coordinates[0], y_pos=self.coordinates[1]):
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
@@ -309,7 +312,7 @@ class Node:
 
     def start_com_process(self):
         self.initialise_proof_of_life_socket()
-
+        print(self.socket_sub_proof_of_life)
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])

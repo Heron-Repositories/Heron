@@ -19,7 +19,7 @@ NodeAttributeType = ['Static', 'Output']
 ParameterNames = ['Visualisation', 'Key']
 ParameterTypes = ['bool', 'str']
 ParametersDefaultValues = [False, 'a']
-WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'key_worker.py')
+WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'key_press_worker.py')
 # </editor-fold>
 
 

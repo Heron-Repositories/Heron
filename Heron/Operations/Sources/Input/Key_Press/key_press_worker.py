@@ -12,8 +12,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Input import key_com
 from Heron.communication.source_worker import SourceWorker
-from pynput.keyboard import Listener, Key
-
+from pynput.keyboard import Listener
 
 worker_object: SourceWorker
 listener: Listener
@@ -24,16 +23,20 @@ loop_on = True
 
 def on_key_pressed(key):
     global key_pressed_and_released
-    if key != Key.backspace:
+    try:
         key_pressed_and_released[0] = key.char
+    except:
+        pass
 
 
 def on_key_released(key):
     global key_pressed_and_released
     global new_input_for_vis
-    if key != Key.backspace:
+    try:
         key_pressed_and_released[1] = key.char
         new_input_for_vis = key.char
+    except:
+        new_input_for_vis = 'No special keys please'
 
 
 def visualisation_to_stdout():

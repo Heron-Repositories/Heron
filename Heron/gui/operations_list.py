@@ -7,7 +7,6 @@ from Heron.general_utils import full_split_path
 
 root = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'Operations')
 
-
 @dataclass
 class Operation:
     name: str
@@ -29,11 +28,12 @@ def load_module(path):
     package = 'Heron.Operations'
     extra_package = []
     p = os.path.split(path)
-    for i in range(2):
+    for i in range(3):
         extra_package.append(p[-1])
         p = os.path.split(p[0])
     package = package + '.' + extra_package[-1]
     package = package + '.' + extra_package[-2]
+    package = package + '.' + extra_package[-3]
 
     module = import_module(package + '.' + name.split('.')[0])
     return module
@@ -51,6 +51,10 @@ for path, subdirs, files in os.walk(root):
             while temp[i] != 'Heron':
                 parent = parent + temp[i] + '##'
                 i = i - 1
+            temp = ''
+            for piece in parent.split('##')[1:]:
+                temp = temp + piece + '##'
+            parent = temp[:-2]
 
             operation = Operation(full_filename=os.path.join(path, name),
                                   name=module.BaseName,
