@@ -39,8 +39,10 @@ def generate_node_tree():
     descriptive of the dir or the file).
     So one tuple would be ('Transforms##Operations##', 'Vision##Transforms##Operations##') which
     would mean that a dir called Vision (with real node_name Vision##Transforms##Operations##) has as
-    its parent dir a dir called Transforms (with real node_name Transforms##Operations##).
-    The returned list can be used in a tree_node widget
+    its parent dir a dir called Transforms (with real node_name Transforms##Operations##). The list does not include
+    the directories that house the actual code (each operation must have its own directory into which any
+    python files must exist).
+    The returned list can be used in a tree_node widget.
     :return: The list of tuples (parent dir, dir)
     """
     path_to_nodes = os.path.join(heron_path, 'Operations')
@@ -408,11 +410,7 @@ with simple.window('Node Selector'):
         pass
         # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
         # tree_node widget
-        print(operations_list)
         for parent, node in node_tree:
-            print(parent)
-            print(node)
-            print('--------')
             with simple.tree_node(node, parent=parent, default_open=True):
                 for op in operations_list:
                     if node == op.parent_dir:
