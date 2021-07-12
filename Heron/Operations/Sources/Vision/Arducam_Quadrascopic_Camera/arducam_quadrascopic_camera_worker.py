@@ -19,7 +19,7 @@ capture: cv2.VideoCapture
 width: int
 height: int
 counter: int
-start_time: datetime.datetime
+start_time: datetime
 frame_count: int
 start: float
 arducam_utils: ArducamUtils
@@ -71,32 +71,32 @@ def run_camera(worker_object):
                 cam_index = worker_object.parameters[0]
                 codec = worker_object.parameters[1]
 
-                capture = cv2.VideoCapture(cam_index, cv2.CAP_V4L2)
-
-                # set pixel format
-                if not capture.set(cv2.CAP_PROP_FOURCC, pixelformat(codec)):
-                    logging.debug("Failed to set pixel format.")
-
-                arducam_utils = ArducamUtils(cam_index)
-
-                show_info(arducam_utils)
-                # turn off RGB conversion
-                if arducam_utils.convert2rgb == 0:
-                    capture.set(cv2.CAP_PROP_CONVERT_RGB, arducam_utils.convert2rgb)
-                    width = capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-                    height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-                counter = 0
-                start_time = datetime.now()
-                frame_count = 0
-                start = time.time()
-
                 recording_on = True
                 logging.debug('Got arducam parameters. Starting capture')
                 print('Got arducam parameters. Starting capture')
             except:
                 logging.debug('Waiting to get parameters for Arducam')
-                cv2.waitKey(1)
+                cv2.waitKey(10)
+
+        capture = cv2.VideoCapture(cam_index, cv2.CAP_V4L2)
+
+        # set pixel format
+        if not capture.set(cv2.CAP_PROP_FOURCC, pixelformat(codec)):
+            logging.debug("Failed to set pixel format.")
+
+        arducam_utils = ArducamUtils(cam_index)
+
+        show_info(arducam_utils)
+        # turn off RGB conversion
+        if arducam_utils.convert2rgb == 0:
+            capture.set(cv2.CAP_PROP_CONVERT_RGB, arducam_utils.convert2rgb)
+            width = capture.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+        counter = 0
+        start_time = datetime.now()
+        frame_count = 0
+        start = time.time()
 
     while True:
         ret, frame = capture.read()
@@ -108,7 +108,7 @@ def run_camera(worker_object):
 
         frame = arducam_utils.convert(frame)
         worker_object.worker_result = frame
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=True)
 
 
 def on_end_of_life():

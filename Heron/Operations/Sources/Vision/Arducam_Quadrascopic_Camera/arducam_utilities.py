@@ -1,9 +1,12 @@
+import logging
+
 import v4l2
 import fcntl
 import array
 import ctypes
 import cv2
 import numpy as np
+from os import path
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -135,7 +138,10 @@ class ArducamUtils(object):
 
     def __init__(self, device_num):
         import subprocess
-        command = ['bash', '-c', 'source scripts/jetson_variables.sh && env']
+        current_dir = path.dirname(path.abspath(__file__))
+        scripts_file = path.join(current_dir, 'scripts', 'jetson_variables.sh')
+        command = ['bash', '-c', 'source {} && env'.format(scripts_file)]
+        logging.debug(command)
 
         proc = subprocess.Popen(command, stdout=subprocess.PIPE)
         environment_vars = {}

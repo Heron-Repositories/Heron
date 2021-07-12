@@ -135,6 +135,8 @@ class Node:
                     break
 
     def update_parameters(self):
+        if self.socket_pub_parameters is None:
+            self.initialise_parameters_socket()
         attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.node_index)
         for i, parameter in enumerate(self.operation.parameters):
             self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
@@ -147,7 +149,6 @@ class Node:
     def spawn_node_on_editor(self):
         self.context = zmq.Context()
         self.initialise_parameters_socket()
-        print(self.context, self.socket_pub_parameters)
         with simple.node(name=self.name, parent='Node Editor##Editor',
                          x_pos=self.coordinates[0], y_pos=self.coordinates[1]):
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
@@ -312,7 +313,6 @@ class Node:
 
     def start_com_process(self):
         self.initialise_proof_of_life_socket()
-        print(self.socket_sub_proof_of_life)
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
