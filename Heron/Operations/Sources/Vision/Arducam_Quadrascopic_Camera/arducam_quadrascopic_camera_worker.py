@@ -12,7 +12,6 @@ import time
 import cv2 as cv2
 import logging
 from Heron import general_utils as gu
-from Arducam_Quadrascopic_Camera import arducam_quadrascopic_camera_com
 from arducam_utilities import ArducamUtils
 
 recording_on = False
