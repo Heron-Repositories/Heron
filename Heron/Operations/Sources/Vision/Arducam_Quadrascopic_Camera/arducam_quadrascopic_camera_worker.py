@@ -2,6 +2,8 @@
 import sys
 from os import path
 
+import numpy as np
+
 current_dir = path.dirname(path.abspath(__file__))
 while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
@@ -16,6 +18,7 @@ from arducam_utilities import ArducamUtils
 
 recording_on = False
 capture: cv2.VideoCapture
+output_video: cv2.VideoWriter
 width: int
 height: int
 counter: int
@@ -23,6 +26,8 @@ start_time: datetime
 frame_count: int
 start: float
 arducam_utils: ArducamUtils
+save_file: str
+get_subcamera_index: int
 
 
 def resize(frame, dst_width):
@@ -56,6 +61,7 @@ def show_info(arducam_utils):
 
 def run_camera(worker_object):
     global capture
+    global output_video
     global recording_on
     global width
     global height
@@ -64,12 +70,16 @@ def run_camera(worker_object):
     global frame_count
     global start
     global arducam_utils
+    global save_file
+    global get_subcamera_index
 
     if not recording_on:  # Get the parameters from the node
         while not recording_on:
             try:
                 cam_index = worker_object.parameters[0]
                 codec = worker_object.parameters[1]
+                get_subcamera_index = worker_object.parameters[2]
+                save_file = worker_object.parameters[3]
 
                 recording_on = True
                 logging.debug('Got arducam parameters. Starting capture')
@@ -90,8 +100,12 @@ def run_camera(worker_object):
         # turn off RGB conversion
         if arducam_utils.convert2rgb == 0:
             capture.set(cv2.CAP_PROP_CONVERT_RGB, arducam_utils.convert2rgb)
-            width = capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-            height = capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        if len(save_file) > 1:
+            fourcc = cv2.VideoWriter_fourcc(*'H264')
+            output_video = cv2.VideoWriter(save_file, fourcc, 40, (width, height), False)
 
         counter = 0
         start_time = datetime.now()
@@ -104,15 +118,27 @@ def run_camera(worker_object):
         frame_count += 1
 
         if arducam_utils.convert2rgb == 0:
-            frame = frame.reshape(int(height), int(width))
+            frame = frame.reshape(height, width)
 
         frame = arducam_utils.convert(frame)
+
+        if len(save_file) > 1:
+            output_video.write(frame.astype('uint8'))
+
+        if get_subcamera_index != '0':
+            sub_cam = int(get_subcamera_index)
+            new_width = int(width / 4)
+            start_pixel = new_width * (sub_cam - 1)
+            end_pixel = start_pixel + new_width
+            frame = np.ascontiguousarray(frame[:, start_pixel:end_pixel])
+
         worker_object.worker_result = frame
         worker_object.socket_push_data.send_array(worker_object.worker_result, copy=True)
 
 
 def on_end_of_life():
     global capture
+    global output_video
     global start_time
     global counter
 
@@ -123,6 +149,7 @@ def on_end_of_life():
     logging.debug("Average FPS: " + str(1 / avgtime))
 
     capture.release()
+    output_video.release()
     cv2.destroyAllWindows()
 
 
