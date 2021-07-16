@@ -11,7 +11,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.communication.sink_worker import SinkWorker
-from Heron.Operations.Sinks.Motion import near_zero_controller_com
+from Heron.Operations.Sinks.Motion.NearZero_Controller import near_zero_controller_com
 
 worker_object: SinkWorker
 need_parameters = True

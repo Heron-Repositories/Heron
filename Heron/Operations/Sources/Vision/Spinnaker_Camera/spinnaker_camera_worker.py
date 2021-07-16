@@ -11,7 +11,7 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 from Heron import general_utils as gu
-from Heron.Operations.Sources.Vision import spinnaker_camera_com
+from Heron.Operations.Sources.Vision.Spinnaker_Camera import spinnaker_camera_com
 from Heron.communication.source_worker import SourceWorker
 from PySpin.PySpin import CameraPtr
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'

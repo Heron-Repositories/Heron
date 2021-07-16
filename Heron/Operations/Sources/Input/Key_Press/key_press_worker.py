@@ -10,7 +10,7 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 from Heron import general_utils as gu
-from Heron.Operations.Sources.Input import key_com
+from Heron.Operations.Sources.Input.Key_Press import key_press_com
 from Heron.communication.source_worker import SourceWorker
 from pynput.keyboard import Listener
 
@@ -67,7 +67,7 @@ def start_key_press_capture(_worker_object):
         try:
             waiting_for_key = str(worker_object.parameters[1])
         except:
-            waiting_for_key = key_com.ParametersDefaultValues[1]
+            waiting_for_key = key_press_com.ParametersDefaultValues[1]
 
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
@@ -77,7 +77,7 @@ def start_key_press_capture(_worker_object):
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
-            worker_object.visualisation_on = key_com.ParametersDefaultValues[0]
+            worker_object.visualisation_on = key_press_com.ParametersDefaultValues[0]
 
         worker_object.visualisation_loop_init()
         time.sleep(0.1)
