@@ -14,7 +14,7 @@ import time
 import cv2 as cv2
 import logging
 from Heron import general_utils as gu
-from arducam_utilities import ArducamUtils
+from Heron.Operations.Sources.Vision.Arducam_Quadrascopic_Camera.arducam_utilities import ArducamUtils
 
 recording_on = False
 capture: cv2.VideoCapture

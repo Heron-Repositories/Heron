@@ -52,6 +52,8 @@ class Node:
         self.worker_executable = self.operation.worker_exec
 
     def initialise_parameters_socket(self):
+        if self.context is None:
+            self.context = zmq.Context()
         self.socket_pub_parameters = Socket(self.context, zmq.PUB)
         self.socket_pub_parameters.setsockopt(zmq.LINGER, 0)
         self.socket_pub_parameters.connect(r"tcp://127.0.0.1:{}".format(ct.PARAMETERS_FORWARDER_SUBMIT_PORT))

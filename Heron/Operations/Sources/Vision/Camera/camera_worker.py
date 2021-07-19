@@ -9,7 +9,7 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import cv2 as cv2
 from Heron import general_utils as gu
-from Camera import camera_com
+from Heron.Operations.Sources.Vision.Camera import camera_com
 
 recording_on = False
 capture = None

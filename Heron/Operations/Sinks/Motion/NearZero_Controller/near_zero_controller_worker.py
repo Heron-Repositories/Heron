@@ -64,9 +64,9 @@ def move_motor(data, parameters):
         motor_controller = initialise_near_zero_controller(i2c_address)
 
     message = data[1:]  # data[0] is the topic
-    message = Socket.reconstruct_array_from_bytes_message_cv2correction(message)[0]
+    message = Socket.reconstruct_array_from_bytes_message(message)[0]
     if int(message):
-        command = '{}{}+{}c{}'.format(motor, pos_or_rot, value, current)
+        command = '{}{}{}c{}'.format(motor, pos_or_rot, value, current)
         if use_pylibi2c:
             motor_controller.write(0x0, command)
         print('Moving controller {} with command {}'.format(worker_object.node_index, command))

@@ -16,7 +16,7 @@ NodeAttributeNames = ['Parameters', 'Command In']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['Use pylibi2c', 'I2C Address', 'Motor', 'Position OR Rotation', 'Value', 'Current']
 ParameterTypes = ['bool', 'str', 'int', 'list', 'str', 'str']
-ParametersDefaultValues = [False, '0x40', 1, ['p', 'r'], '00000', '00000']
+ParametersDefaultValues = [False, '0x40', 1, ['p', 'r'], '+00000', '00000']
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'near_zero_controller_worker.py')
 # </editor-fold>
 
