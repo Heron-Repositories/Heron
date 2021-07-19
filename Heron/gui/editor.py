@@ -287,10 +287,14 @@ def load_graph():
     Loads a saved graph
     :return: Nothing
     """
+
     clear_editor()
 
     def on_file_select(sender, data):
         global nodes_list
+        global last_used_port
+        global port_generator
+
         load_file = os.path.join(data[0], data[1])
         
         with open(load_file, 'r') as file:
@@ -329,7 +333,9 @@ def load_graph():
                     for l1 in links_dict:
                         for l2 in links_dict[l1]:
                             add_node_link('Node Editor##Editor', l1, l2)
-    
+
+        last_used_port =int( nodes_list[-1].starting_port) + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
+        port_generator = get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
     open_file_dialog(callback=on_file_select)
 
 

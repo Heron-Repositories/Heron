@@ -88,7 +88,7 @@ class SSHCom:
         if self.ssh_local_ip == 'None':
             socket.connect("{}:{}".format(socket_ip, socket_port))
         else:
-            logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_port))
+            #logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_port))
             try:
                 if self.ssh_local_password == 'None' or skip_ssh:
                     logging.debug('=== Using normal sockets (not SSH) connecting to tcp://{}:{}'

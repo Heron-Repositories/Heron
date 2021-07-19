@@ -1,4 +1,5 @@
 
+import threading
 import platform
 import signal
 import os
@@ -344,6 +345,15 @@ class Node:
         # Then update the parameters
         self.update_parameters()
         configure_item('##{}'.format(attribute_name), enabled=False)
+
+    def sending_parameters_multiple_times(self):
+        for i in range(10):
+            self.update_parameters()
+            time.sleep(0.2)
+
+    def start_thread_to_send_parameters_multiple_times(self):
+        thread_parameters = threading.Thread(target=self.sending_parameters_multiple_times, daemon=True)
+        thread_parameters.start()
 
     def wait_for_proof_of_life(self):
         self.socket_sub_proof_of_life.recv()

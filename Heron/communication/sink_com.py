@@ -25,6 +25,7 @@ class SinkCom:
 
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
         self.port_pub_parameters = ct.PARAMETERS_FORWARDER_SUBMIT_PORT
+
         self.poller = zmq.Poller()
 
         self.context = None
