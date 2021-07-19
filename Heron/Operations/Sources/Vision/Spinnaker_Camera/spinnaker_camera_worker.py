@@ -19,7 +19,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 worker_object: SourceWorker
 cam: CameraPtr
 
-recording_on = False
+acquiring_on = False
 fps = 0
 
 # The following variables must be global so that they do not die after the start_acquisition function exits
@@ -236,7 +236,7 @@ def new_visualisation():
 
 
 def run_spinnaker_camera(_worker_object):
-    global recording_on
+    global acquiring_on
     global worker_object
     worker_object = _worker_object
     cam_index = None

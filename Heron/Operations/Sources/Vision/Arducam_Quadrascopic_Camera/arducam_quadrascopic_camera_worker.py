@@ -16,7 +16,7 @@ import logging
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Arducam_Quadrascopic_Camera.arducam_utilities import ArducamUtils
 
-recording_on = False
+acquiring_on = False
 capture: cv2.VideoCapture
 output_video: cv2.VideoWriter
 width: int
@@ -71,7 +71,7 @@ def add_timestamp_to_filename():
 def run_camera(worker_object):
     global capture
     global output_video
-    global recording_on
+    global acquiring_on
     global width
     global height
     global counter

@@ -11,13 +11,13 @@ import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Camera import camera_com
 
-recording_on = False
+acquiring_on = False
 capture = None
 
 
 def run_camera(worker_object):
     global capture
-    global recording_on
+    global acquiring_on
 
     if not recording_on:  # Get the parameters from the node
         while not recording_on:
