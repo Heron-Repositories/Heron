@@ -31,11 +31,13 @@ numpy
 
 dearpygui = 0.6.415 (The latest 0.8.x is a release that breaks everything. We are working on transitioning to it).
 
-opencv = 4.x (optional but highly reccomented unless you want to rewrite the visualisation part)
+opencv = 4.x (3.x should work but not tested)
 
 paramikro (required if the multiple computers fuctionality is utilised)
 
-pynput
+pynput (for the user input nodes)
+
+diskarray (for the save numpy node)
 
 
 ## Use
