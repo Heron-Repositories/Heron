@@ -19,7 +19,7 @@ More information on the parts of the Heron editor and its use see the Use paragr
 
 Heron does not require any type of installation (and thus it has not yet been packaged into pip or conda - something that will happen in the future). Just download the repo, put it somewhere and then run the editor.py script found in the Heron/Heron/gui folder. 
 
-Important note. The whole of the Heron repo must be found in all the computers that run nodes in a pipeline. The editor will only run in one of the computers but the whole repo needs to be present in all computers (since this defines Heron's communication protocol). Any code that runs in a seperate to the computer running the editor must be part of the Heron directory structure wrapped appropriately in the code that creates the Hron nodes.
+Important note. The whole of the Heron repo must be found in all the computers that run nodes in a pipeline. The editor will only run in one of the computers but the whole repo needs to be present in all computers (since this defines Heron's communication protocol). Any code that runs in a machine seperate to the computer running the editor must be part of the Heron directory structure wrapped appropriately in the code that creates the Heron nodes.
 
 ## Requirements. 
 
@@ -42,15 +42,17 @@ diskarray (for the save numpy node)
 
 ## Use
 
-The left hand side table in the editor is a list of all available nodes. The user clicks on the ones they need and then proceeds to connect the outputs to the inputs. Once this is done, the user starts the Graph that has been generated. The result is the initialisation of a series of processes (double the number of nodes plus one) which then pass data between them as the connectivity of their nodes prescribes. 
+The left hand side table in the editor is a list of all available nodes. The user clicks on the ones they need and then proceeds to connect the outputs to the inputs and sets up the parameters values. Once this is done, the user starts the Graph that has been generated. The result is the initialisation of a series of processes (double the number of nodes plus one) which then pass data between them as the connectivity of their nodes prescribes. 
 
 There are three types of nodes:
 
-The Source nodes which are meant to bring data from the outside world into the pipeline. Examples of these are cameras, microphones and in general any type of hardware that will generate data. In the case of the above pipeline there is a single Source node capturing camera frames as they arrive. Source nodes have only outputs.
+The Source nodes which are meant to bring data from the outside world into the pipeline. Examples of these are cameras, microphones, data acquisition devices and in general any type of hardware that will generate data. For example, in the pipeline shown above, there is a single Source node live capturing camera frames. Source nodes have only outputs.
 
-Then there are the Transfom nodes which grab data from one of their inputs, transform it and then pass it to their output (currently Heron supports multiple inputs but only a single discreet output). In the above example, each captured frame is passed through a canny filter running in its own process.
+Then there are the Transfom nodes which grab data from one of their inputs, transform it and then pass it to their output (currently Heron supports multiple inputs but only a single discreet output). In the above example, each captured frame is passed through a canny filter.
 
 Finally there are Sink nodes which only have inputs and which are meant as final saving points for the data. In the above example this is the Save FFMPEG video which takes the canny transformed frame and adds it to a video file (through running ffmpeg).
+
+In the future there will be Kernel nodes with no inputs or outputs (self sufficient processes that do stuff without requiring input or generating output).
 
 ## Heron protocol
 
