@@ -8,7 +8,7 @@ Heron has originaly been conceptualised as a framework to allow modular and fast
 
 Heron is not another visual programming language. It is just a graphical abstraction of the way individual pieces of code, each running in its own process, communicate with each other in an experimental pipeline. The code that does the actual work is Python code and the user is expected to construct their own pieces of code (that can be trivially wrapped into the code necessary to have them represented as Heron nodes). 
 
-Here is an example of the Heron editor runnig a simple pipeline
+Here is an example of the Heron editor running a simple pipeline
 
 ![Heron at work](https://user-images.githubusercontent.com/12892531/124310304-e7139e80-db63-11eb-8640-40b23746dfbb.png)
 
