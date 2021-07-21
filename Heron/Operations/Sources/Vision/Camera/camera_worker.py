@@ -19,12 +19,12 @@ def run_camera(worker_object):
     global capture
     global acquiring_on
 
-    if not recording_on:  # Get the parameters from the node
-        while not recording_on:
+    if not acquiring_on:  # Get the parameters from the node
+        while not acquiring_on:
             try:
                 cam_index = worker_object.parameters[1]
                 capture = cv2.VideoCapture(cam_index, cv2.CAP_DSHOW)
-                recording_on = True
+                acquiring_on = True
                 print('Got camera parameters. Starting capture')
             except:
                 cv2.waitKey(1)
