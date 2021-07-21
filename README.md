@@ -39,6 +39,9 @@ pynput (for the user input nodes)
 
 diskarray (for the save numpy node)
 
+If you use conda then dearpygui and diskarray have to be installed by pip (no conda packages yet). 
+Trying to install diskarray will try to install numpy (on top of the conda install numpy). Do not do that! First "pip install basescript" (a diskarray requirement) and then "pip install diskarray --no-dependencies" which will install only diskarray.
+
 
 ## Use
 
