@@ -7,6 +7,7 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
+import threading
 import numpy as np
 from dearpygui.core import *
 from dearpygui.simple import *
@@ -58,6 +59,7 @@ def plot_callback():
             hide_item('Plot')
         except Exception as e:
             pass
+
 
 def start_plotting_thread():
     with window("Visualisation", width=500, height=300, show=False):
@@ -119,8 +121,13 @@ def on_end_of_life():
     global acquiring_on
 
     acquiring_on = False
-    del task
-    stop_dearpygui()
+    try:
+        task.stop()
+        task.close()
+        del task
+        stop_dearpygui()
+    except:
+        pass
 
 
 if __name__ == "__main__":

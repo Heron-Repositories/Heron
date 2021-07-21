@@ -347,9 +347,9 @@ class Node:
         configure_item('##{}'.format(attribute_name), enabled=False)
 
     def sending_parameters_multiple_times(self):
-        for i in range(10):
+        for i in range(20):
             self.update_parameters()
-            time.sleep(0.2)
+            time.sleep(0.1)
 
     def start_thread_to_send_parameters_multiple_times(self):
         thread_parameters = threading.Thread(target=self.sending_parameters_multiple_times, daemon=True)
