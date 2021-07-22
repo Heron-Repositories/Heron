@@ -15,9 +15,10 @@ Properties of the generated Node
 BaseName = 'Arducam Quadrascopic Camera'
 NodeAttributeNames = ['Parameters', 'Frame Out']
 NodeAttributeType = ['Static', 'Output']
-ParameterNames = ['Cam Index', 'FourCC', 'Get Sub Camera', 'Sub Camera Scale', 'Save File', 'Timestamp', 'FPS of File']
-ParameterTypes = ['int', 'str', 'list', 'float', 'str', 'bool', 'int']
-ParametersDefaultValues = [0, 'FMP4', ['0', '1', '2', '3', '4'], 1.0, '', False, 40]
+ParameterNames = ['Cam Index', 'FourCC', 'Exposure', 'Gain', 'Trigger Mode', 'Get Sub Camera', 'Sub Camera Scale',
+                  'Save File', 'Timestamp', 'FPS of File']
+ParameterTypes = ['int', 'str', 'int', 'int', 'bool', 'list', 'float', 'str', 'bool', 'int']
+ParametersDefaultValues = [0, 'FMP4', -1, -1, False, ['0', '1', '2', '3', '4'], 1.0, '', False, 40]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'arducam_quadrascopic_camera_worker.py')
 # </editor-fold>
 

@@ -1,5 +1,6 @@
 
 import sys
+import os
 from os import path
 
 current_dir = path.dirname(path.abspath(__file__))
@@ -8,7 +9,6 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
-import ffmpeg
 from datetime import datetime
 import time
 import cv2 as cv2
@@ -24,7 +24,6 @@ height: int
 counter: int
 start_time: datetime
 frame_count: int
-start: float
 arducam_utils: ArducamUtils
 save_file: str
 get_subcamera_index: int
@@ -68,6 +67,18 @@ def add_timestamp_to_filename():
     save_file = '{}_{}.{}'.format(filename[0], date_time, filename[1])
 
 
+def change_camera_parameters(worker_object):
+    exposure = worker_object.parameters[2]
+    gain = worker_object.parameters[3]
+    trigger_mode = worker_object.parameters[4]
+    if exposure != -1:
+        os.system('v4l2-ctl -c exposure={}'.format(exposure))
+    if gain != -1:
+        os.system('v4l2-ctl -c gain={}'.format(gain))
+    if trigger_mode:
+        os.system('v4l2-ctl -c trigger_mode=1')
+
+
 def run_camera(worker_object):
     global capture
     global output_video
@@ -77,22 +88,22 @@ def run_camera(worker_object):
     global counter
     global start_time
     global frame_count
-    global start
     global arducam_utils
     global save_file
     global get_subcamera_index
     global sub_camera_scale
 
-    if not recording_on:  # Get the parameters from the node
-        while not recording_on:
+    if not acquiring_on:  # Get the parameters from the node
+        while not acquiring_on:
             try:
                 cam_index = worker_object.parameters[0]
                 codec = worker_object.parameters[1]
-                get_subcamera_index = worker_object.parameters[2]
-                sub_camera_scale = worker_object.parameters[3]
-                save_file = worker_object.parameters[4]
-                add_time_stamp = worker_object.parameters[5]
-                file_fps = worker_object.parameters[6]
+
+                get_subcamera_index = worker_object.parameters[5]
+                sub_camera_scale = worker_object.parameters[6]
+                save_file = worker_object.parameters[7]
+                add_time_stamp = worker_object.parameters[8]
+                file_fps = worker_object.parameters[9]
 
                 recording_on = True
                 logging.debug('Got arducam parameters. Starting capture')
@@ -126,34 +137,41 @@ def run_camera(worker_object):
             #gst_out = "appsrc ! video/x-raw, format=GRAY8 ! queue ! nvvidconv ! omxh264enc ! h264parse ! qtmux ! filesink location={} ".format(save_file)
             output_video = cv2.VideoWriter(gst_out, cv2.CAP_GSTREAMER, 0, file_fps, (width, height), False)
 
+        change_camera_parameters(worker_object)
+
         counter = 0
         start_time = datetime.now()
         frame_count = 0
-        start = time.time()
 
     while True:
-        ret, frame = capture.read()
-        counter += 1
-        frame_count += 1
+        try:
+            got_frame, frame = capture.read()
+            if got_frame:
+                change_camera_parameters(worker_object)
 
-        frame = arducam_utils.convert(frame)
+                counter += 1
+                frame_count += 1
 
-        if len(save_file) > 1:
-            output_video.write(frame.astype('uint8'))
+                frame = arducam_utils.convert(frame)
 
-        if get_subcamera_index != '0':
-            sub_cam = int(get_subcamera_index)
-            new_width = int(width / 4)
-            start_pixel = new_width * (sub_cam - 1)
-            end_pixel = start_pixel + new_width
-            frame = np.ascontiguousarray(frame[:, start_pixel:end_pixel])
+                if len(save_file) > 1:
+                    output_video.write(frame.astype('uint8'))
 
-            if sub_camera_scale != 1.0:
-                dst_width = sub_camera_scale * new_width
-                frame = resize(frame, dst_width)
+                if get_subcamera_index != '0':
+                    sub_cam = int(get_subcamera_index)
+                    new_width = int(width / 4)
+                    start_pixel = new_width * (sub_cam - 1)
+                    end_pixel = start_pixel + new_width
+                    frame = np.ascontiguousarray(frame[:, start_pixel:end_pixel])
 
-        worker_object.worker_result = frame
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+                    if sub_camera_scale != 1.0:
+                        dst_width = sub_camera_scale * new_width
+                        frame = resize(frame, dst_width)
+
+                worker_object.worker_result = frame
+                worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        except:
+            pass
 
 
 def on_end_of_life():
