@@ -77,6 +77,8 @@ def change_camera_parameters(worker_object):
         os.system('v4l2-ctl -c gain={}'.format(gain))
     if trigger_mode:
         os.system('v4l2-ctl -c trigger_mode=1')
+    else:
+        os.system('v4l2-ctl -c trigger_mode=0')
 
 
 def run_camera(worker_object):
