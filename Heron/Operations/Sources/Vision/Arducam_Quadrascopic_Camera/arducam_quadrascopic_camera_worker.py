@@ -105,7 +105,7 @@ def run_camera(worker_object):
                 add_time_stamp = worker_object.parameters[8]
                 file_fps = worker_object.parameters[9]
 
-                recording_on = True
+                acquiring_on = True
                 logging.debug('Got arducam parameters. Starting capture')
                 print('Got arducam parameters. Starting capture')
             except:
@@ -143,35 +143,33 @@ def run_camera(worker_object):
         start_time = datetime.now()
         frame_count = 0
 
-    while True:
-        try:
-            got_frame, frame = capture.read()
-            if got_frame:
-                change_camera_parameters(worker_object)
+    while acquiring_on:
+        got_frame, frame = capture.read()
+        if got_frame:
+            change_camera_parameters(worker_object)
 
-                counter += 1
-                frame_count += 1
+            counter += 1
+            frame_count += 1
 
-                frame = arducam_utils.convert(frame)
+            frame = arducam_utils.convert(frame)
 
-                if len(save_file) > 1:
-                    output_video.write(frame.astype('uint8'))
+            if len(save_file) > 1:
+                output_video.write(frame.astype('uint8'))
 
-                if get_subcamera_index != '0':
-                    sub_cam = int(get_subcamera_index)
-                    new_width = int(width / 4)
-                    start_pixel = new_width * (sub_cam - 1)
-                    end_pixel = start_pixel + new_width
-                    frame = np.ascontiguousarray(frame[:, start_pixel:end_pixel])
+            if get_subcamera_index != '0':
+                sub_cam = int(get_subcamera_index)
+                new_width = int(width / 4)
+                start_pixel = new_width * (sub_cam - 1)
+                end_pixel = start_pixel + new_width
+                frame = np.ascontiguousarray(frame[:, start_pixel:end_pixel])
 
-                    if sub_camera_scale != 1.0:
-                        dst_width = sub_camera_scale * new_width
-                        frame = resize(frame, dst_width)
+                if sub_camera_scale != 1.0:
+                    dst_width = sub_camera_scale * new_width
+                    frame = resize(frame, dst_width)
 
-                worker_object.worker_result = frame
-                worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
-        except:
-            pass
+            worker_object.worker_result = frame
+            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+
 
 
 def on_end_of_life():
@@ -179,12 +177,15 @@ def on_end_of_life():
     global output_video
     global start_time
     global counter
+    global acquiring_on
 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
     avgtime = elapsed_time.total_seconds() / counter
     logging.debug("Average time between frames: " + str(avgtime))
     logging.debug("Average FPS: " + str(1 / avgtime))
+
+    acquiring_on = False
 
     capture.release()
     output_video.release()
