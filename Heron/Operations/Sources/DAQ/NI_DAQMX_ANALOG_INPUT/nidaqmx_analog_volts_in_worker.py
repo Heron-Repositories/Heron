@@ -22,33 +22,47 @@ buffer_size = 0
 task: nidaqmx.Task
 worker_object: SourceWorker
 window_showing = False
+channels: list
+rate: int
+sample_mode: int
 
 
 def plot(data):
     global buffer_size
+    global channels
+
     # updating plot data
     plot_datax = np.arange(buffer_size)
     plot_datay = data
-    add_data("plot_datax", plot_datax)
-    add_data("plot_datay", plot_datay)
-    # plotting new data
-    add_line_series("Plot", "Voltage / V", plot_datax, plot_datay, weight=2)
+    try:
+        for i, n in enumerate(channels):
+            add_data("plot_datax_{}".format(n), plot_datax)
+            add_data("plot_datay_{}".format(n), plot_datay)
+            # plotting new data
+            add_line_series('Plot {}'.format(n), "Voltage of {}/ V".format(n), plot_datax, plot_datay[i, :], weight=2)
+    except Exception as e:
+        print(e)
 
 
 def plot_callback():
     global worker_object
     global window_showing
+    global channels
 
     window_showing = False
 
     if worker_object.visualisation_on:
         if not window_showing:
             show_item('Visualisation')
-            show_item('Plot')
+            for n in channels:
+                show_item("Plot {}".format(n))
             window_showing = True
         if window_showing:
             try:
-                plot(worker_object.worker_result)
+                if len(channels) == 1:
+                    plot([worker_object.worker_result])
+                else:
+                    plot(worker_object.worker_result)
             except Exception as e:
                 print(e)
 
@@ -56,16 +70,20 @@ def plot_callback():
         window_showing = False
         try:
             hide_item('Visualisation')
-            hide_item('Plot')
+            for n in channels:
+                hide_item('Plot {}'.format(n))
         except Exception as e:
             pass
 
 
 def start_plotting_thread():
-    with window("Visualisation", width=500, height=300, show=False):
-        add_plot("Plot", height=-1, show=False)
-        add_data("plot_datax", [])
-        add_data("plot_datay", [])
+    global channels
+
+    with window("Visualisation", width=500, height=700, show=False):
+        for n in channels:
+            add_plot("Plot {}".format(n), height=int(700/len(channels)), show=False)
+            add_data("plot_datax_{}".format(n), [])
+            add_data("plot_datay_{}".format(n), [])
     start_dearpygui(primary_window='Visualisation')
 
 
@@ -74,34 +92,39 @@ def acquire(_worker_object):
     global task
     global buffer_size
     global worker_object
+    global channels
+    global rate
+    global sample_mode
+
     worker_object = _worker_object
 
     worker_object.set_new_visualisation_loop(start_plotting_thread)
 
-    if not acquiring_on:  # Get the parameters from the node
-        while not acquiring_on:
-            try:
-                name = worker_object.parameters[1]
-                rate = int(worker_object.parameters[2])
-                sample_mode = worker_object.parameters[3]
-                buffer_size = int(worker_object.parameters[4])
-                task = nidaqmx.Task()
-                task.ai_channels.add_ai_voltage_chan(name)
+    while not acquiring_on:
+        try:
+            channels = worker_object.parameters[1].split(' ')
+            rate = int(worker_object.parameters[2])
+            sample_mode = worker_object.parameters[3]
+            buffer_size = int(worker_object.parameters[4])
 
-                if sample_mode == 'CONTINUOUS':
-                    sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
-                elif sample_mode == 'FINITE':
-                    sample_mode = nidaqmx.constants.AcquisitionType.FINITE
-                elif sample_mode == 'HW_TIMED_SINGLE_POINT':
-                    sample_mode = nidaqmx.constants.AcquisitionType.HW_TIMED_SINGLE_POINT
-                task.timing.cfg_samp_clk_timing(rate=rate, sample_mode=sample_mode,
-                                                samps_per_chan=buffer_size)
-                task.start()
+            if sample_mode == 'CONTINUOUS':
+                sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
+            elif sample_mode == 'FINITE':
+                sample_mode = nidaqmx.constants.AcquisitionType.FINITE
+            elif sample_mode == 'HW_TIMED_SINGLE_POINT':
+                sample_mode = nidaqmx.constants.AcquisitionType.HW_TIMED_SINGLE_POINT
 
-                acquiring_on = True
-                print('Got nidaqmx analog input parameters. Starting capture')
-            except:
-                cv2.waitKey(1)
+            acquiring_on = True
+            print('Got nidaqmx analog input parameters. Starting capture')
+        except Exception as e:
+            cv2.waitKey(10)
+
+    task = nidaqmx.Task('Main')
+    for n in channels:
+        task.ai_channels.add_ai_voltage_chan(n)
+    task.timing.cfg_samp_clk_timing(rate=rate, sample_mode=sample_mode,
+                                    samps_per_chan=buffer_size)
+    task.start()
 
     while True:
         worker_object.worker_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
@@ -126,8 +149,8 @@ def on_end_of_life():
         task.close()
         del task
         stop_dearpygui()
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
