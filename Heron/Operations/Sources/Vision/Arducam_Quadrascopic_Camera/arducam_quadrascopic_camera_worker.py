@@ -22,12 +22,12 @@ output_video: cv2.VideoWriter
 width: int
 height: int
 counter: int
-start_time: datetime
 frame_count: int
 arducam_utils: ArducamUtils
 save_file: str
 get_subcamera_index: int
 sub_camera_scale: float
+total_frame_time: int
 
 
 def resize(frame, dst_width):
@@ -71,14 +71,21 @@ def change_camera_parameters(worker_object):
     exposure = worker_object.parameters[2]
     gain = worker_object.parameters[3]
     trigger_mode = worker_object.parameters[4]
+
+    result = []
     if exposure != -1:
-        os.system('v4l2-ctl -c exposure={}'.format(exposure))
+        result.append(os.system('v4l2-ctl -c exposure={}'.format(exposure)))
+        time.sleep(0.5)
     if gain != -1:
-        os.system('v4l2-ctl -c gain={}'.format(gain))
+        result.append(os.system('v4l2-ctl -c gain={}'.format(gain)))
+        time.sleep(0.5)
     if trigger_mode:
-        os.system('v4l2-ctl -c trigger_mode=1')
+        result.append(os.system('v4l2-ctl -c trigger_mode=1'))
+        time.sleep(0.2)
     else:
-        os.system('v4l2-ctl -c trigger_mode=0')
+        result.append(os.system('v4l2-ctl -c trigger_mode=0'))
+        time.sleep(0.2)
+    return result
 
 
 def run_camera(worker_object):
@@ -88,19 +95,19 @@ def run_camera(worker_object):
     global width
     global height
     global counter
-    global start_time
     global frame_count
     global arducam_utils
     global save_file
     global get_subcamera_index
     global sub_camera_scale
+    global total_frame_time
 
     if not acquiring_on:  # Get the parameters from the node
         while not acquiring_on:
             try:
                 cam_index = worker_object.parameters[0]
                 codec = worker_object.parameters[1]
-
+                # parameters 2 to 4 are used in the change_camera_parameters()
                 get_subcamera_index = worker_object.parameters[5]
                 sub_camera_scale = worker_object.parameters[6]
                 save_file = worker_object.parameters[7]
@@ -121,7 +128,6 @@ def run_camera(worker_object):
             logging.debug("Failed to set pixel format.")
 
         arducam_utils = ArducamUtils(cam_index)
-
         show_info(arducam_utils)
 
         # turn off RGB conversion
@@ -139,19 +145,24 @@ def run_camera(worker_object):
             #gst_out = "appsrc ! video/x-raw, format=GRAY8 ! queue ! nvvidconv ! omxh264enc ! h264parse ! qtmux ! filesink location={} ".format(save_file)
             output_video = cv2.VideoWriter(gst_out, cv2.CAP_GSTREAMER, 0, file_fps, (width, height), False)
 
-        change_camera_parameters(worker_object)
-
-        counter = 0
-        start_time = datetime.now()
-        frame_count = 0
-
-    while acquiring_on:
+        # Before changing the v4l2 driver parameters first capture a frame (otherwise the changes do not stick)
         got_frame, frame = capture.read()
         if got_frame:
             change_camera_parameters(worker_object)
+            os.system('v4l2-ctl -l')  # send the camera parameters to the stdout
+        else:
+            logging.error("Arducam didn't acquire the first frame correctly. Aborting")
+            print("Arducam didn't acquire the first frame correctly. Aborting")
+            return
+
+    counter = 0
+    total_frame_time = 0
+    while acquiring_on:
+        start = datetime.now()
+        got_frame, frame = capture.read()
+        if got_frame:
 
             counter += 1
-            frame_count += 1
 
             frame = arducam_utils.convert(frame)
 
@@ -172,26 +183,28 @@ def run_camera(worker_object):
             worker_object.worker_result = frame
             worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
 
+            total_frame_time = total_frame_time + (datetime.now() - start).total_seconds()
 
 
 def on_end_of_life():
     global capture
     global output_video
-    global start_time
+    global total_frame_time
     global counter
     global acquiring_on
 
-    end_time = datetime.now()
-    elapsed_time = end_time - start_time
-    avgtime = elapsed_time.total_seconds() / counter
+    avgtime = total_frame_time / counter
     logging.debug("Average time between frames: " + str(avgtime))
     logging.debug("Average FPS: " + str(1 / avgtime))
 
     acquiring_on = False
+    time.sleep(0.5)
 
     capture.release()
-    output_video.release()
-    cv2.destroyAllWindows()
+    try:
+        output_video.release()
+    except:
+        pass
 
 
 if __name__ == "__main__":
