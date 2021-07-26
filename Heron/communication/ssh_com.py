@@ -143,7 +143,13 @@ class SSHCom:
 
     def start_process(self, arguments_list):
         if self.remote_server_id == 'None':
-            return subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP).pid
+            if len(arguments_list[0].split(' ')) > 1:
+                new_arguments_list = arguments_list[0].split(' ')
+                for i in range(1, len(arguments_list)):
+                    new_arguments_list.append(arguments_list[i])
+            else:
+                new_arguments_list = arguments_list
+            return subprocess.Popen(new_arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP).pid
         else:
             logging.debug(arguments_list)
             self.client.connect(self.remote_server_info['IP'],

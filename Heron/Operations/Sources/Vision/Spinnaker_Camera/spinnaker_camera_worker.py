@@ -243,23 +243,23 @@ def run_spinnaker_camera(_worker_object):
     worker_object.set_new_visualisation_loop(new_visualisation)
 
     # Get the parameters from the node
-    while not recording_on:
+    while not acquiring_on:
         try:
             cam_index = worker_object.parameters[1]
             trigger = worker_object.parameters[2]
             pixel_format = worker_object.parameters[3]
             fps = int(worker_object.parameters[4])
-            recording_on = True
+            acquiring_on = True
 
             print('Got Spinnaker camera with Trigger = {}. Starting capture'.format(trigger))
         except:
             cv2.waitKey(1)
 
     if not setup_camera_and_start_acquisition(cam_index, trigger, pixel_format, fps):
-        recording_on = False
+        acquiring_on = False
 
     # The infinite loop that does the frame capture and push to the output of the node
-    while recording_on:
+    while acquiring_on:
         worker_object.worker_result = grab_frame()
         if worker_object.worker_result is not None:
             worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
@@ -274,7 +274,9 @@ def run_spinnaker_camera(_worker_object):
 
 def on_end_of_life():
     global cam
+    global acquiring_on
     try:
+        acquiring_on = False
         cam.EndAcquisition()
         cam.DeInit()
     except:
