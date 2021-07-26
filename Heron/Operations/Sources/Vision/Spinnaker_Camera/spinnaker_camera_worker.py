@@ -1,6 +1,4 @@
 
-import PySpin
-import cv2 as cv2
 import os
 from os import path
 import sys
@@ -10,10 +8,12 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
+import PySpin
+from PySpin.PySpin import CameraPtr
+import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Spinnaker_Camera import spinnaker_camera_com
 from Heron.communication.source_worker import SourceWorker
-from PySpin.PySpin import CameraPtr
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 worker_object: SourceWorker
@@ -128,7 +128,6 @@ def setup_camera_and_start_acquisition(camera_index, trigger, pixel_format, fps)
 
         # Retrieve entry node from enumeration node
         if trigger:
-            print(1)
             node_trigger_mode_on = node_trigger_mode.GetEntryByName('On')
         else:
             node_trigger_mode_on = node_trigger_mode.GetEntryByName('Off')
@@ -156,7 +155,6 @@ def setup_camera_and_start_acquisition(camera_index, trigger, pixel_format, fps)
         # ------------------------------
 
         if not trigger:
-            print(2)
             # ------------------------------
             # Set Acquisition Frame Rate
             node_acqFrameRate_float = PySpin.CFloatPtr(nodemap.GetNode("AcquisitionFrameRate"))
@@ -277,6 +275,7 @@ def on_end_of_life():
     global acquiring_on
     try:
         acquiring_on = False
+        cv2.waitKey(500)
         cam.EndAcquisition()
         cam.DeInit()
     except:

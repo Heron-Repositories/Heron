@@ -33,7 +33,7 @@ def plot(data):
 
     # updating plot data
     plot_datax = np.arange(buffer_size)
-    plot_datay = data
+    plot_datay = np.array(data)
     try:
         for i, n in enumerate(channels):
             add_data("plot_datax_{}".format(n), plot_datax)
@@ -41,7 +41,7 @@ def plot(data):
             # plotting new data
             add_line_series('Plot {}'.format(n), "Voltage of {}/ V".format(n), plot_datax, plot_datay[i, :], weight=2)
     except Exception as e:
-        print(e)
+        print('Plotting exception: {}'.format(e))
 
 
 def plot_callback():
@@ -126,7 +126,7 @@ def acquire(_worker_object):
                                     samps_per_chan=buffer_size)
     task.start()
 
-    while True:
+    while acquiring_on:
         worker_object.worker_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
         worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
         plot_callback()
