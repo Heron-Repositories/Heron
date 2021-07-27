@@ -178,27 +178,27 @@ class Node:
                     add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index), default_value=attr)
 
                     if 'Parameters' in attr:
-                        for i, parameter in enumerate(self.operation.parameters):
-                            if self.operation.parameter_types[i] == 'int':
+                        for k, parameter in enumerate(self.operation.parameters):
+                            if self.operation.parameter_types[k] == 'int':
                                 add_input_int('{}##{}'.format(parameter, attribute_name),
-                                              default_value=self.node_parameters[i],
+                                              default_value=self.node_parameters[k],
                                               callback=self.update_parameters)
-                            elif self.operation.parameter_types[i] == 'str':
+                            elif self.operation.parameter_types[k] == 'str':
                                 add_input_text('{}##{}'.format(parameter, attribute_name),
-                                               default_value=self.node_parameters[i],
+                                               default_value=self.node_parameters[k],
                                                callback=self.update_parameters)
-                            elif self.operation.parameter_types[i] == 'float':
+                            elif self.operation.parameter_types[k] == 'float':
                                 add_input_float('{}##{}'.format(parameter, attribute_name),
-                                                default_value=self.node_parameters[i],
+                                                default_value=self.node_parameters[k],
                                                 callback=self.update_parameters)
-                            elif self.operation.parameter_types[i] == 'bool':
+                            elif self.operation.parameter_types[k] == 'bool':
                                 add_checkbox('{}##{}'.format(parameter, attribute_name),
-                                             default_value=self.node_parameters[i],
+                                             default_value=self.node_parameters[k],
                                              callback=self.update_parameters)
-                            elif self.operation.parameter_types[i] == 'list':
+                            elif self.operation.parameter_types[k] == 'list':
                                 add_combo('{}##{}'.format(parameter, attribute_name),
-                                          items=self.node_parameters_combos_items[i],
-                                          default_value=self.node_parameters[i][0],
+                                          items=self.node_parameters_combos_items[k],
+                                          default_value=self.node_parameters[k][0],
                                           callback=self.update_parameters)
                             simple.set_item_width('{}##{}'.format(parameter, attribute_name), width=100)
 

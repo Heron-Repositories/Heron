@@ -14,10 +14,10 @@ Properties of the generated Node
 BaseName = 'Save Array To Binary'
 NodeAttributeNames = ['Parameters', 'Array In']
 NodeAttributeType = ['Static', 'Input']
-ParameterNames = ['File name', 'Append (T) / Stack (F)', 'dtype']
-ParameterTypes = ['str', 'bool', 'list']
-ParametersDefaultValues = ['output.bin', True, ['Same', 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32',
-                                                'uint64', 'float16', 'float32', 'float64']]
+ParameterNames = ['File name', 'Append on Axis', 'dtype']
+ParameterTypes = ['str', 'int', 'list']
+ParametersDefaultValues = ['output.bin', 0, ['Same', 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32',
+                                             'uint64', 'float16', 'float32', 'float64']]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'save_numpy_array_to_binary_worker.py')
 # </editor-fold>
 
