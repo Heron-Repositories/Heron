@@ -52,13 +52,8 @@ def save_video(data, parameters):
             fps = parameters[3]
             need_parameters = False
         except:
-            file_name = save_ffmpeg_video_com.ParametersDefaultValues[0]
-            pixel_format_in = save_ffmpeg_video_com.ParametersDefaultValues[1]
-            pixel_format_out = save_ffmpeg_video_com.ParametersDefaultValues[2]
-            fps = save_ffmpeg_video_com.ParametersDefaultValues[3]
-            need_parameters = False
+            return
     else:
-        print('Starting video saving')
         message = data[1:]  # data[0] is the topic
         image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
         size = image.shape

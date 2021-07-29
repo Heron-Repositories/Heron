@@ -278,9 +278,10 @@ def on_end_of_life():
         cv2.waitKey(500)
         cam.EndAcquisition()
         cam.DeInit()
+        del cam
     except:
         pass
-    del cam
+
 
 
 if __name__ == "__main__":
