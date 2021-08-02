@@ -4,6 +4,7 @@ import os
 import time
 import sys
 import signal
+import math
 from struct import *
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
@@ -11,6 +12,14 @@ from Heron.communication.transform_com import TransformCom
 from Heron.communication.transform_worker import TransformWorker
 from Heron.communication.sink_com import SinkCom
 from Heron.communication.sink_worker import SinkWorker
+
+
+def convertToNumber (s):
+    return int.from_bytes(s.encode(), 'little')
+
+
+def convertFromNumber (n):
+    return n.to_bytes(math.ceil(n.bit_length() / 8), 'little').decode()
 
 
 def full_split_path(path):
@@ -67,7 +76,6 @@ def choose_color_according_to_operations_type(operations_parent_name):
         colour = [0, 255, 0, 100]
     elif 'Sinks' in operations_parent_name:
         colour = [255, 0, 0, 100]
-
     return colour
 
 

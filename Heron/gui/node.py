@@ -1,4 +1,5 @@
 
+
 import threading
 import platform
 import signal
@@ -10,8 +11,7 @@ import subprocess
 import zmq
 import numpy as np
 import copy
-from dearpygui import simple
-from dearpygui.core import *
+import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication.socket_for_serialization import Socket
@@ -22,8 +22,10 @@ operations_list = op.operations_list  # This generates all of the Operation data
 
 
 class Node:
-    def __init__(self, name):
+    def __init__(self, name, parent):
+        self.id = None
         self.name = name
+        self.parent = parent
         self.operation = None
         self.node_index = None
         self.process = None
@@ -35,10 +37,13 @@ class Node:
         self.coordinates = [100, 100]
         self.node_parameters = None
         self.node_parameters_combos_items = []
+        self.parameter_inputs_ids = {}
         self.verbose = 0
         self.context = None
         self.socket_pub_parameters = None
         self.socket_sub_proof_of_life = None
+        self.theme_id = None
+        self.extra_window_id = None
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -69,7 +74,7 @@ class Node:
                                                  '{}'.format(self.name.replace(' ', '_')).encode('ascii'))
 
     def remove_from_editor(self):
-        delete_item(self.name)
+        dpg.delete_item(self.id)
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
@@ -142,7 +147,7 @@ class Node:
             self.initialise_parameters_socket()
         attribute_name = 'Parameters' + '##{}##{}'.format(self.operation.name, self.node_index)
         for i, parameter in enumerate(self.operation.parameters):
-            self.node_parameters[i] = get_value('{}##{}'.format(parameter, attribute_name))
+            self.node_parameters[i] = dpg.get_value(self.parameter_inputs_ids[parameter])
         topic = self.operation.name + '##' + self.node_index
         topic = topic.replace(' ', '_')
         self.socket_pub_parameters.send_string(topic, flags=zmq.SNDMORE)
@@ -152,57 +157,67 @@ class Node:
     def spawn_node_on_editor(self):
         self.context = zmq.Context()
         self.initialise_parameters_socket()
-        with simple.node(name=self.name, parent='Node Editor##Editor',
-                         x_pos=self.coordinates[0], y_pos=self.coordinates[1]):
+
+        with dpg.node(label=self.name, parent=self.parent, pos=[self.coordinates[0], self.coordinates[1]]) as self.id:
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
-            set_item_color(self.name, style=mvGuiCol_TitleBg, color=colour)
+            with dpg.theme() as self.theme_id:
+                dpg.add_theme_color(dpg.mvNodeCol_TitleBar, colour, category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, colour, category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, colour, category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundSelected, [120, 120, 120, 255],
+                                    category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_NodeBackground, [70, 70, 70, 255],
+                                    category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundHovered, [80, 80, 80, 255],
+                                    category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], category=dpg.mvThemeCat_Nodes)
+                dpg.add_theme_style(dpg.mvNodeStyleVar_NodeBorderThickness, x=4, category=dpg.mvThemeCat_Nodes)
+            dpg.set_item_theme(self.id, self.theme_id)
 
             # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
             # the node
             for i, attr in enumerate(self.operation.attributes):
 
                 if self.operation.attribute_types[i] == 'Input':
-                    output_type = False
-                    static = False
+                    attribute_type = dpg.mvNode_Attr_Input
                 elif self.operation.attribute_types[i] == 'Output':
-                    output_type = True
-                    static = False
+                    attribute_type = dpg.mvNode_Attr_Output
                 elif self.operation.attribute_types[i] == 'Static':
-                    output_type = False
-                    static = True
+                    attribute_type = dpg.mvNode_Attr_Static
 
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
 
-                with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
-                                           output=output_type, static=static):
-                    add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index), default_value=attr)
+                with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type):
+                    dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                                 default_value=attr)
 
                     if 'Parameters' in attr:
                         for k, parameter in enumerate(self.operation.parameters):
                             if self.operation.parameter_types[k] == 'int':
-                                add_input_int('{}##{}'.format(parameter, attribute_name),
-                                              default_value=self.node_parameters[k],
-                                              callback=self.update_parameters)
+                                id = dpg.add_input_int(label='{}##{}'.format(parameter, attribute_name),
+                                                  default_value=self.node_parameters[k],
+                                                  callback=self.update_parameters, width=100)
                             elif self.operation.parameter_types[k] == 'str':
-                                add_input_text('{}##{}'.format(parameter, attribute_name),
+                                id = dpg.add_input_text(label='{}##{}'.format(parameter, attribute_name),
                                                default_value=self.node_parameters[k],
-                                               callback=self.update_parameters)
+                                               callback=self.update_parameters, width=100)
                             elif self.operation.parameter_types[k] == 'float':
-                                add_input_float('{}##{}'.format(parameter, attribute_name),
+                                id = dpg.add_input_float(label='{}##{}'.format(parameter, attribute_name),
                                                 default_value=self.node_parameters[k],
-                                                callback=self.update_parameters)
+                                                callback=self.update_parameters, width=100)
                             elif self.operation.parameter_types[k] == 'bool':
-                                add_checkbox('{}##{}'.format(parameter, attribute_name),
+                                id = dpg.add_checkbox(label='{}##{}'.format(parameter, attribute_name),
                                              default_value=self.node_parameters[k],
                                              callback=self.update_parameters)
                             elif self.operation.parameter_types[k] == 'list':
-                                add_combo('{}##{}'.format(parameter, attribute_name),
+                                id = dpg.add_combo(label='{}##{}'.format(parameter, attribute_name),
                                           items=self.node_parameters_combos_items[k],
                                           default_value=self.node_parameters[k][0],
-                                          callback=self.update_parameters)
-                            simple.set_item_width('{}##{}'.format(parameter, attribute_name), width=100)
+                                          callback=self.update_parameters, width=100)
 
-                    add_spacing(name='##Spacing##'+attribute_name, count=3)
+                            self.parameter_inputs_ids[parameter] = id
+
+                    dpg.add_spacing(label='##Spacing##'+attribute_name, count=3)
 
             # Add the extra input button with its popup window for extra inputs like ssh and verbosity
             self.extra_input_window()
@@ -210,81 +225,76 @@ class Node:
     def extra_input_window(self):
         attr = 'Extra_Input'
         attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-        with simple.node_attribute(attribute_name, parent=self.operation.name + '##{}'.format(self.node_index),
-                                   output=False, static=True):
+        with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=dpg.mvNode_Attr_Static) as attr_id:
 
-            add_image_button('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                             value=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir,
-                                                'resources', 'Blue_glass_button_square_34x34.png'),
-                             callback=self.update_ssh_combo_boxes)
-            with simple.popup(popupparent='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                              name='Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                              mousebutton=mvMouseButton_Left):
+            image_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'resources',
+                                                                        'Blue_glass_button_square_34x34.png')
+            
+            width, height, channels, data = dpg.load_image(image_file)
 
-                with simple.child('##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                                  width=430, height=180):
+            with dpg.texture_registry():
+                texture_id = dpg.add_static_texture(width, height, data)
 
-                    # Add the local ssh input
-                    add_dummy(height=10)
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_text('SSH local server')
+            image_button = dpg.add_image_button(texture_id=texture_id,
+                                                label='##' + attr + ' Name{}##{}'.format(self.operation.name,
+                                                                                         self.node_index),
+                                                callback=self.update_ssh_combo_boxes)
 
-                    add_same_line()
-                    add_dummy(width=80)
-                    add_same_line()
-                    add_text('SSH remote server')
+            with dpg.window(label='##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                            width=450, height=250, pos=[self.coordinates[0] + 400, self.coordinates[1] + 200],
+                            show=False, popup=True) as self.extra_window_id:
 
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_combo('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                              items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
-                              callback=self.assign_local_server,
-                              tip='Add the details of the ssh server running on\n the machine that is running the '
-                                  'editor.')
-                    add_same_line()
-                    add_dummy(width=40)
-                    add_same_line()
-                    add_combo(
-                        '##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                        items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
-                        callback=self.assign_remote_server,
-                        tip='Add the details of the ssh server that is running on\n the machine that will run the '
-                            'worker process of the node.')
+                # Add the local ssh input
+                dpg.add_dummy(height=10)
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                dpg.add_text('SSH local server')
 
-                    add_dummy(height=10)
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_text('Python script (or executable) of worker process')
+                dpg.add_same_line()
+                dpg.add_dummy(width=80)
+                dpg.add_same_line()
+                dpg.add_text('SSH remote server')
 
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_input_text(
-                        '##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                        width=400, default_value=self.worker_executable, callback=self.assign_worker_executable,
-                        tip='Input either the full path of the python script (e.g. /my files/my_script.py) \nor the  '
-                            'python command and the script (e.g. pyhton3 /my files/my_script.p) \nor an executable '
-                            'file that the system knows how to handle\n(and which speaks the Heron communication '
-                            'protocol).\nThe default script is the one that comes with the {} operation.\nIf no command'
-                            ' is given with a python script (.py) then Heron will try to run it with the command python'
-                            '.\nHeron will look locally first for the script/executable.\nIf it is not found then it '
-                            'will assume it resides in the remote machine.'.format(self.name.split('##')[0]))
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                id = dpg.add_combo(label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                          items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
+                          callback=self.assign_local_server)
+                self.parameter_inputs_ids['SSH local server'] = id
+                dpg.add_same_line()
+                dpg.add_dummy(width=40)
+                dpg.add_same_line()
+                id = dpg.add_combo(
+                    label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                    items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
+                    callback=self.assign_remote_server)
+                self.parameter_inputs_ids['SSH remote server'] = id
+                dpg.add_dummy(height=10)
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                dpg.add_text('Python script of worker process or Python.exe and script')
 
-                    # Add the verbocity input
-                    add_dummy(height=6)
-                    add_dummy(width=10)
-                    add_same_line()
-                    attr = 'Verbocity'
-                    attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-                    add_text('##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                dpg.add_input_text(
+                    label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                    width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
+
+                # Add the verbocity input
+                dpg.add_dummy(height=6)
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                attr = 'Verbocity'
+                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+                dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                              default_value=attr)
-                    add_dummy(width=10)
-                    add_same_line()
-                    add_input_int('##{}'.format(attribute_name), default_value=self.verbose, callback=self.update_verbosity)
-                    simple.set_item_width('##{}'.format(attribute_name), width=100)
+                dpg.add_dummy(width=10)
+                dpg.add_same_line()
+                dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
+                                  callback=self.update_verbosity, width=100)
 
     def update_verbosity(self, sender, data):
-        self.verbose = get_value(sender)
+        self.verbose = dpg.get_value(sender)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
@@ -296,23 +306,21 @@ class Node:
             self.ssh_server_id_and_names.append(id + ' ' + ssh_info[id]['Name'])
 
     def update_ssh_combo_boxes(self):
+        dpg.configure_item(self.extra_window_id, show=True)
         self.get_ssh_server_names_and_ids()
-
-        if does_item_exist('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index)):
-            configure_item('##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                           items=self.ssh_server_id_and_names)
-        if does_item_exist('##SSH remote server##Extra input##{}##{}'.format(self.operation.name, self.node_index)):
-            configure_item('##SSH remote server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                           items=self.ssh_server_id_and_names)
+        if dpg.does_item_exist(self.parameter_inputs_ids['SSH local server']):
+            dpg.configure_item(self.parameter_inputs_ids['SSH local server'], items=self.ssh_server_id_and_names)
+        if dpg.does_item_exist(self.parameter_inputs_ids['SSH remote server']):
+            dpg.configure_item(self.parameter_inputs_ids['SSH remote server'], items=self.ssh_server_id_and_names)
 
     def assign_local_server(self, sender, data):
-        self.ssh_local_server = get_value(sender)
+        self.ssh_local_server = dpg.get_value(sender)
 
     def assign_remote_server(self, sender, data):
-        self.ssh_remote_server = get_value(sender)
+        self.ssh_remote_server = dpg.get_value(sender)
 
     def assign_worker_executable(self, sender, data):
-        self.worker_executable = get_value(sender)
+        self.worker_executable = dpg.get_value(sender)
 
     def start_com_process(self):
         self.initialise_proof_of_life_socket()
@@ -344,7 +352,10 @@ class Node:
 
         # Then update the parameters
         self.update_parameters()
-        configure_item('##{}'.format(attribute_name), enabled=False)
+        dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], parent=self.theme_id,
+                            category=dpg.mvThemeCat_Nodes)
+       # dpg.set_item_theme(self.id, self.theme_id)
+        #configure_item('##{}'.format(attribute_name), enabled=False)
 
     def sending_parameters_multiple_times(self):
         for i in range(20):
@@ -371,8 +382,12 @@ class Node:
         time.sleep(0.5)
         self.process.kill()
         self.process = None
+        dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], parent=self.theme_id,
+                            category=dpg.mvThemeCat_Nodes)
+        #dpg.set_item_theme(self.id, self.theme_id)
 
-        attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
-        configure_item('##{}'.format(attribute_name), enabled=True)
+
+
+
 
 

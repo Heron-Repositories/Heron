@@ -42,8 +42,11 @@ def run_camera(worker_object):
 
 def on_end_of_life():
     global capture
-    capture.release()
-    cv2.destroyAllWindows()
+    try:
+        capture.release()
+        cv2.destroyAllWindows()
+    except:
+        pass
 
 
 if __name__ == "__main__":

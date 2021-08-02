@@ -5,48 +5,53 @@ import time
 import subprocess
 import os
 from pathlib import Path
-import atexit
 import numpy as np
 import json
 import copy
 import sys
 sys.path.insert(0, '../../')
-from Heron.general_utils import choose_color_according_to_operations_type, get_next_available_port_group
+import Heron.general_utils as gu
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron import constants as ct
 from Heron.gui import ssh_info_editor
-from dearpygui import simple
-from dearpygui.core import *
-import default_style
+import dearpygui.dearpygui as dpg
+
 
 operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6000
 nodes_list = []
+links_dict = {}
 panel_coordinates = [0, 0]
+mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
+
+
+port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
 
 def generate_node_tree():
     """
-    The function that looks into the Heron/Operations path and creates a list of tuples of
-    directories where the first element in the tuple is a dir and the second is
-    its parent dir. All names for the dirs are generated (using ## to separate the different
-    parts of the node_name) in such a way that can be used by dearpygui (i.e. they are
-    unique and the first part before the first ## - which is the one that shows on a widget - is
-    descriptive of the dir or the file).
-    So one tuple would be ('Transforms##Operations##', 'Vision##Transforms##Operations##') which
-    would mean that a dir called Vision (with real node_name Vision##Transforms##Operations##) has as
-    its parent dir a dir called Transforms (with real node_name Transforms##Operations##). The list does not include
-    the directories that house the actual code (each operation must have its own directory into which any
-    python files must exist).
-    The returned list can be used in a tree_node widget.
-    :return: The list of tuples (parent dir, dir)
-    """
+        The function that looks into the Heron/Operations path and creates a list of tuples of
+        directories where the first element in the tuple is a dir and the second is
+        its parent dir. All names for the dirs are generated (using ## to separate the different
+        parts of the node_name) in such a way that can be used by dearpygui (i.e. they are
+        unique and the first part before the first ## - which is the one that shows on a widget - is
+        descriptive of the dir or the file).
+        So one tuple would be ('Transforms##Operations##', 'Vision##Transforms##Operations##') which
+        would mean that a dir called Vision (with real node_name Vision##Transforms##Operations##) has as
+        its parent dir a dir called Transforms (with real node_name Transforms##Operations##). The list does not include
+        the directories that house the actual code (each operation must have its own directory into which any
+        python files must exist).
+        The returned list can be used in a tree_node widget.
+        :return: The list of tuples (parent dir, dir)
+        """
     path_to_nodes = os.path.join(heron_path, 'Operations')
     node_dirs = []
+    dir_ids = {}
+    dir_id = 1000
     for d in os.walk(path_to_nodes):
         if len(d[1]) > 0:
             temp = d[0].split('\\')
@@ -54,17 +59,23 @@ def generate_node_tree():
             parent = ''
             while temp[i] != 'Heron':
                 parent = parent + temp[i] + '##'
+                if not dir_ids:
+                    parent_int = 1000
+                else:
+                    try:
+                        parent_int = dir_ids[parent]
+                    except:
+                        pass
                 i = i - 1
             if len(d[1]) > 1 and '__pycache__' not in d[1]:
                 for dir in d[1]:
                     if dir != '__pycache__':
                         dir_name = dir + '##' + parent
-                        node_dirs.append((parent, dir_name))
+                        dir_id += 1
+                        dir_ids[dir_name] = dir_id
+                        node_dirs.append((parent_int, parent, dir_id, dir_name))
 
     return node_dirs
-
-
-port_generator = get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
 
 def on_add_node(sender, data):
@@ -75,24 +86,26 @@ def on_add_node(sender, data):
     :param data: Not used
     :return: Nothing
     """
+    sneder_name = dpg.get_item_label(sender)
     # Get corresponding operation
     operation = None
     for op in operations_list:
-        if op.name == sender:
+        if op.name == sneder_name:
             operation = op
             break
 
     # Find how many other nodes there are already on the editor for the same operation
     num_of_same_nodes = 0
-    all_nodes = get_item_children("Node Editor##Editor")
-    if all_nodes is not None:
-        for n in all_nodes:
-            if operation.name in n:
-                num_of_same_nodes = num_of_same_nodes+1
+    all_nodes = dpg.get_item_children(node_editor)[1]
+
+    for n in all_nodes:
+        name = dpg.get_item_label(n)
+        if operation.name in name:
+            num_of_same_nodes = num_of_same_nodes+1
 
     # Create the Node
     name = operation.name + '##{}'.format(num_of_same_nodes)
-    n = Node(name=name)
+    n = Node(name=name, parent=node_editor)
     n.spawn_node_on_editor()
     n.starting_port = next(port_generator)
     nodes_list.append(n)
@@ -106,33 +119,55 @@ def on_link(sender, link):
     :param link: The link list
     :return: Nothing
     """
-    output_node = link[0].split('##')[-2] + '##' + link[0].split('##')[-1]
-    input_node = link[1].split('##')[-2] + '##' + link[1].split('##')[-1]
+    global links_dict
+
+    dpg.add_node_link(link[0], link[1], parent=sender)
+    link0_name = dpg.get_item_label(link[0])
+    link1_name = dpg.get_item_label(link[1])
+
+    if link0_name in links_dict:
+        inputs = links_dict[link0_name]
+        inputs.append(link1_name)
+    else:
+        inputs = [link1_name]
+
+    links_dict[link0_name] = inputs
+
+    output_nade_label = dpg.get_item_label(link[0])
+    iput_node_label = dpg.get_item_label(link[1])
+    output_node = output_nade_label.split('##')[-2] + '##' + output_nade_label.split('##')[-1]
+    input_node = iput_node_label.split('##')[-2] + '##' + iput_node_label.split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            n.add_topic_out(link[0])
+            n.add_topic_out(output_nade_label)
         if input_node == n.name:
-            n.add_topic_in(link[0])
+            n.add_topic_in(output_nade_label)
 
 
 # TODO: Define what happens when user deletes a link.
 def on_delink(sender, link):
-    print(link)
-    output_node = link[0].split('##')[-2] + '##' + link[0].split('##')[-1]
-    input_node = link[1].split('##')[-2] + '##' + link[1].split('##')[-1]
+    global links_dict
+
+    output_nade_label = dpg.get_item_label(link[0])
+    iput_node_label = dpg.get_item_label(link[1])
+    del links_dict[dpg.get_item_label(link[0])]
+
+    output_node = output_nade_label.split('##')[-2] + '##' + output_nade_label.split('##')[-1]
+    input_node = iput_node_label.split('##')[-2] + '##' + iput_node_label.split('##')[-1]
     for n in nodes_list:
         #print(n.name)
         #print(n.topics_in)
         #print(n.topics_out)
         #print('-------')
         if output_node == n.name:
-            n.remove_topic_out(link[0])
+            n.remove_topic_out(output_node)
         if input_node == n.name:
-            n.remove_topic_in(link[0])
+            n.remove_topic_in(output_node)
         #print(n.topics_in)
         #print(n.topics_out)
         #print('-------')
         #print('-------')
+    dpg.delete_item(link)
 
 
 def start_forwarders_process(path_to_com):
@@ -146,18 +181,22 @@ def start_forwarders_process(path_to_com):
 
     forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'],
                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-    #atexit.register(kill_child, forwarders.pid)
 
     print('Main loop PID = {}'.format(os.getpid()))
     print('Forwarders PID = {}'.format(forwarders.pid))
 
 
 def get_links_dictionary():
+    pass
     """
     Returns the links in dictionary form (the key is the out and the value is the list of all the ins connected to it)
     :return: The links dictionary
     """
-    links = np.array(get_links("Node Editor##Editor"))
+    '''
+    print(dpg.get_item_children(node_editor, slot=0))
+    print(dpg.get_selected_links(node_editor))
+    print(dpg.get_item_configuration(dpg.get_item_children(node_editor, slot=0)))
+    links = np.array(dpg.get_selected_links(node_editor=node_editor))
     links_dict = {}
     if len(links) > 0:
         for l in range(len(links[:, 0])):
@@ -170,6 +209,7 @@ def get_links_dictionary():
             links_dict[out] = inputs
 
     return links_dict
+    '''
 
 
 def on_start_graph(sender, data):
@@ -213,35 +253,33 @@ def on_end_graph(sender, data):
     elif platform.system() == 'Linux':
         forwarders.terminate()
 
-    with simple.window('Progress bar', x_pos=500, y_pos=400, width=400, height=80):
-        add_progress_bar('Killing processes', parent='Progress bar', width=400, height=40,
-                         overlay='Closing worker_exec processes')
+    with dpg.window(label='Progress bar', pos=[500, 400], width=400, height=80) as progress_bar:
+        killing_proc_bar = dpg.add_progress_bar(label='Killing processes', parent=progress_bar, width=400, height=40,
+                                                overlay='Closing worker_exec processes')
         t = 0
         while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
-            set_value('Killing processes', t/(ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
+            dpg.set_value(killing_proc_bar, t/(ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
             t = t + 0.1
             time.sleep(0.1)
-        delete_item('Killing processes')
+        dpg.delete_item(killing_proc_bar)
     update_control_graph_buttons(False)
-    delete_item('Progress bar')
+    dpg.delete_item(progress_bar)
 
     forwarders.kill()
     del forwarders
 
 
-def on_keys_pressed(sender, key_value):
-    if key_value == 46:  # Pressed the Delete key
-        indices_to_remove = []
-        for node in get_selected_nodes("Node Editor##Editor"):
-            for i in np.arange(len(nodes_list)-1, -1, -1):
-                if nodes_list[i].name == node:
-                    nodes_list[i].remove_from_editor()
-                    indices_to_remove.append(i)
-        for i in indices_to_remove:
-            del nodes_list[i]
+def on_del_pressed(sender, key_value):
+    indices_to_remove = []
 
-        for link in get_selected_links("Node Editor##Editor"):
-            delete_node_link("Node Editor##Editor", link[0], link[1])
+    for node in dpg.get_selected_nodes(node_editor=node_editor):
+        node_name = dpg.get_item_label(node)
+        for i in np.arange(len(nodes_list)-1, -1, -1):
+            if nodes_list[i].name == node_name:
+                nodes_list[i].remove_from_editor()
+                indices_to_remove.append(i)
+    for i in indices_to_remove:
+        del nodes_list[i]
 
 
 def update_control_graph_buttons(is_graph_running):
@@ -251,12 +289,24 @@ def update_control_graph_buttons(is_graph_running):
     :param is_graph_running: Is the graph running bool
     :return: Nothing
     """
+    with dpg.theme() as theme_active:
+        dpg.add_theme_color(dpg.mvThemeCol_Button, [50, 50, 180, 255], category=dpg.mvThemeCat_Core)
+
+    with dpg.theme() as theme_non_active:
+        dpg.add_theme_color(dpg.mvThemeCol_Button, [150, 150, 150, 255], category=dpg.mvThemeCat_Core)
+
     if is_graph_running:
-        configure_item('Start Graph', enabled=False)
-        configure_item('End Graph', enabled=True)
+        dpg.configure_item(start_graph_button_id, enabled=False)
+        dpg.set_item_theme(start_graph_button_id, theme_non_active)
+        dpg.configure_item(end_graph_button_id, enabled=True)
+        dpg.set_item_theme(end_graph_button_id, theme_active)
     else:
-        configure_item('Start Graph', enabled=True)
-        configure_item('End Graph', enabled=False)
+        dpg.configure_item(start_graph_button_id, enabled=True)
+        dpg.set_item_theme(start_graph_button_id, theme_active)
+        dpg.configure_item(end_graph_button_id, enabled=False)
+        dpg.set_item_theme(end_graph_button_id, theme_non_active)
+
+
 
 
 def save_graph():
@@ -264,8 +314,10 @@ def save_graph():
     Saves the current graph
     :return: Nothing
     """
-    def on_file_select(sender, data):
-        save_to = os.path.join(data[0], data[1])
+    def on_file_select(sender, app_data, user_data):
+        global links_dict
+
+        save_to = app_data['file_path_name']
         node_dict = {}
         for n in nodes_list:
             n.socket_pub_parameters = None
@@ -275,11 +327,22 @@ def save_graph():
             node_dict[n.name] = n.__dict__
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
 
-        node_dict['links'] = get_links_dictionary()
+        node_dict['links'] = links_dict
         with open(save_to, 'w+') as file:
             json.dump(node_dict, file, indent=4)
 
-    open_file_dialog(callback=on_file_select)
+    file_dialog = dpg.add_file_dialog(callback=on_file_select)
+    dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
+
+
+def get_attribute_id_from_label(label):
+    all_editors_children = dpg.get_item_children(node_editor, 1)
+    for node_id in all_editors_children:
+        all_nodes_childern = dpg.get_item_children(node_id, slot=1)
+        for child_id in all_nodes_childern:
+            child_label = dpg.get_item_label(child_id)
+            if child_label == label:
+                return child_id
 
 
 def load_graph():
@@ -290,12 +353,13 @@ def load_graph():
 
     clear_editor()
 
-    def on_file_select(sender, data):
+    def on_file_select(sender, app_data, user_data):
         global nodes_list
         global last_used_port
         global port_generator
+        global links_dict
 
-        load_file = os.path.join(data[0], data[1])
+        load_file = app_data['file_path_name']
         
         with open(load_file, 'r') as file:
             raw_dict = json.load(file)
@@ -304,7 +368,7 @@ def load_graph():
             for key in raw_dict.keys():
                 if key != 'links':
                     value = raw_dict[key]
-                    n = Node(name=value['name'])
+                    n = Node(name=value['name'], parent=node_editor)
                     op_dict = value['operation']
                     n.operation = op_list.create_operation_from_dictionary(op_dict)
                     n.node_index = value['node_index']
@@ -330,14 +394,17 @@ def load_graph():
 
                 elif key == 'links':
                     links_dict = raw_dict[key]
-                    for l1 in links_dict:
-                        for l2 in links_dict[l1]:
-                            add_node_link('Node Editor##Editor', l1, l2)
+                    for l1_name in links_dict:
+                        l1 = get_attribute_id_from_label(l1_name)
+                        for l2_name in links_dict[l1_name]:
+                            l2 = get_attribute_id_from_label(l2_name)
+                            dpg.add_node_link(l1, l2, parent=node_editor)
 
         last_used_port = int(nodes_list[-1].starting_port) + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
-        port_generator = get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
+        port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
-    open_file_dialog(callback=on_file_select)
+    file_dialog = dpg.add_file_dialog(callback=on_file_select, directory_selector=False)
+    dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
 
 
 # TODO: Add a UI asking the user if they are sure (and that all link will be lost)
@@ -347,101 +414,119 @@ def clear_editor():
     :return: Nothing
     """
     global nodes_list
-    if get_item_children('Node Editor##Editor'):
-        for n in get_item_children('Node Editor##Editor'):
-            delete_item(n)
-    if get_links('Node Editor##Editor'):
-        for l in get_links('Node Editor##Editor'):
-            delete_node_link('Node Editor##Editor', l[0], l[1])
+    if dpg.get_item_children(node_editor, slot=1):
+        for n in dpg.get_item_children(node_editor, slot=1):
+            dpg.delete_item(n)
     nodes_list = []
 
 
-def on_drag(sender, data):
+def on_drag(sender, data, user_data):
     """
     When mouse is dragged and a node is selected then update that node's coordinates
     When mouse is dragged on the canvas with no node selected then move all nodes by the mouse movement and
     update their coordinates
     :param sender: Not used (the editor window)
     :param data: The mouse drag amount in x and y
+    :param user_data: Not used
     :return: Nothing
     """
     global panel_coordinates
+    global mouse_dragging_deltas
+
     data = np.array(data)
 
     # If moving a selected node, update the node's stores coordinates
     if np.sum(np.abs(data)) > 0 and len(nodes_list) > 0:
-        for sel in get_selected_nodes('Node Editor##Editor'):
+        for sel in dpg.get_selected_nodes(node_editor=node_editor):
             for n in nodes_list:
-                if n.name in sel:
-                    n.coordinates = [get_item_configuration(sel)['x_pos'], get_item_configuration(sel)['y_pos']]
+                if n.id == sel:
+                    n.coordinates = dpg.get_item_pos(sel)
 
     # If dragging on the canvas with Ctrl pressed then move all nodes and update their stored coordinates
-    if len(get_selected_nodes('Node Editor##Editor')) == 0 and is_key_down(17):
+    if len(dpg.get_selected_nodes(node_editor=node_editor)) == 0 and dpg.is_key_down(17):
+        move = [data[1] - mouse_dragging_deltas[0], data[2] - mouse_dragging_deltas[1]]
         panel_coordinates = [0, 0]
-        panel_coordinates[0] = panel_coordinates[0] + data[1]
-        panel_coordinates[1] = panel_coordinates[1] + data[2]
+        panel_coordinates[0] = panel_coordinates[0] + move[0]
+        panel_coordinates[1] = panel_coordinates[1] + move[1]
+        mouse_dragging_deltas = [data[1], data[2]]
+
         for n in nodes_list:
-            simple.set_window_pos(n.name, n.coordinates[0] + int(data[1]),
-                                  n.coordinates[1] + int(data[2]))
-            n.coordinates = [get_item_configuration(n.name)['x_pos'], get_item_configuration(n.name)['y_pos']]
+            dpg.set_item_pos(n.id, [n.coordinates[0] + int(move[0]), n.coordinates[1] + int(move[1])])
+            n.coordinates = dpg.get_item_pos(n.id)
 
 
-with simple.window("Main Window"):
-    set_main_window_title("Heron")
-    set_main_window_size(1700, 1000)
-    set_main_window_pos(350, 0)
+def on_mouse_release(sender, app_data, user_data):
+    global mouse_dragging_deltas
+
+    mouse_dragging_deltas = [0, 0]
+
+
+vp = dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
+
+with dpg.font_registry():
+    # add font (set as default for entire app)
+    dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18, default_font=True)
+
+with dpg.window(width=1700, height=1000, pos=[0,0 ]) as main_window:
+    dpg.set_primary_window(main_window, True)
     # The Start Graph button that starts all processes
-    add_button("Start Graph", callback=on_start_graph)
-    add_same_line()
-    add_button("End Graph", callback=on_end_graph)
+    start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
+    dpg.add_same_line()
+    end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
     update_control_graph_buttons(False)
 
-    with simple.menu_bar('Menu Bar'):
-        with simple.menu('File'):
-            add_menu_item('New', callback=clear_editor)
-            add_menu_item('Save', callback=save_graph)
-            add_menu_item('Load', callback=load_graph)
-        with simple.menu('SSH'):
-            add_menu_item('Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
+    with dpg.menu_bar(label='Menu Bar'):
+        with dpg.menu(label='File'):
+            dpg.add_menu_item(label='New', callback=clear_editor)
+            dpg.add_menu_item(label='Save', callback=save_graph)
+            dpg.add_menu_item(label='Load', callback=load_graph)
+        with dpg.menu(label='SSH') as menu:
+            ssh_info_editor.set_parent_id(menu)
+            dpg.add_menu_item(label='Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
 
-with simple.window('Node Selector'):
+
+with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
     # Create the window of the Node selector
-    simple.set_window_pos('Node Selector', 10, 60)
-    simple.set_item_width('Node Selector', 300)
-    simple.set_item_height('Node Selector', 890)
 
     node_tree = generate_node_tree()
-    base_name = node_tree[0][0]
+    base_id = node_tree[0][0]
+    base_name = node_tree[0][1]
 
-    with simple.tree_node(base_name, parent='Node Selector', default_open=True):
-        pass
+    with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id):
+
         # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
         # tree_node widget
-        for parent, node in node_tree:
-            with simple.tree_node(node, parent=parent, default_open=True):
+        for parent_id, parent, node_id, node in node_tree:
+            with dpg.tree_node(label=node, parent=parent_id, default_open=True, id=node_id):
                 for op in operations_list:
                     if node == op.parent_dir:
-                        colour = choose_color_according_to_operations_type(node)
-                        add_button(op.name, width=150, height=30, callback=on_add_node)
-                        set_item_color(op.name, style=mvGuiCol_Button, color=colour)
+                        colour = gu.choose_color_according_to_operations_type(node)
+                        button = dpg.add_button(label=op.name, width=150, height=30, callback=on_add_node)
+                        with dpg.theme() as theme_id:
+                            dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
+                            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
+
+                        dpg.set_item_theme(button, theme_id)
 
 
-with simple.window("Node Editor", x_pos=int(get_main_window_size()[0]) - 1000, y_pos=0):
+with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0])as node_editor_window:
     # The node editor
-    with simple.node_editor('Node Editor##Editor', link_callback=on_link, delink_callback=on_delink):
+    with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=on_delink,
+                         width=1300, height=dpg.get_item_height(main_window) - 80) as node_editor:
 
-        simple.set_item_width('Node Editor', 1300)
-        simple.set_item_height('Node Editor', int(get_main_window_size()[1] - 80))
-        simple.set_window_pos('Node Editor', 370, 30)
+        dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
 
-#simple.show_debug()
-#simple.show_logger()
-#simple.show_documentation()
-#simple.show_style_editor()
+#dpg.show_debug()
+#dpg.show_logger()
+#dpg.show_documentation()
+#dpg.show_style_editor()
 
 # Button and mouse callback registers
-set_mouse_drag_callback(callback=on_drag, threshold=0.1)
-set_key_press_callback(callback=on_keys_pressed)
+with dpg.handler_registry():
+    dpg.add_key_press_handler(key=46, callback=on_del_pressed)
+    dpg.add_mouse_drag_handler(callback=on_drag)
+    dpg.add_mouse_release_handler(callback=on_mouse_release)
 
-default_style.set_style(heron_path)
-start_dearpygui(primary_window="Main Window")
+dpg.setup_dearpygui(viewport=vp)
+dpg.show_viewport(vp)
+dpg.start_dearpygui()
