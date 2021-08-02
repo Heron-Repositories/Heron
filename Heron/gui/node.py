@@ -45,6 +45,7 @@ class Node:
         self.theme_id = None
         self.extra_window_id = None
 
+
         self.get_corresponding_operation()
         self.get_node_index()
         self.assign_default_parameters()
@@ -286,8 +287,8 @@ class Node:
                 dpg.add_same_line()
                 attr = 'Verbocity'
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-                dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                             default_value=attr)
+                self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                                                 default_value=attr)
                 dpg.add_dummy(width=10)
                 dpg.add_same_line()
                 dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
@@ -337,7 +338,6 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name.replace(" ", "_"))
 
-        attribute_name = 'Verbocity##{}##{}'.format(self.operation.name, self.node_index)
         verbocity = str(self.verbose > 0)
         arguments_list.append(verbocity)
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
@@ -352,10 +352,11 @@ class Node:
 
         # Then update the parameters
         self.update_parameters()
+        self.start_thread_to_send_parameters_multiple_times()
+
         dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], parent=self.theme_id,
                             category=dpg.mvThemeCat_Nodes)
-       # dpg.set_item_theme(self.id, self.theme_id)
-        #configure_item('##{}'.format(attribute_name), enabled=False)
+
 
     def sending_parameters_multiple_times(self):
         for i in range(20):
@@ -384,7 +385,6 @@ class Node:
         self.process = None
         dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], parent=self.theme_id,
                             category=dpg.mvThemeCat_Nodes)
-        #dpg.set_item_theme(self.id, self.theme_id)
 
 
 
