@@ -7,10 +7,8 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
-import threading
 import numpy as np
-from dearpygui.core import *
-from dearpygui.simple import *
+import dearpygui.dearpygui as dpg
 import nidaqmx
 import cv2 as cv2
 from Heron import general_utils as gu
@@ -25,6 +23,7 @@ window_showing = False
 channels: list
 rate: int
 sample_mode: int
+dpg_ids = {}
 
 
 def plot(data):
@@ -36,10 +35,7 @@ def plot(data):
     plot_datay = np.array(data)
     try:
         for i, n in enumerate(channels):
-            add_data("plot_datax_{}".format(n), plot_datax)
-            add_data("plot_datay_{}".format(n), plot_datay)
-            # plotting new data
-            add_line_series('Plot {}'.format(n), "Voltage of {}/ V".format(n), plot_datax, plot_datay[i, :], weight=2)
+            dpg.set_value(dpg_ids['Series {}'.format(n)], [plot_datax, list(plot_datay[i, :])])
     except Exception as e:
         print('Plotting exception: {}'.format(e))
 
@@ -48,15 +44,20 @@ def plot_callback():
     global worker_object
     global window_showing
     global channels
-
-    window_showing = False
+    global dpg_ids
+    global buffer_size
 
     if worker_object.visualisation_on:
         if not window_showing:
-            show_item('Visualisation')
-            for n in channels:
-                show_item("Plot {}".format(n))
+
+            dpg.show_item(dpg_ids['Visualisation'])
+
             window_showing = True
+            for n in channels:
+                dpg.show_item(dpg_ids["Plot {}".format(n)])
+                dpg_ids['Series {}'.format(n)] = dpg.add_line_series(np.arange(buffer_size), np.arange(buffer_size),
+                                                                    parent=dpg_ids['Voltage of {} / Volts'.format(n)])
+
         if window_showing:
             try:
                 if len(channels) == 1:
@@ -68,23 +69,56 @@ def plot_callback():
 
     if not worker_object.visualisation_on:
         window_showing = False
-        try:
-            hide_item('Visualisation')
-            for n in channels:
-                hide_item('Plot {}'.format(n))
-        except Exception as e:
-            pass
+        dpg.stop_dearpygui()
 
 
 def start_plotting_thread():
+    """
+    The outside loop runs forever and blocks when the dpg.start_dearpygui() is called.
+    When the plot_callback() calls dpg.stop_dearpygui() then it continues running forever until the
+    worker_object.visualisation_on turns on at which point the start_dearpygui is called again and this blocks
+    :return: Nothing
+    """
     global channels
+    global dpg_ids
+    global worker_object
+    global window_showing
 
-    with window("Visualisation", width=500, height=700, show=False):
-        for n in channels:
-            add_plot("Plot {}".format(n), height=int(700/len(channels)), show=False)
-            add_data("plot_datax_{}".format(n), [])
-            add_data("plot_datay_{}".format(n), [])
-    start_dearpygui(primary_window='Visualisation')
+    while True:
+        if worker_object.visualisation_on:
+            if not window_showing:
+                dpg_ids['Viewport'] = dpg.create_viewport(title='Visualising NIDAQ', width=820,
+                                                          height=780)
+
+                with dpg.window(label="Visualisation", width=800, height=750, show=False) \
+                        as dpg_ids['Visualisation']:
+                    for n in channels:
+                        dpg_ids["Plot {}".format(n)] = \
+                            dpg.add_plot(label="Plot {}".format(n), height=int(700/len(channels)), width=800, show=False)
+                        dpg_ids['Time points'] = \
+                            dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
+                        dpg_ids['Voltage of {} / Volts'.format(n)] = \
+                            dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
+
+                dpg.set_viewport_resize_callback(on_resize_viewport)
+                dpg.setup_dearpygui(viewport=dpg_ids['Viewport'])
+                dpg.show_viewport(dpg_ids['Viewport'])
+                dpg.start_dearpygui()
+
+
+def on_resize_viewport():
+    global channels
+    num_of_channels = len(channels)
+
+    width = dpg.get_viewport_width()
+    height = dpg.get_viewport_height()
+
+    dpg.set_item_width(dpg_ids['Visualisation'], width - 20)
+    dpg.set_item_height(dpg_ids['Visualisation'], height-40)
+
+    for n in channels:
+        dpg.set_item_width(dpg_ids["Plot {}".format(n)], width - 20)
+        dpg.set_item_height(dpg_ids["Plot {}".format(n)], int(height/num_of_channels) - int(80/num_of_channels))
 
 
 def acquire(_worker_object):
@@ -115,11 +149,10 @@ def acquire(_worker_object):
                 sample_mode = nidaqmx.constants.AcquisitionType.HW_TIMED_SINGLE_POINT
 
             acquiring_on = True
-            print('Got nidaqmx analog input parameters. Starting capture')
         except Exception as e:
             cv2.waitKey(10)
 
-    task = nidaqmx.Task('Main')
+    task = nidaqmx.Task('Task {} {}'.format(worker_object.node_name, worker_object.node_index))
     for n in channels:
         task.ai_channels.add_ai_voltage_chan(n)
     task.timing.cfg_samp_clk_timing(rate=rate, sample_mode=sample_mode,
@@ -129,7 +162,9 @@ def acquire(_worker_object):
     while acquiring_on:
         worker_object.worker_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
         worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+
         plot_callback()
+
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
@@ -148,7 +183,7 @@ def on_end_of_life():
         task.stop()
         task.close()
         del task
-        stop_dearpygui()
+        dpg.stop_dearpygui()
     except Exception as e:
         print(e)
 
