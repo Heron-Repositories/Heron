@@ -196,25 +196,29 @@ class Node:
                         for k, parameter in enumerate(self.operation.parameters):
                             if self.operation.parameter_types[k] == 'int':
                                 id = dpg.add_input_int(label='{}##{}'.format(parameter, attribute_name),
-                                                  default_value=self.node_parameters[k],
-                                                  callback=self.update_parameters, width=100)
+                                                       default_value=self.node_parameters[k],
+                                                       callback=self.update_parameters, width=100,
+                                                       min_clamped=False, max_clamped=False,
+                                                       min_value=-1e8, max_value=1e8)
                             elif self.operation.parameter_types[k] == 'str':
                                 id = dpg.add_input_text(label='{}##{}'.format(parameter, attribute_name),
-                                               default_value=self.node_parameters[k],
-                                               callback=self.update_parameters, width=100)
+                                                        default_value=self.node_parameters[k],
+                                                        callback=self.update_parameters, width=100)
                             elif self.operation.parameter_types[k] == 'float':
                                 id = dpg.add_input_float(label='{}##{}'.format(parameter, attribute_name),
-                                                default_value=self.node_parameters[k],
-                                                callback=self.update_parameters, width=100)
+                                                         default_value=self.node_parameters[k],
+                                                         callback=self.update_parameters, width=100,
+                                                         min_clamped=False, max_clamped=False,
+                                                         min_value=-1e10, max_value=1e10)
                             elif self.operation.parameter_types[k] == 'bool':
                                 id = dpg.add_checkbox(label='{}##{}'.format(parameter, attribute_name),
-                                             default_value=self.node_parameters[k],
-                                             callback=self.update_parameters)
+                                                      default_value=self.node_parameters[k],
+                                                      callback=self.update_parameters)
                             elif self.operation.parameter_types[k] == 'list':
                                 id = dpg.add_combo(label='{}##{}'.format(parameter, attribute_name),
-                                          items=self.node_parameters_combos_items[k],
-                                          default_value=self.node_parameters[k][0],
-                                          callback=self.update_parameters, width=100)
+                                                   items=self.node_parameters_combos_items[k],
+                                                   default_value=self.node_parameters[k][0],
+                                                   callback=self.update_parameters, width=100)
 
                             self.parameter_inputs_ids[parameter] = id
 

@@ -29,7 +29,7 @@ def run_camera(worker_object):
             except:
                 cv2.waitKey(1)
 
-    while True:
+    while acquiring_on:
         ret, worker_object.worker_result = capture.read()
         worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
         try:
@@ -42,6 +42,10 @@ def run_camera(worker_object):
 
 def on_end_of_life():
     global capture
+    global acquiring_on
+
+    acquiring_on = True
+
     try:
         capture.release()
         cv2.destroyAllWindows()
