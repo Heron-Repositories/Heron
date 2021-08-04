@@ -1,7 +1,6 @@
 
 import sys
 from os import path
-import os
 
 current_dir = path.dirname(path.abspath(__file__))
 while path.split(current_dir)[-1] != r'Heron':
@@ -10,20 +9,33 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import json
 import numpy as np
+import h5py
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-from Heron.Operations.Sinks.General.Save_Array_to_Binary.diskarray import DiskArray
+#from Heron.Operations.Sinks.General.Save_Array_to_Binary.diskarray import DiskArray
 
 need_parameters = True
 expand: bool
 on_axis: int
-disk_array: DiskArray
+disk_array: h5py.Dataset
 file_name: str
 input_shape = None
 input_type: type
 output_shape: tuple
 output_type: str
-order: str
+shape_step: list
+hdf5_file: h5py.File
+
+
+def add_data_to_array(data):
+    global disk_array
+    global shape_step
+    global on_axis
+
+    disk_array.resize(np.array(disk_array.shape) + shape_step)
+    slice = [np.s_[:] for i in range(len(data.shape))]
+    slice[on_axis] = np.s_[int(disk_array.shape[on_axis] - shape_step[on_axis]):disk_array.shape[on_axis]]
+    disk_array[tuple(slice)] = data
 
 
 def save_array(data, parameters):
@@ -36,7 +48,8 @@ def save_array(data, parameters):
     global input_type
     global output_shape
     global output_type
-    global order
+    global shape_step
+    global hdf5_file
 
     # Once the parameters are received at the starting of the graph then they cannot be updated any more.
     if need_parameters:
@@ -58,53 +71,55 @@ def save_array(data, parameters):
 
             if expand:
                 input_shape = list(array.shape)
+                shape_step = np.zeros(len(input_shape))
                 input_shape[on_axis] = 0
+                shape_step[on_axis] = array.shape[on_axis]
             else:
                 input_shape = []
+                shape_step = []
                 for i, n in enumerate(array.shape):
                     if i == on_axis:
                         input_shape.append(0)
+                        shape_step.append(1)
                     input_shape.append(n)
+                    shape_step.append(0)
+            max_shape = np.copy(input_shape)
+            max_shape = list(max_shape)
+            max_shape[np.where(np.array(input_shape) == 0)[0][0]] = None
             input_shape = tuple(input_shape)
+            max_shape = tuple(max_shape)
 
             if output_type == 'Same':
                 output_type = input_type
             else:
                 output_type = np.dtype(output_type)
 
-            disk_array = DiskArray(file_name, shape=input_shape, dtype=output_type)
+            hdf5_file = h5py.File(file_name, 'w')
+            disk_array = hdf5_file.create_dataset('data', shape=input_shape, maxshape=max_shape, dtype=output_type, chunks=True)
 
             if not expand:
                 array = np.expand_dims(array, on_axis)
-                order = 'F'
-            else:
-                order = 'F'
-            disk_array.append(array, on_axis)
+
+            add_data_to_array(array)
+
         except Exception as e:
             print(e)
     else:
         try:
             if not expand:
                 array = np.expand_dims(array, on_axis)
-            disk_array.append(array, on_axis)
-            output_shape = tuple(map(int, disk_array.shape))
+            add_data_to_array(array)
 
-            with open("{}_header.json".format(file_name.split('.')[0]), "w+") as json_file:
-                json.dump({'shape': list(output_shape), 'dtype': str(output_type), 'order': order}, json_file)
+            output_shape = tuple(map(int, disk_array.shape))
         except Exception as e:
             print(e)
 
 
 def on_end_of_life():
-    global file_name
-    global output_shape
-    global input_type
-    global output_type
-    global order
+    global hdf5_file
 
-    new_file_name = file_name.split('.')[0]
-    with open("{}_header.json".format(new_file_name), "w+") as json_file:
-        json.dump({'shape': list(output_shape), 'dtype': str(output_type), 'order': order}, json_file)
+    hdf5_file.close()
+
 
 
 if __name__ == "__main__":
