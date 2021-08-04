@@ -36,17 +36,18 @@ class DiskArray(object):
         self.data = None
         self._update_ndarray()
 
-    def _update_ndarray(self):
+    def _update_ndarray(self, order='C'):
         if self.data is not None:
             self.data.flush()
 
-        self._create_ndarray()
+        self._create_ndarray(order)
 
-    def _create_ndarray(self):
+    def _create_ndarray(self, order):
         self.data = np.memmap(self._fpath,
-                        shape=self._capacity_shape,
-                        dtype=self._dtype,
-                        mode=self._mode)
+                              shape=self._capacity_shape,
+                              dtype=self._dtype,
+                              mode=self._mode,
+                              order=order)
         if self._shape is None:
             self._shape = self.data.shape
 
@@ -108,11 +109,13 @@ class DiskArray(object):
 
         diff = data_shape - remaining_capacity
         self._capacity_shape = self._incr_shape(self._capacity_shape, diff)
-        self._update_ndarray()
+
+        self._update_ndarray(order='F')
 
         slice = [np.s_[:] for i in range(len(self._capacity_shape))]
         slice[axis] = np.s_[self._shape[axis]:self._capacity_shape[axis]]
         self.data[tuple(slice)] = v
+
         self._shape = self._incr_shape(self._shape, diff)
 
     def close(self):
