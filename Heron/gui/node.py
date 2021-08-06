@@ -199,17 +199,17 @@ class Node:
                                                        default_value=self.node_parameters[k],
                                                        callback=self.update_parameters, width=100,
                                                        min_clamped=False, max_clamped=False,
-                                                       min_value=-1e8, max_value=1e8)
+                                                       min_value=int(-1e8), max_value=int(1e8), on_enter=True)
                             elif self.operation.parameter_types[k] == 'str':
                                 id = dpg.add_input_text(label='{}##{}'.format(parameter, attribute_name),
                                                         default_value=self.node_parameters[k],
-                                                        callback=self.update_parameters, width=100)
+                                                        callback=self.update_parameters, width=100, on_enter=True)
                             elif self.operation.parameter_types[k] == 'float':
                                 id = dpg.add_input_float(label='{}##{}'.format(parameter, attribute_name),
                                                          default_value=self.node_parameters[k],
                                                          callback=self.update_parameters, width=100,
                                                          min_clamped=False, max_clamped=False,
-                                                         min_value=-1e10, max_value=1e10)
+                                                         min_value=-1e10, max_value=1e10, on_enter=True)
                             elif self.operation.parameter_types[k] == 'bool':
                                 id = dpg.add_checkbox(label='{}##{}'.format(parameter, attribute_name),
                                                       default_value=self.node_parameters[k],
@@ -363,7 +363,7 @@ class Node:
 
 
     def sending_parameters_multiple_times(self):
-        for i in range(20):
+        for i in range(ct.NUMBER_OF_INITIAL_PARAMETERS_UPDATES):
             self.update_parameters()
             time.sleep(0.5)
 

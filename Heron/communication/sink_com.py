@@ -134,7 +134,7 @@ class SinkCom:
 
     def start_ioloop(self):
         """
-        Start the io loop for the transform node. It reads the link from the previous node's _com process,
+        Start the io loop for the sink node. It reads the link from the previous node's _com process,
         pushes it to the worker_com process,
         waits for the results,
         grabs the resulting link from the worker_com process and
@@ -146,10 +146,6 @@ class SinkCom:
             t1 = time.perf_counter()
             try:
                 sockets_in = dict(self.poller.poll(timeout=0))
-                #while not sockets_in:
-                #    sockets_in = dict(self.poller.poll(timeout=0))
-
-                #t2 = time.perf_counter()
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                     topic, data_index, data_time, messagedata = self.get_sub_data()

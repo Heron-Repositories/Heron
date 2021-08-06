@@ -167,6 +167,15 @@ class TransformWorker:
             time.sleep(0.1)
         #print('--- Finished sending POL from {} {}'.format(self.node_name, self.node_index))
 
+    def set_new_visualisation_loop(self, new_visualisation_loop):
+        """
+        If a specific source_worker needs to do something else regarding visualisation then it needs to implement a
+        visualisation loop function and pass it here by giving it as an argument to this function
+        :param new_visualisation_loop: The new function that will deal with the node's visualisation
+        :return: Nothing
+        """
+        self.visualisation_loop = new_visualisation_loop
+
     def visualisation_loop(self):
         """
         When the visualisation parameter in a node is set to True then this loop starts in a new visualisation thread.

@@ -133,15 +133,15 @@ def on_link(sender, link):
 
     links_dict[link0_name] = inputs
 
-    output_nade_label = dpg.get_item_label(link[0])
-    iput_node_label = dpg.get_item_label(link[1])
-    output_node = output_nade_label.split('##')[-2] + '##' + output_nade_label.split('##')[-1]
-    input_node = iput_node_label.split('##')[-2] + '##' + iput_node_label.split('##')[-1]
+    output_node_label = dpg.get_item_label(link[0])
+    input_node_label = dpg.get_item_label(link[1])
+    output_node = output_node_label.split('##')[-2] + '##' + output_node_label.split('##')[-1]
+    input_node = input_node_label.split('##')[-2] + '##' + input_node_label.split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            n.add_topic_out(output_nade_label)
+            n.add_topic_out('{}_{}'.format(output_node_label, input_node_label))
         if input_node == n.name:
-            n.add_topic_in(output_nade_label)
+            n.add_topic_in('{}_{}'.format(output_node_label, input_node_label))
 
 
 # TODO: Define what happens when user deletes a link.
@@ -184,32 +184,6 @@ def start_forwarders_process(path_to_com):
 
     print('Main loop PID = {}'.format(os.getpid()))
     print('Forwarders PID = {}'.format(forwarders.pid))
-
-
-def get_links_dictionary():
-    pass
-    """
-    Returns the links in dictionary form (the key is the out and the value is the list of all the ins connected to it)
-    :return: The links dictionary
-    """
-    '''
-    print(dpg.get_item_children(node_editor, slot=0))
-    print(dpg.get_selected_links(node_editor))
-    print(dpg.get_item_configuration(dpg.get_item_children(node_editor, slot=0)))
-    links = np.array(dpg.get_selected_links(node_editor=node_editor))
-    links_dict = {}
-    if len(links) > 0:
-        for l in range(len(links[:, 0])):
-            out = links[l, 0]
-            try:
-                inputs = links_dict[out]
-            except:
-                inputs = []
-            inputs.append(links[l, 1])
-            links_dict[out] = inputs
-
-    return links_dict
-    '''
 
 
 def on_start_graph(sender, data):
@@ -305,8 +279,6 @@ def update_control_graph_buttons(is_graph_running):
         dpg.set_item_theme(start_graph_button_id, theme_active)
         dpg.configure_item(end_graph_button_id, enabled=False)
         dpg.set_item_theme(end_graph_button_id, theme_non_active)
-
-
 
 
 def save_graph():
