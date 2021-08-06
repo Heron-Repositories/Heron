@@ -17,7 +17,7 @@ from pynput.keyboard import Listener
 worker_object: SourceWorker
 listener: Listener
 key_pressed_and_released = [None, None]
-new_input_for_vis = False
+previous_user_input = False
 loop_on = True
 
 
@@ -31,7 +31,7 @@ def on_key_pressed(key):
 
 def on_key_released(key):
     global key_pressed_and_released
-    global new_input_for_vis
+    global previous_user_input
     try:
         key_pressed_and_released[1] = key.char
         new_input_for_vis = key.char
@@ -41,7 +41,7 @@ def on_key_released(key):
 
 def visualisation_to_stdout():
     global worker_object
-    global new_input_for_vis
+    global previous_user_input
     global key_pressed_and_released
     while True:
         while worker_object.visualisation_on:

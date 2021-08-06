@@ -7,12 +7,10 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
-import json
 import numpy as np
 import h5py
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-#from Heron.Operations.Sinks.General.Save_Array_to_Binary.diskarray import DiskArray
 
 need_parameters = True
 expand: bool
@@ -21,7 +19,6 @@ disk_array: h5py.Dataset
 file_name: str
 input_shape = None
 input_type: type
-output_shape: tuple
 output_type: str
 shape_step: list
 hdf5_file: h5py.File
@@ -46,7 +43,6 @@ def save_array(data, parameters):
     global disk_array
     global input_shape
     global input_type
-    global output_shape
     global output_type
     global shape_step
     global hdf5_file
@@ -95,7 +91,8 @@ def save_array(data, parameters):
                 output_type = np.dtype(output_type)
 
             hdf5_file = h5py.File(file_name, 'w')
-            disk_array = hdf5_file.create_dataset('data', shape=input_shape, maxshape=max_shape, dtype=output_type, chunks=True)
+            disk_array = hdf5_file.create_dataset('data', shape=input_shape, maxshape=max_shape, dtype=output_type,
+                                                  chunks=True)
 
             if not expand:
                 array = np.expand_dims(array, on_axis)
@@ -109,8 +106,6 @@ def save_array(data, parameters):
             if not expand:
                 array = np.expand_dims(array, on_axis)
             add_data_to_array(array)
-
-            output_shape = tuple(map(int, disk_array.shape))
         except Exception as e:
             print(e)
 
@@ -119,7 +114,6 @@ def on_end_of_life():
     global hdf5_file
 
     hdf5_file.close()
-
 
 
 if __name__ == "__main__":
