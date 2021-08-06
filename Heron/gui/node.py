@@ -377,8 +377,11 @@ class Node:
         print('ooo Received POL from {} {}'.format(self.name, self.node_index))
 
     def stop_com_process(self):
-        self.socket_sub_proof_of_life.disconnect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
-        self.socket_sub_proof_of_life.close()
+        try:
+            self.socket_sub_proof_of_life.disconnect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
+            self.socket_sub_proof_of_life.close()
+        except:
+            pass
 
         if platform.system() == 'Windows':
             self.process.send_signal(signal.CTRL_BREAK_EVENT)

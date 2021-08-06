@@ -18,8 +18,8 @@ from Heron import general_utils as gu
 need_parameters = True
 screen_image = []
 overlayed_image = []
-image_height = 780
-image_width = 1260
+image_height = 800
+image_width = 1280
 screen_texture_id: int
 photodiode_on = False
 overlay_image_pos = []
@@ -69,7 +69,6 @@ def overlay_image(angle):
     screen_image_to_blue()
     screen_image = np.reshape(screen_image, (image_width, image_height, 4)).astype(np.float16)
 
-
     rotated_overlayed_image = rotate(overlayed_image, angle, (0, 1), reshape=False).astype(np.float16) / overlayed_image.max()
     rotated_overlayed_image = np.flipud(rotated_overlayed_image)
 
@@ -110,7 +109,7 @@ def start_dpg_thread():
     dpg.set_viewport_title(title='Custom Title')
     dpg.set_viewport_width(image_width + 20)
     dpg.set_viewport_height(image_height + 20)
-    dpg.set_viewport_pos([0, 0])
+    dpg.set_viewport_pos([1980, 0])
     dpg.set_viewport_decorated(False)
 
     dpg.start_dearpygui()
