@@ -75,12 +75,14 @@ def change_camera_parameters(worker_object):
     result = []
     if exposure != -1:
         result.append(os.system('v4l2-ctl -c exposure={}'.format(exposure)))
-        time.sleep(0.5)
+        time.sleep(0.2)
     if gain != -1:
         result.append(os.system('v4l2-ctl -c gain={}'.format(gain)))
-        time.sleep(0.5)
+        time.sleep(0.2)
     if trigger_mode:
         result.append(os.system('v4l2-ctl -c trigger_mode=1'))
+        time.sleep(0.2)
+        result.append(os.system('v4l2-ctl -c frame_timeout={}'.format(180000)))
         time.sleep(0.2)
     else:
         result.append(os.system('v4l2-ctl -c trigger_mode=0'))
