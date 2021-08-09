@@ -12,11 +12,12 @@ from Heron.communication.ssh_com import SSHCom
 
 
 class SourceWorker:
-    def __init__(self, port, parameters_topic, end_of_life_function, verbose=False,
+    def __init__(self, port, parameters_topic, initialisation_function, end_of_life_function, verbose=False,
                  ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
         self.parameters_topic = parameters_topic
         self.data_port = port
         self.pull_heartbeat_port = str(int(self.data_port) + 1)
+        self.initialisation_function = initialisation_function
         self.end_of_life_function = end_of_life_function
         self.verbose = verbose
         self.node_name = parameters_topic.split('##')[-2]
@@ -32,6 +33,7 @@ class SourceWorker:
         self.loops_on = True
         self.visualisation_on = False
         self.visualisation_thread = None
+        self.initialised = False
 
         self.context = None
         self.socket_push_data = None
@@ -92,6 +94,9 @@ class SourceWorker:
             parameters_in_bytes = self.socket_sub_parameters.recv(flags=zmq.NOBLOCK)
             args = pickle.loads(parameters_in_bytes)
             self.parameters = args
+            if not self.initialised and self.initialisation_function is not None:
+                self.initialisation_function(self)
+            self.initialised = True
             # print('TOPIC {}'.format(topic))
             #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
             # print(args)

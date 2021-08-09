@@ -13,12 +13,13 @@ from Heron.communication.ssh_com import SSHCom
 
 
 class TransformWorker:
-    def __init__(self, recv_topics_buffer, pull_port, work_function, end_of_life_function, parameters_topic, verbose,
-                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
+    def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
+                 parameters_topic, verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
         self.push_data_port = str(int(self.pull_data_port) + 1)
         self.pull_heartbeat_port = str(int(self.pull_data_port) + 2)
+        self.initialisation_function = initialisation_function
         self.work_function = work_function
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
@@ -36,6 +37,7 @@ class TransformWorker:
         self.visualisation_on = False
         self.visualisation_thread = None
         self.loops_on = True
+        self.initialised = False
 
         self.context = None
         self.socket_pull_data = None
@@ -123,6 +125,9 @@ class TransformWorker:
             args = pickle.loads(args_pyobj)
             if args is not None:
                 self.parameters = args
+                if not self.initialised and self.initialisation_function is not None:
+                    self.initialisation_function(self)
+                self.initialised = True
                 #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):

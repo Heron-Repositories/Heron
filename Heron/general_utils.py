@@ -194,7 +194,7 @@ def start_the_source_communications_process():
     return com_object
 
 
-def start_the_source_worker_process(worker_function, end_of_life_function):
+def start_the_source_worker_process(worker_function, end_of_life_function, initialisation_function=None):
     """
     Creates a SourceWorker for a worker_exec process of a Source
     :param worker_function:
@@ -204,7 +204,9 @@ def start_the_source_worker_process(worker_function, end_of_life_function):
         parse_arguments_to_worker(sys.argv)
     verbose = verbose == 'True'
 
-    worker_object = SourceWorker(port=port, parameters_topic=parameters_topic, end_of_life_function=end_of_life_function,
+    worker_object = SourceWorker(port=port, parameters_topic=parameters_topic,
+                                 initialisation_function=initialisation_function,
+                                 end_of_life_function=end_of_life_function,
                                  verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                  ssh_local_password=ssh_local_password)
     worker_object.connect_socket()
@@ -235,7 +237,7 @@ def start_the_transform_communications_process():
     return com_object
 
 
-def start_the_transform_worker_process(work_function, end_of_life_function):
+def start_the_transform_worker_process(work_function, end_of_life_function, initialisation_function=None):
     """
     Starts the _worker process of the Transform that grabs link from the _com process, does something with them
     and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
@@ -250,7 +252,8 @@ def start_the_transform_worker_process(work_function, end_of_life_function):
     for rt in receiving_topics:
         buffer[rt] = []
 
-    worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
+    worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port,
+                                    initialisation_function=initialisation_function, work_function=work_function,
                                     end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
                                     verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                     ssh_local_password=ssh_local_password)
@@ -280,7 +283,7 @@ def start_the_sink_communications_process():
     return com_object
 
 
-def start_the_sink_worker_process(work_function, end_of_life_function):
+def start_the_sink_worker_process(work_function, end_of_life_function, initialisation_function=None):
     """
     Starts the _worker process of the Transform that grabs link from the _com process, does something with them
     and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
@@ -295,7 +298,8 @@ def start_the_sink_worker_process(work_function, end_of_life_function):
     for rt in receiving_topics:
         buffer[rt] = []
 
-    worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port, work_function=work_function,
+    worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port,
+                               initialisation_function=initialisation_function, work_function=work_function,
                                end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
                                verbose=verbose, ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                ssh_local_password=ssh_local_password)
