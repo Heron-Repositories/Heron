@@ -16,7 +16,7 @@ NodeAttributeNames = ['Parameters', 'Frame In']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['File name', 'Timestamp', 'Pixel Format In', 'Pixel Format Out', 'Fps']
 ParameterTypes = ['str', 'bool', 'str', 'str', 'int']
-ParametersDefaultValues = ['output.avi', True, 'bayer_rggb8', 'rgb24', 120]
+ParametersDefaultValues = ['output.avi', True, 'bayer_rggb8', 'rgb0', 120]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'save_ffmpeg_video_worker.py')
 # </editor-fold>
 

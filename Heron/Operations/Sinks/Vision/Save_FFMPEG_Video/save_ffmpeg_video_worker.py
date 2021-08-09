@@ -64,7 +64,6 @@ def save_video(data, parameters):
 
             if time_stamp:
                 add_timestamp_to_filename()
-
             need_parameters = False
         except:
             return
@@ -73,10 +72,10 @@ def save_video(data, parameters):
         image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
         size = image.shape
 
-        if write_proc is None:
+        try:
+            write_proc.stdin.write(image.astype(np.uint8).tobytes())
+        except Exception as e:
             write_proc = ffmpeg_write_process(file_name, fps, pixel_format_in, pixel_format_out, size[1], size[0])
-
-        write_proc.stdin.write(image.astype(np.uint8).tobytes())
 
     end = time.perf_counter()
     #print('ooooTime of frame receive = {}, saved = {}, dif = {}'.format(start, end, end-start))
