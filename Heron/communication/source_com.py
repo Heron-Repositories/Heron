@@ -1,18 +1,18 @@
 
-import platform
-import signal
+from datetime import datetime
 import os
 import zmq
 import time
 import threading
-from Heron import constants as ct
+
+from Heron import constants as ct, general_utils as gu
 from Heron.communication.socket_for_serialization import Socket
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.ssh_com import SSHCom
 
 
 class SourceCom:
-    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose=False,
+    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='',
                  ssh_local_server_id='None', ssh_remote_server_id='None'):
         self.sending_topics = sending_topics
         self.sending_topic = self.sending_topics[0]  # TODO need to deal with multiple outputs
@@ -35,6 +35,17 @@ class SourceCom:
         self.stream_pull_data = None
         self.socket_push_heartbeat = None
         self.average_sending_time = 0
+
+        # If self.verbose is a string it is the file name to log things in. If it is an int it is the level of the verbosity
+        self.logger = None
+        if self.verbose != '':
+            try:
+                self.verbose = int(self.verbose)
+            except:
+                log_file_name =  gu.add_timestamp_to_filename(self.verbose, datetime.now())
+                self.logger = gu.setup_logger('Source', log_file_name)
+                self.logger.info('Index of data packet : Computer Time')
+                self.verbose = False
 
     def connect_sockets(self):
         """
@@ -91,6 +102,8 @@ class SourceCom:
             print('----------')
             print("Source with topic {} sending packet with data_index {} at time {}".format(self.sending_topic, self.index, self.time))
             print('Time Diff between packages = {}. Average package sending time = {} ms'.format(dt/1000, self.average_sending_time / 1000))
+        if self.logger:
+            self.logger.info('{} : {}'.format(self.index, datetime.now()))
         self.previous_time = self.time
 
     def heartbeat_loop(self):

@@ -19,7 +19,7 @@ listener: Listener
 key_pressed_and_released = [None, None]
 previous_user_input = False
 loop_on = True
-
+new_input_for_vis = ''
 
 def on_key_pressed(key):
     global key_pressed_and_released
@@ -32,6 +32,8 @@ def on_key_pressed(key):
 def on_key_released(key):
     global key_pressed_and_released
     global previous_user_input
+    global new_input_for_vis
+
     try:
         key_pressed_and_released[1] = key.char
         new_input_for_vis = key.char
@@ -43,6 +45,8 @@ def visualisation_to_stdout():
     global worker_object
     global previous_user_input
     global key_pressed_and_released
+    global new_input_for_vis
+
     while True:
         while worker_object.visualisation_on:
             if new_input_for_vis:

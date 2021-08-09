@@ -5,8 +5,9 @@ import time
 import threading
 import zmq
 import os
+from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
 
 
@@ -34,7 +35,18 @@ class SinkCom:
         self.socket_push_data = None
         self.socket_push_heartbeat = None
 
-        self.index = -1
+        self.index = 0
+
+        # If self.verbose is a string it is the file name to log things in. If it is an int it is the level of the verbosity
+        self.logger = None
+        if self.verbose != '':
+            try:
+                self.verbose = int(self.verbose)
+            except:
+                log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
+                self.logger = gu.setup_logger('Sink', log_file_name)
+                self.logger.info('Index of data packet received: Topic : Computer Time')
+                self.verbose = False
 
         atexit.register(self.on_kill, None, None)
         signal.signal(signal.SIGTERM, self.on_kill)
@@ -152,6 +164,8 @@ class SinkCom:
 
                     if self.verbose:
                         print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
+                    if self.logger:
+                        self.logger.info('{} : {} : {}'.format(data_index, topic, datetime.now()))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)

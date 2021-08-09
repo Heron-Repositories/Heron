@@ -5,8 +5,9 @@ import time
 import threading
 import zmq
 import os
+from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
 
 
@@ -38,7 +39,18 @@ class TransformCom:
         self.socket_pub_data = None
         self.socket_push_heartbeat = None
 
-        self.index = -1
+        self.index = 0
+
+        # If self.verbose is a string it is the file name to log things in. If it is an int it is the level of the verbosity
+        self.logger = None
+        if self.verbose != '':
+            try:
+                self.verbose = int(self.verbose)
+            except:
+                log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
+                self.logger = gu.setup_logger('Transform', log_file_name)
+                self.logger.info('Index of data packet given : Index of data packet received : Topic : Computer Time')
+                self.verbose = False
 
     def connect_sockets(self):
         """
@@ -174,6 +186,8 @@ class TransformCom:
                                                                                           self.sending_topics,
                                                                                           data_index,
                                                                                           data_time))
+                    if self.logger:
+                        self.logger.info('{} : {} : {}: {}'.format(self.index, data_index, topic, datetime.now()))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)

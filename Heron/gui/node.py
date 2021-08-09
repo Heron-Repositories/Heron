@@ -38,7 +38,7 @@ class Node:
         self.node_parameters = None
         self.node_parameters_combos_items = []
         self.parameter_inputs_ids = {}
-        self.verbose = 0
+        self.verbose = ''
         self.context = None
         self.socket_pub_parameters = None
         self.socket_sub_proof_of_life = None
@@ -277,7 +277,7 @@ class Node:
                 dpg.add_dummy(height=10)
                 dpg.add_dummy(width=10)
                 dpg.add_same_line()
-                dpg.add_text('Python script of worker process or Python.exe and script')
+                dpg.add_text('Python script of worker process OR Python.exe and script:')
 
                 dpg.add_dummy(width=10)
                 dpg.add_same_line()
@@ -289,14 +289,17 @@ class Node:
                 dpg.add_dummy(height=6)
                 dpg.add_dummy(width=10)
                 dpg.add_same_line()
-                attr = 'Verbocity'
+                attr = 'Log file or Verbosity level:'
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
                 self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                                  default_value=attr)
                 dpg.add_dummy(width=10)
                 dpg.add_same_line()
-                dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
-                                  callback=self.update_verbosity, width=100)
+                #dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
+                #                  callback=self.update_verbosity, width=100)
+                dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
+                                   callback=self.update_verbosity, width=400,
+                                   hint='Log file name or verbosity level integer.')
 
     def update_verbosity(self, sender, data):
         self.verbose = dpg.get_value(sender)
@@ -342,8 +345,10 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name.replace(" ", "_"))
 
-        verbocity = str(self.verbose > 0)
-        arguments_list.append(verbocity)
+        #verbocity = str(self.verbose > 0)
+        #arguments_list.append(verbocity)
+        arguments_list.append(self.verbose)
+        print(self.verbose)
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)

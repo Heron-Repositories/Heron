@@ -144,7 +144,7 @@ def run_camera(worker_object):
 
             gst_out = "appsrc ! video/x-raw, format=GRAY8 ! nvvidconv ! video/x-raw(memory:NVMM) ! \
                        omxh264enc ! h264parse ! matroskamux ! filesink location={}".format(save_file)
-            #gst_out = "appsrc ! video/x-raw, format=GRAY8 ! queue ! nvvidconv ! omxh264enc ! h264parse ! qtmux ! filesink location={} ".format(save_file)
+            #gst_out = "appsrc ! video/x-raw, format=GRAY8 ! queue ! nvvidconv ! omxh264enc ! h264parse ! qtmux ! filesink location={} ".format(file_name)
             output_video = cv2.VideoWriter(gst_out, cv2.CAP_GSTREAMER, 0, file_fps, (width, height), False)
 
         # Before changing the v4l2 driver parameters first capture a frame (otherwise the changes do not stick)

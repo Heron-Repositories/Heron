@@ -6,6 +6,7 @@ import sys
 import signal
 import math
 from struct import *
+import logging
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
@@ -106,6 +107,28 @@ def register_exit_signals(function_to_register):
         signal.signal(signal.SIGTERM, function_to_register)
 
 
+def setup_logger(name, log_file, level=logging.DEBUG):
+    """To setup as many loggers as you want"""
+    formatter = logging.Formatter(fmt='%(message)s')
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+
+def add_timestamp_to_filename(file_name, datetime):
+
+    filename = file_name.split('.')
+    date_time = '{}'.format(datetime).replace(':', '-').replace(' ', '_').split('.')[0]
+    file_name = '{}_{}.{}'.format(filename[0], date_time, filename[1])
+    return file_name
+
+
 def parse_arguments_to_com(args):
     """
     Turns the list of argv arguments that is send to a com process (by the editor) into appropriate list of strings
@@ -181,7 +204,7 @@ def start_the_source_communications_process():
 
     push_port, _, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec =\
         parse_arguments_to_com(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
                            worker_exec=worker_exec, verbose=verbose, ssh_local_server_id=ssh_local_server_id,
@@ -202,7 +225,7 @@ def start_the_source_worker_process(worker_function, end_of_life_function, initi
     """
     port, parameters_topic, _, verbose, ssh_local_ip, ssh_local_username, ssh_local_password =\
         parse_arguments_to_worker(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     worker_object = SourceWorker(port=port, parameters_topic=parameters_topic,
                                  initialisation_function=initialisation_function,
@@ -224,7 +247,7 @@ def start_the_transform_communications_process():
     """
     push_port, receiving_topics, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id,\
         worker_exec = parse_arguments_to_com(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,
                               parameters_topic=parameters_topic, push_port=push_port, worker_exec=worker_exec,
@@ -246,7 +269,7 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
 
     pull_port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     buffer = {}
     for rt in receiving_topics:
@@ -271,7 +294,7 @@ def start_the_sink_communications_process():
     """
     push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec = \
         parse_arguments_to_com(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
                          push_port=push_port, worker_exec=worker_exec, verbose=verbose,
@@ -292,7 +315,7 @@ def start_the_sink_worker_process(work_function, end_of_life_function, initialis
 
     pull_port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
-    verbose = verbose == 'True'
+    #verbose = verbose == 'True'
 
     buffer = {}
     for rt in receiving_topics:
