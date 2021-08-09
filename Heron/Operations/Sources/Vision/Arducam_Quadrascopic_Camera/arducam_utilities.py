@@ -139,7 +139,7 @@ class ArducamUtils(object):
     def __init__(self, device_num):
         import subprocess
         current_dir = path.dirname(path.abspath(__file__))
-        scripts_file = path.join(current_dir, 'scripts', 'jetson_variables.sh')
+        scripts_file = path.join(current_dir, '__scripts__', 'jetson_variables.sh')
         command = ['bash', '-c', 'source {} && env'.format(scripts_file)]
         logging.debug(command)
 

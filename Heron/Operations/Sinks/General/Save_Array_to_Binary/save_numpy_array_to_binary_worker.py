@@ -9,10 +9,12 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
 import h5py
+from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 
 need_parameters = True
+time_stamp: bool
 expand: bool
 on_axis: int
 disk_array: h5py.Dataset
@@ -22,6 +24,14 @@ input_type: type
 output_type: str
 shape_step: list
 hdf5_file: h5py.File
+
+
+def add_timestamp_to_filename():
+    global file_name
+
+    filename = file_name.split('.')
+    date_time = '{}'.format(datetime.now()).replace(':', '-').replace(' ', '_').split('.')[0]
+    file_name = '{}_{}.{}'.format(filename[0], date_time, filename[1])
 
 
 def add_data_to_array(data):
@@ -37,6 +47,7 @@ def add_data_to_array(data):
 
 def save_array(data, parameters):
     global need_parameters
+    global time_stamp
     global expand
     global on_axis
     global file_name
@@ -51,9 +62,10 @@ def save_array(data, parameters):
     if need_parameters:
         try:
             file_name = parameters[0]
-            expand = parameters[1]
-            on_axis = parameters[2]
-            output_type = parameters[3]
+            time_stamp = parameters[1]
+            expand = parameters[2]
+            on_axis = parameters[3]
+            output_type = parameters[4]
             need_parameters = False
         except:
             return
@@ -90,6 +102,8 @@ def save_array(data, parameters):
             else:
                 output_type = np.dtype(output_type)
 
+            if time_stamp:
+                add_timestamp_to_filename()
             hdf5_file = h5py.File(file_name, 'w')
             disk_array = hdf5_file.create_dataset('data', shape=input_shape, maxshape=max_shape, dtype=output_type,
                                                   chunks=True)

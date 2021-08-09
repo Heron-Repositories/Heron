@@ -2,6 +2,8 @@
 import numpy as np
 import time
 import ffmpeg
+from datetime import datetime
+from subprocess import Popen
 import sys
 from os import path
 
@@ -13,12 +15,20 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.communication.sink_worker import SinkWorker
-from Heron.Operations.Sinks.Vision.Save_FFMPEG_Video import save_ffmpeg_video_com
 
-worker_object: SinkWorker
 need_parameters = True
-output = None
-write_proc = None
+worker_object: SinkWorker
+file_name: str
+time_stamp: bool
+write_proc: Popen
+
+
+def add_timestamp_to_filename():
+    global file_name
+
+    filename = file_name.split('.')
+    date_time = '{}'.format(datetime.now()).replace(':', '-').replace(' ', '_').split('.')[0]
+    file_name = '{}_{}.{}'.format(filename[0], date_time, filename[1])
 
 
 def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, width, height):
@@ -35,7 +45,7 @@ def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, 
 def save_video(data, parameters):
     global worker_object
     global need_parameters
-    global output
+    global time_stamp
     global write_proc
     global file_name
     global pixel_format_out
@@ -47,9 +57,14 @@ def save_video(data, parameters):
     if need_parameters:
         try:
             file_name = parameters[0]
-            pixel_format_in = parameters[1]
-            pixel_format_out = parameters[2]
-            fps = parameters[3]
+            time_stamp = parameters[1]
+            pixel_format_in = parameters[2]
+            pixel_format_out = parameters[3]
+            fps = parameters[4]
+
+            if time_stamp:
+                add_timestamp_to_filename()
+
             need_parameters = False
         except:
             return

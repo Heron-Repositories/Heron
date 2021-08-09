@@ -220,7 +220,7 @@ def new_visualisation():
                 cv2.imshow(window_name, worker_object.worker_result)
                 cv2.waitKey(1)
                 window_showing = True
-            if window_showing:
+            if window_showing and worker_object.worker_result is not None:
                 try:
                     image = cv2.cvtColor(worker_object.worker_result, cv2.COLOR_BAYER_RG2RGB)
                     image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
