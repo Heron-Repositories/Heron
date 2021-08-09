@@ -11,7 +11,7 @@ Exec = os.path.realpath(__file__)
 """
 Properties of the generated Node
 """
-BaseName = 'T.L. Projector Output'
+BaseName = 'TL Projector Output'
 NodeAttributeNames = ['Parameters', 'Trigger Photodiode.', 'Angle of Pic']
 NodeAttributeType = ['Static', 'Input', 'Input']
 ParameterNames = ['Picture file name', 'Screen X', 'Screen Y', 'Picture X', 'Picture Y']
