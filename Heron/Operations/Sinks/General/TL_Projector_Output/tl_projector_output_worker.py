@@ -61,8 +61,6 @@ def screen_image_to_blue_with_red_spot():
     photodiode_on = True
 
 
-
-
 def screen_image_to_black():
     global image_width
     global image_height
@@ -142,19 +140,21 @@ def start_dpg_thread():
     dpg.start_dearpygui()
 
 
-def update_output(data, parameters):
-    global need_parameters
+def initialise(_worker_object):
     global overlayed_image
     global overlay_image_pos
     global screen_pos
 
-    # Once the parameters are received at the starting of the graph then they cannot be updated any more.
-    if need_parameters:
+    need_parameters = True
+
+    while need_parameters:
+        parameters = _worker_object.parameters
+
         try:
             overlay_image_file_name = parameters[0]
             screen_pos = [parameters[1], parameters[2]]
             overlay_image_pos = [parameters[3], parameters[4]]
-            overlayed_image = cv2.imread(overlay_image_file_name).astype(np.float16)/255
+            overlayed_image = cv2.imread(overlay_image_file_name).astype(np.float16) / 255
             oi_image_height, oi_image_width, oi_channels = overlayed_image.shape
             if oi_channels == 3:
                 overlayed_image = np.dstack((overlayed_image[:, :, 2], overlayed_image[:, :, 1],
@@ -164,11 +164,20 @@ def update_output(data, parameters):
                     (overlayed_image, overlayed_image, overlayed_image, np.ones((oi_image_height, oi_image_width))))
 
             need_parameters = False
-            worker_object.visualisation_on = True
-            worker_object.visualisation_loop_init()
-        except Exception as e:
-            print(e)
-            return
+
+            _worker_object.visualisation_on = True
+            _worker_object.visualisation_loop_init()
+        except:
+            pass
+
+
+def update_output(data, parameters):
+    global need_parameters
+    global overlayed_image
+    global overlay_image_pos
+    global screen_pos
+
+    # Once the parameters are received at the starting of the graph then they cannot be updated any more.
 
     topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
@@ -191,6 +200,7 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_sink_worker_process(update_output, on_end_of_life)
+    worker_object = gu.start_the_sink_worker_process(work_function=update_output, end_of_life_function=on_end_of_life,
+                                                     initialisation_function=initialise)
     worker_object.set_new_visualisation_loop(start_dpg_thread)
     worker_object.start_ioloop()
