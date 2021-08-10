@@ -45,7 +45,7 @@ class SinkCom:
             except:
                 log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
                 self.logger = gu.setup_logger('Sink', log_file_name)
-                self.logger.info('Index of data packet received: Topic : Computer Time')
+                self.logger.info('Index of data packet given : Index of data packet received: Topic : Computer Time')
                 self.verbose = False
 
         atexit.register(self.on_kill, None, None)
@@ -165,7 +165,7 @@ class SinkCom:
                     if self.verbose:
                         print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
                     if self.logger:
-                        self.logger.info('{} : {} : {}'.format(data_index, topic, datetime.now()))
+                        self.logger.info('{}: {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
@@ -175,6 +175,9 @@ class SinkCom:
                     if self.verbose:
                         #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
                         print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
+
+                    self.index += 1
+
             except:
                 pass
 

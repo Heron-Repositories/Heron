@@ -299,6 +299,10 @@ def save_graph():
             node_dict[n.name] = n.__dict__
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
 
+        try:
+            del node_dict['links']
+        except:
+            pass
         node_dict['links'] = links_dict
         with open(save_to, 'w+') as file:
             json.dump(node_dict, file, indent=4)

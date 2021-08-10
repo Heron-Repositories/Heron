@@ -215,9 +215,12 @@ class Node:
                                                       default_value=self.node_parameters[k],
                                                       callback=self.update_parameters)
                             elif self.operation.parameter_types[k] == 'list':
+                                default_value = self.node_parameters[k][0]
+                                if type(self.node_parameters[k]) == str:
+                                    default_value = self.node_parameters[k]
                                 id = dpg.add_combo(label='{}##{}'.format(parameter, attribute_name),
                                                    items=self.node_parameters_combos_items[k],
-                                                   default_value=self.node_parameters[k][0],
+                                                   default_value=default_value,
                                                    callback=self.update_parameters, width=100)
 
                             self.parameter_inputs_ids[parameter] = id
@@ -348,7 +351,6 @@ class Node:
         #verbocity = str(self.verbose > 0)
         #arguments_list.append(verbocity)
         arguments_list.append(self.verbose)
-        print(self.verbose)
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)
