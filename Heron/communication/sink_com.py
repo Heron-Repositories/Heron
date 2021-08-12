@@ -121,12 +121,7 @@ class SinkCom:
         arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
-        #self.worker_pid = subprocess.Popen(arguments_list)
         worker_pid = self.ssh_com.start_process(arguments_list)
-
-        if self.verbose:
-            print('Starting Sink worker {} with PID = {} getting data from .'.format(self.worker_exec,
-                                                                                     self.receiving_topics, worker_pid))
 
     def get_sub_data(self):
         """
@@ -157,7 +152,10 @@ class SinkCom:
             # Get link from subsribed node
             t1 = time.perf_counter()
             try:
-                sockets_in = dict(self.poller.poll(timeout=0))
+                # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
+                # the CPU utilization goes to around 10% which quickly kills the CPU (if there are 2 or 3 Sinks in the
+                # pipeline)
+                sockets_in = dict(self.poller.poll(timeout=1))
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
@@ -173,11 +171,9 @@ class SinkCom:
                     t3 = time.perf_counter()
 
                     if self.verbose:
-                        #print("---Time waiting for new data = {}".format((t2 - t1) * 1000))
                         print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
 
                     self.index += 1
-
             except:
                 pass
 

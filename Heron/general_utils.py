@@ -92,7 +92,6 @@ def get_next_available_port_group(starting_port, step):
 
 def add_heron_to_pythonpath():
     heron_path = os.Path(os.path.dirname(os.path.realpath(__file__)))
-    #print(heron_path)
 
 
 def register_exit_signals(function_to_register):
@@ -110,7 +109,6 @@ def register_exit_signals(function_to_register):
 def setup_logger(name, log_file, level=logging.DEBUG):
     """To setup as many loggers as you want"""
     formatter = logging.Formatter(fmt='%(message)s')
-    print(log_file)
     handler = logging.FileHandler(log_file)
     handler.setFormatter(formatter)
 

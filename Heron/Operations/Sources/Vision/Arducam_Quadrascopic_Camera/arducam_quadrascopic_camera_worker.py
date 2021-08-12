@@ -151,7 +151,7 @@ def run_camera(worker_object):
         got_frame, frame = capture.read()
         if got_frame:
             change_camera_parameters(worker_object)
-            os.system('v4l2-ctl -l')  # send the camera parameters to the stdout
+            #os.system('v4l2-ctl -l')  # send the camera parameters to the stdout
         else:
             logging.error("Arducam didn't acquire the first frame correctly. Aborting")
             print("Arducam didn't acquire the first frame correctly. Aborting")

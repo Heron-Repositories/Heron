@@ -143,7 +143,7 @@ class SourceWorker:
         that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
-        print('---Sending POL {}'.format('topic = {}, msg = POL'.format(self.parameters_topic.encode('ascii'))))
+        #print('---Sending POL {}'.format('topic = {}, msg = POL'.format(self.parameters_topic.encode('ascii'))))
         for i in range(100):
             try:
                 self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
@@ -207,6 +207,8 @@ class SourceWorker:
         Start the heartbeat thread that run the infinite heartbeat_loop
         :return: Nothing
         """
+        print('Started Worker {}_{} process with PID = {}'.format(self.node_name, self.node_index, os.getpid()))
+
         self.thread_heartbeat = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.thread_heartbeat.start()
 

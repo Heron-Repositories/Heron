@@ -138,11 +138,6 @@ class TransformCom:
 
         self.ssh_com.connect_socket_to_remote(self.socket_pull_data,
                                                          r"tcp://127.0.0.1:{}".format(self.pull_data_port))
-        if self.verbose:
-            print('Starting Transform worker {}, with PID = {}, transforming from {} to {}.'.format(self.worker_exec,
-                                                                                                  worker_pid,
-                                                                                                  self.receiving_topics,
-                                                                                                  self.sending_topics))
 
     def get_sub_data(self):
         """
@@ -174,6 +169,9 @@ class TransformCom:
             t1 = time.perf_counter()
 
             try:
+                # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
+                # the CPU utilization goes to around 10% which quickly kills the CPU (if there are 2 or 3 Transforms in
+                # the pipeline)
                 sockets_in = dict(self.poller.poll(timeout=1))
                 while not sockets_in:
                     sockets_in = dict(self.poller.poll(timeout=1))
@@ -182,10 +180,8 @@ class TransformCom:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
 
                     if self.verbose:
-                        print("-Transform from {} to {}, node_index {} at time {}".format(topic,
-                                                                                          self.sending_topics,
-                                                                                          data_index,
-                                                                                          data_time))
+                        print("-Transform from {} to {}, node_index {} at time {}".format(topic, self.sending_topics,
+                                                                                          data_index, data_time))
                     if self.logger:
                         self.logger.info('{} : {} : {}: {}'.format(self.index, data_index, topic, datetime.now()))
 

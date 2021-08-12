@@ -356,8 +356,7 @@ class Node:
         arguments_list.append(self.worker_executable)
 
         self.process = subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-
-        #print('Pid of Com {} {} = {}'.format(self.name, self.node_index, self.process.pid))
+        print('Started COM {}_{} process with PID = {}'.format(self.name, self.node_index, self.process.pid))
         # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).
         self.wait_for_proof_of_life()
 
@@ -381,7 +380,7 @@ class Node:
     def wait_for_proof_of_life(self):
         self.socket_sub_proof_of_life.recv()
         self.socket_sub_proof_of_life.recv_string()
-        print('ooo Received POL from {} {}'.format(self.name, self.node_index))
+        #print('ooo Received POL from {} {}'.format(self.name, self.node_index))
 
     def stop_com_process(self):
         try:

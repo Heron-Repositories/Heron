@@ -87,11 +87,14 @@ def start_availability_thread():
         elif step >= total_steps:
             #print('Finish')
             availability_period_is_running = False
+            arduino_serial.write(freq_to_signal(1000))
+            time.sleep(1.2 * sleep_dt)
+            arduino_serial.write(freq_to_signal(500))
         else:
             #print('Play Availability sound')
             try:
                 arduino_serial.write(freq_to_signal(avail_freq))
-                print(arduino_serial.read(arduino_serial.in_waiting))
+                arduino_serial.read(arduino_serial.in_waiting)
             except Exception as e:
                 print(e)
             time.sleep(sleep_dt)

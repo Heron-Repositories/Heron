@@ -11,7 +11,7 @@ sys.path.insert(0, path.dirname(current_dir))
 
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-from Vision.Canny import canny_com
+from Heron.Operations.Transforms.Vision.Canny import canny_com
 from Heron.communication.transform_worker import TransformWorker
 
 worker_object: TransformWorker

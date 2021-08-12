@@ -149,7 +149,7 @@ class SinkWorker:
         that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
-        print('--- Sending POL from {} {}'.format(self.node_name, self.node_index))
+        #print('--- Sending POL from {} {}'.format(self.node_name, self.node_index))
         for i in range(100):
             try:
                 self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
@@ -219,7 +219,7 @@ class SinkWorker:
 
         self.thread_proof_of_life = threading.Thread(target=self.proof_of_life, daemon=True)
         self.thread_proof_of_life.start()
-
+        print('Started Worker {}_{} process with PID = {}'.format(self.node_name, self.node_index, os.getpid()))
         ioloop.IOLoop.instance().start()
         print('!!! WORKER {} HAS STOPPED'.format(self.parameters_topic))
 

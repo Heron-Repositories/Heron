@@ -162,7 +162,7 @@ class TransformWorker:
         :return: Nothing
         """
 
-        print('---Sending POL {}'.format('{}##POL'.format(self.parameters_topic)))
+        #print('---Sending POL {}'.format('{}##POL'.format(self.parameters_topic)))
         for i in range(100):
             try:
                 self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
@@ -232,6 +232,8 @@ class TransformWorker:
 
         self.thread_proof_of_life = threading.Thread(target=self.proof_of_life, daemon=True)
         self.thread_proof_of_life.start()
+
+        print('Started Worker {}_{} process with PID = {}'.format(self.node_name, self.node_index, os.getpid()))
 
         ioloop.IOLoop.instance().start()
         print('!!! WORKER {} HAS STOPPED'.format(self.parameters_topic))
