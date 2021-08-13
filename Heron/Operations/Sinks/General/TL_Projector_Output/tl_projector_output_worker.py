@@ -145,30 +145,28 @@ def initialise(_worker_object):
     global overlay_image_pos
     global screen_pos
 
-    need_parameters = True
 
-    while need_parameters:
-        parameters = _worker_object.parameters
+    parameters = _worker_object.parameters
 
-        try:
-            overlay_image_file_name = parameters[0]
-            screen_pos = [parameters[1], parameters[2]]
-            overlay_image_pos = [parameters[3], parameters[4]]
-            overlayed_image = cv2.imread(overlay_image_file_name).astype(np.float16) / 255
-            oi_image_height, oi_image_width, oi_channels = overlayed_image.shape
-            if oi_channels == 3:
-                overlayed_image = np.dstack((overlayed_image[:, :, 2], overlayed_image[:, :, 1],
-                                             overlayed_image[:, :, 0], np.ones((oi_image_height, oi_image_width))))
-            if oi_channels == 1:
-                overlayed_image = np.dstack(
-                    (overlayed_image, overlayed_image, overlayed_image, np.ones((oi_image_height, oi_image_width))))
+    try:
+        overlay_image_file_name = parameters[0]
+        screen_pos = [parameters[1], parameters[2]]
+        overlay_image_pos = [parameters[3], parameters[4]]
+        overlayed_image = cv2.imread(overlay_image_file_name).astype(np.float16) / 255
+        oi_image_height, oi_image_width, oi_channels = overlayed_image.shape
+        if oi_channels == 3:
+            overlayed_image = np.dstack((overlayed_image[:, :, 2], overlayed_image[:, :, 1],
+                                         overlayed_image[:, :, 0], np.ones((oi_image_height, oi_image_width))))
+        if oi_channels == 1:
+            overlayed_image = np.dstack(
+                (overlayed_image, overlayed_image, overlayed_image, np.ones((oi_image_height, oi_image_width))))
 
-            need_parameters = False
+        _worker_object.visualisation_on = True
+        _worker_object.visualisation_loop_init()
+    except:
+        return False
 
-            _worker_object.visualisation_on = True
-            _worker_object.visualisation_loop_init()
-        except:
-            pass
+    return True
 
 
 def update_output(data, parameters):
