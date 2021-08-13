@@ -101,8 +101,8 @@ class TransformWorker:
         """
         The callback that is called when link is send from the previous com process this com process is connected to
         (receives link from and shares a common topic) and pushes the link to the worker_exec.
-        The link are a three zmq.Frame list. The first is the topic (used for the worker_exec to distinguish which input the
-        link have come from in the case of multiple input nodes). The other two items are the details and the link load
+        The link is a three zmq.Frame list. The first is the topic (used for the worker_exec to distinguish which input the
+        link has come from in the case of multiple input nodes). The other two items are the details and the link load
         of the numpy array coming from the previous node).
         :param data: The link received
         :return: Nothing
@@ -126,8 +126,7 @@ class TransformWorker:
             if args is not None:
                 self.parameters = args
                 if not self.initialised and self.initialisation_function is not None:
-                    self.initialisation_function(self)
-                self.initialised = True
+                    self.initialised = self.initialisation_function(self)
                 #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):

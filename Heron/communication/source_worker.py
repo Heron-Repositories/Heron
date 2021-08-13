@@ -95,8 +95,7 @@ class SourceWorker:
             args = pickle.loads(parameters_in_bytes)
             self.parameters = args
             if not self.initialised and self.initialisation_function is not None:
-                self.initialisation_function(self)
-            self.initialised = True
+                self.initialised = self.initialisation_function(self)
             # print('TOPIC {}'.format(topic))
             #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
             # print(args)

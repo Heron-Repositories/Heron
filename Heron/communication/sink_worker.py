@@ -115,8 +115,7 @@ class SinkWorker:
             if args is not None:
                 self.parameters = args
                 if not self.initialised and self.initialisation_function is not None:
-                    self.initialisation_function(self)
-                self.initialised = True
+                    self.initialised = self.initialisation_function(self)
                 #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):
