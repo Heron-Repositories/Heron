@@ -51,8 +51,8 @@ def visualisation_to_stdout():
         while worker_object.visualisation_on:
             if new_input_for_vis:
                 print(new_input_for_vis)
-                if new_input_for_vis == worker_object.worker_result:
-                    print('Outputing :{}'.format(worker_object.worker_result))
+                if new_input_for_vis == worker_object.worker_visualisable_result:
+                    print('Outputing :{}'.format(worker_object.worker_visualisable_result))
                 new_input_for_vis = False
 
 
@@ -75,8 +75,8 @@ def start_key_press_capture(_worker_object):
 
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
-            worker_object.worker_result = np.array([waiting_for_key])
-            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+            worker_object.worker_visualisable_result = np.array([waiting_for_key])
+            worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
             key_pressed_and_released = [None, None]
         try:
             worker_object.visualisation_on = worker_object.parameters[0]

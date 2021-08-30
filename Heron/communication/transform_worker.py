@@ -10,7 +10,7 @@ from Heron import constants as ct
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
-
+import logging
 
 class TransformWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
@@ -51,7 +51,7 @@ class TransformWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
-        self.worker_result = None
+        self.worker_visualisable_result = None
 
     def connect_sockets(self):
         """
@@ -110,6 +110,7 @@ class TransformWorker:
         data = [data[0].bytes, data[1].bytes, data[2].bytes]
         results = self.work_function(data, self.parameters)
         for array_in_list in results:
+            #print(array_in_list.shape)
             self.socket_push_data.send_array(array_in_list, copy=False)
 
     def parameters_callback(self, parameters_in_bytes):
@@ -193,14 +194,14 @@ class TransformWorker:
                 if not window_showing:
                     window_name = '{} {}'.format(self.node_name, self.node_index)
                     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                    cv2.imshow(window_name, self.worker_result)
+                    cv2.imshow(window_name, self.worker_visualisable_result)
                     cv2.waitKey(1)
                     window_showing = True
                 if window_showing:
                     width = cv2.getWindowImageRect(window_name)[2]
                     height = cv2.getWindowImageRect(window_name)[3]
                     try:
-                        image = cv2.resize(self.worker_result, (width, height), interpolation=cv2.INTER_AREA)
+                        image = cv2.resize(self.worker_visualisable_result, (width, height), interpolation=cv2.INTER_AREA)
                         cv2.imshow(window_name, image)
                         cv2.waitKey(1)
                     except Exception as e:

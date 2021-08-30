@@ -113,7 +113,7 @@ def on_add_node(sender, data):
 
 def on_link(sender, link):
     """
-    When a link is created its out part is stored as a topic_out in the node with the output and as a topic_in in the
+    When a link is created it is stored as a topic_out in the node with the output and as a topic_in in the
     node with the input
     :param sender: The node editor (not used)
     :param link: The link list
@@ -139,9 +139,9 @@ def on_link(sender, link):
     input_node = input_node_label.split('##')[-2] + '##' + input_node_label.split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            n.add_topic_out('{}_{}'.format(output_node_label, input_node_label))
+            n.add_topic_out('{}->{}'.format(output_node_label, input_node_label))
         if input_node == n.name:
-            n.add_topic_in('{}_{}'.format(output_node_label, input_node_label))
+            n.add_topic_in('{}->{}'.format(output_node_label, input_node_label))
 
 
 # TODO: Define what happens when user deletes a link.
@@ -496,6 +496,7 @@ with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000
 #dpg.show_logger()
 #dpg.show_documentation()
 #dpg.show_style_editor()
+
 
 # Button and mouse callback registers
 with dpg.handler_registry():

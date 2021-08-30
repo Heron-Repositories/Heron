@@ -61,9 +61,9 @@ def plot_callback():
         if window_showing:
             try:
                 if len(channels) == 1:
-                    plot([worker_object.worker_result])
+                    plot([worker_object.worker_visualisable_result])
                 else:
-                    plot(worker_object.worker_result)
+                    plot(worker_object.worker_visualisable_result)
             except Exception as e:
                 print(e)
 
@@ -160,8 +160,8 @@ def acquire(_worker_object):
     task.start()
 
     while acquiring_on:
-        worker_object.worker_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        worker_object.worker_visualisable_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
+        worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
 
         plot_callback()
 

@@ -24,11 +24,11 @@ def nothing(data, parameters):
         worker_object.visualisation_on = nothing_com.ParametersDefaultValues[0]
 
     message = data[1:]  # data[0] is the topic
-    worker_object.worker_result = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+    worker_object.worker_visualisable_result = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
 
     worker_object.visualisation_loop_init()
 
-    return [worker_object.worker_result]
+    return [worker_object.worker_visualisable_result]
 
 
 def on_end_of_life():

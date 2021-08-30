@@ -209,7 +209,7 @@ def new_visualisation():
     global worker_object
     window_showing = False
 
-    aspect_ratio = worker_object.worker_result.shape[0]/worker_object.worker_result.shape[1]
+    aspect_ratio = worker_object.worker_visualisable_result.shape[0] / worker_object.worker_visualisable_result.shape[1]
     width = 400
     height = int(width * aspect_ratio)
     while True:
@@ -217,12 +217,12 @@ def new_visualisation():
             if not window_showing:
                 window_name = '{} {}'.format(worker_object.node_name, worker_object.node_index)
                 cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                cv2.imshow(window_name, worker_object.worker_result)
+                cv2.imshow(window_name, worker_object.worker_visualisable_result)
                 cv2.waitKey(1)
                 window_showing = True
-            if window_showing and worker_object.worker_result is not None:
+            if window_showing and worker_object.worker_visualisable_result is not None:
                 try:
-                    image = cv2.cvtColor(worker_object.worker_result, cv2.COLOR_BAYER_RG2RGB)
+                    image = cv2.cvtColor(worker_object.worker_visualisable_result, cv2.COLOR_BAYER_RG2RGB)
                     image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
                     cv2.imshow(window_name, image)
                     cv2.waitKey(1)
@@ -258,9 +258,9 @@ def run_spinnaker_camera(_worker_object):
 
     # The infinite loop that does the frame capture and push to the output of the node
     while acquiring_on:
-        worker_object.worker_result = grab_frame()
-        if worker_object.worker_result is not None:
-            worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        worker_object.worker_visualisable_result = grab_frame()
+        if worker_object.worker_visualisable_result is not None:
+            worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
 
             try:
                 worker_object.visualisation_on = worker_object.parameters[0]

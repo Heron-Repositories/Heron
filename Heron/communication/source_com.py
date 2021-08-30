@@ -13,9 +13,8 @@ from Heron.communication.ssh_com import SSHCom
 
 class SourceCom:
     def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='',
-                 ssh_local_server_id='None', ssh_remote_server_id='None'):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', multiple_outputs=None):
         self.sending_topics = sending_topics
-        self.sending_topic = self.sending_topics[0]  # TODO need to deal with multiple outputs
         self.parameters_topic = parameters_topic
         self.pull_data_port = port
         self.heartbeat_port = str(int(self.pull_data_port) + 1)
@@ -26,6 +25,7 @@ class SourceCom:
         self.verbose = verbose
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
+        self.multiple_outputs = multiple_outputs
 
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
@@ -68,7 +68,7 @@ class SourceCom:
         # Socket for publishing the data to the data forwarder
         self.socket_pub_data = Socket(self.context, zmq.PUB)
         self.socket_pub_data.setsockopt(zmq.LINGER, 0)
-        self.socket_pub_data.set_hwm(1)
+        self.socket_pub_data.set_hwm(len(self.sending_topics))
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub))
 
         # Socket for publishing the heartbeat to the worker_exec
@@ -87,13 +87,37 @@ class SourceCom:
         # The node_index of the link packet is the system's time in microseconds
         data = Socket.reconstruct_array_from_bytes_message(msg)
 
+        new_message_data = []
+        if len(self.sending_topics) > 1:
+            for i in range(len(self.sending_topics)):
+                new_message_data.append(data[i])
+        else:
+            new_message_data.append(data)
+
         self.time = int(1000000 * time.perf_counter())
         self.index = self.index + 1
 
-        self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
-        self.socket_pub_data.send_array(data, copy=False)
+        # Publish the results. Each array in the list of arrays is published to its own sending topic
+        # (matched by order)
+        for st in self.sending_topics:
+            if st != 'NothingOut':
+                topic_output_attr = st.split('##')[0]
+                if self.multiple_outputs is not None:
+                    for mi, mo in enumerate(self.multiple_outputs):
+                        if mo in topic_output_attr:
+                            i = mi
+                else:
+                    i = 0
+
+                self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
+                self.socket_pub_data.send_array(new_message_data[i], copy=False)
+
+        #self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
+        #self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+        #self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
+        #self.socket_pub_data.send_array(data, copy=False)
 
         if self.verbose:
             dt = self.time - self.previous_time

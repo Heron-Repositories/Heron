@@ -14,7 +14,7 @@ from Heron.communication.ssh_com import SSHCom
 class TransformCom:
 
     def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True,
-                 ssh_local_server_id='None', ssh_remote_server_id='None'):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', multiple_outputs=None):
         self.receiving_topics = receiving_topics
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
@@ -25,6 +25,7 @@ class TransformCom:
         self.verbose = verbose
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
+        self.multiple_outputs = multiple_outputs
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
@@ -202,6 +203,7 @@ class TransformCom:
                 new_message_data = []
                 for i in range(len(self.sending_topics)):
                     new_message_data.append(self.socket_pull_data.recv_array())
+
                 results_time = time.perf_counter()
 
                 if self.verbose:
@@ -209,11 +211,21 @@ class TransformCom:
 
                 # Publish the results. Each array in the list of arrays is published to its own sending topic
                 # (matched by order)
-                for i, st in enumerate(self.sending_topics):
-                    self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
-                    self.socket_pub_data.send_array(new_message_data[i], copy=False)
+                for st in self.sending_topics:
+                    if st != 'NothingOut':
+                        topic_output_attr = st.split('##')[0]
+                        if self.multiple_outputs is not None:
+                            for mi, mo in enumerate(self.multiple_outputs):
+                                if mo in topic_output_attr:
+                                    i = mi
+                        else:
+                            i = 0
+                        
+                        self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
+                        self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
+                        self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+                        self.socket_pub_data.send_array(new_message_data[i], copy=False)
+
                 t3 = time.perf_counter()
 
                 self.index = self.index + 1
@@ -242,6 +254,6 @@ class TransformCom:
             self.socket_pub_data.close()
             self.socket_push_heartbeat.close()
         except Exception as e:
-            print('Trying to kill Transform com {} failed with error: {}'.format(self.sending_topic, e))
+            print('Trying to kill Transform com {} failed with error: {}'.format(self.sending_topics, e))
         finally:
             self.context.term()

@@ -193,7 +193,7 @@ def parse_arguments_to_worker(args):
     return port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username,ssh_local_password
 
 
-def start_the_source_communications_process():
+def start_the_source_communications_process(multiple_outputs=None):
     """
     Creates a SourceCom object for a source process
     (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec and the forwarders)
@@ -206,7 +206,7 @@ def start_the_source_communications_process():
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
                            worker_exec=worker_exec, verbose=verbose, ssh_local_server_id=ssh_local_server_id,
-                           ssh_remote_server_id=ssh_remote_server_id)
+                           ssh_remote_server_id=ssh_remote_server_id, multiple_outputs=multiple_outputs)
 
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
@@ -236,7 +236,7 @@ def start_the_source_worker_process(worker_function, end_of_life_function, initi
     worker_function(worker_object)
 
 
-def start_the_transform_communications_process():
+def start_the_transform_communications_process(node_attribute_type=None, node_attribute_names=None):
     """
     Creates a TransformCom object for a transformation process
     (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec
@@ -245,12 +245,18 @@ def start_the_transform_communications_process():
     """
     push_port, receiving_topics, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id,\
         worker_exec = parse_arguments_to_com(sys.argv)
-    #verbose = verbose == 'True'
+
+    multiple_outputs = None
+    if node_attribute_type is not None and node_attribute_names is not None:
+        multiple_outputs = []
+        for i, t in enumerate(node_attribute_type):
+            if t == 'Output':
+                multiple_outputs.append(node_attribute_names[i])
 
     com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,
                               parameters_topic=parameters_topic, push_port=push_port, worker_exec=worker_exec,
                               verbose=verbose, ssh_local_server_id=ssh_local_server_id,
-                              ssh_remote_server_id=ssh_remote_server_id)
+                              ssh_remote_server_id=ssh_remote_server_id, multiple_outputs=multiple_outputs)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()

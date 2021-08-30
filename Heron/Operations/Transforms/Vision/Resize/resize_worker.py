@@ -32,14 +32,14 @@ def resize(data, parameters):
     message = data[1:]  # data[0] is the topic
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
     try:
-        worker_object.worker_result = cv2.resize(image, (x_shape, y_shape))
+        worker_object.worker_visualisable_result = cv2.resize(image, (x_shape, y_shape))
     except Exception as e:
-        worker_object.worker_result = np.array((10, 10))
+        worker_object.worker_visualisable_result = np.array((10, 10))
         print('resize {} operation failed with exception {}'.format(worker_object.node_index, e))
 
     worker_object.visualisation_loop_init()
 
-    return [worker_object.worker_result]
+    return [worker_object.worker_visualisable_result]
 
 
 def on_end_of_life():

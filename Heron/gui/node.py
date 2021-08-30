@@ -58,6 +58,24 @@ class Node:
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
 
+    def get_attribute_order(self, type):
+        number_of_static_attrs = 0
+        for at in self.operation.attribute_types:
+            if 'Static' in at:
+                number_of_static_attrs += 1
+
+        number_of_input_attrs = 0
+        number_of_output_attrs = 0
+        order = {}
+        for at, attr_order_num in zip(self.operation.attribute_types, range(len(self.operation.attributes))):
+            if type == 'Input' and type in at:
+                order[self.operation.attributes[attr_order_num]] = number_of_input_attrs
+                number_of_input_attrs += 1
+            if type == 'Output' and type in at:
+                order[self.operation.attributes[attr_order_num]] = number_of_output_attrs
+                number_of_output_attrs += 1
+        return order
+
     def initialise_parameters_socket(self):
         if self.context is None:
             self.context = zmq.Context()
@@ -102,6 +120,39 @@ class Node:
     def get_node_index(self):
         self.node_index = self.name.split('##')[-1]
 
+    '''
+    def generate_default_topics(self):
+        number_of_static_attrs = 0
+        number_of_input_attrs = 0
+        number_of_output_attrs = 0
+        for at in self.operation.attribute_types:
+            if 'Static' in at:
+                number_of_static_attrs += 1
+
+        for at, attr_order_num in zip(self.operation.attribute_types, range(len(self.operation.attributes))):
+            if 'Input' in at:
+                self.topics_in.append('{}:NothingIn'.format(self.operation.attributes[attr_order_num]))
+                number_of_input_attrs += 1
+            if 'Output' in at:
+                self.topics_out.append('{}:NothingOut'.format(self.operation.attributes[attr_order_num]))
+                number_of_output_attrs += 1
+
+    def add_topic_in(self, topic):
+        i = self.get_attribute_order('Input')[topic.split('->')[1].split('##')[0]]
+        topic = topic.replace(' ', '_')
+        for t in self.topics_in:
+            if 'NothingIn' in t:
+                self.topics_in[i] = '{}:{}'.format(i, topic)
+                break
+
+    def add_topic_out(self, topic):
+        i = self.get_attribute_order('Output')[topic.split('##')[0]]
+        topic = topic.replace(' ', '_')
+        for t in self.topics_out:
+            if 'NothingOut' in t:
+                self.topics_out[i] = '{}:{}'.format(i, topic)
+                break
+    '''
     def generate_default_topics(self):
         for at in self.operation.attribute_types:
             if 'Input' in at:
@@ -306,6 +357,8 @@ class Node:
 
     def update_verbosity(self, sender, data):
         self.verbose = dpg.get_value(sender)
+        if type(self.verbose) is int:
+            self.verbose = str(self.verbose)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
@@ -350,7 +403,7 @@ class Node:
 
         #verbocity = str(self.verbose > 0)
         #arguments_list.append(verbocity)
-        arguments_list.append(self.verbose)
+        arguments_list.append(str(self.verbose))
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)

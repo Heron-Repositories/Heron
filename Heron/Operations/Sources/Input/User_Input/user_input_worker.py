@@ -47,8 +47,8 @@ def start_user_input_capture(_worker_object):
                 if worker_object.visualisation_on:
                     print(latest_user_input)
 
-                worker_object.worker_result = np.array([latest_user_input])
-                worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+                worker_object.worker_visualisable_result = np.array([latest_user_input])
+                worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
                 latest_user_input = ''
                 worker_object.parameters[1] = latest_user_input
         except:

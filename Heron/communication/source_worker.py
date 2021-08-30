@@ -46,7 +46,7 @@ class SourceWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
-        self.worker_result = None
+        self.worker_visualisable_result = None
 
     def connect_socket(self):
         """
@@ -158,20 +158,19 @@ class SourceWorker:
         :return: Nothing
         """
         window_showing = False
-
         while True:
             while self.visualisation_on :
                 if not window_showing:
                     window_name = '{} {}'.format(self.node_name, self.node_index)
                     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                    cv2.imshow(window_name, self.worker_result)
+                    cv2.imshow(window_name, self.worker_visualisable_result)
                     cv2.waitKey(1)
                     window_showing = True
                 if window_showing:
                     width = cv2.getWindowImageRect(window_name)[2]
                     height = cv2.getWindowImageRect(window_name)[3]
                     try:
-                        image = cv2.resize(self.worker_result, (width, height), interpolation=cv2.INTER_AREA)
+                        image = cv2.resize(self.worker_visualisable_result, (width, height), interpolation=cv2.INTER_AREA)
                         cv2.imshow(window_name, image)
                         cv2.waitKey(1)
                     except Exception as e:

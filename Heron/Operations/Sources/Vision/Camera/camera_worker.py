@@ -30,8 +30,8 @@ def run_camera(worker_object):
                 cv2.waitKey(1)
 
     while acquiring_on:
-        ret, worker_object.worker_result = capture.read()
-        worker_object.socket_push_data.send_array(worker_object.worker_result, copy=False)
+        ret, worker_object.worker_visualisable_result = capture.read()
+        worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
