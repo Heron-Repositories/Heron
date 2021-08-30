@@ -12,5 +12,12 @@
         "Port": 22,
         "username": "njsnarena",
         "password": "1234567890"
+    },
+    "2": {
+        "Name": "wsl",
+        "IP": "172.21.203.169",
+        "Port": 22,
+        "username": "george",
+        "password": "1234567890"
     }
 }
