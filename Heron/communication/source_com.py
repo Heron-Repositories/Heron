@@ -84,15 +84,16 @@ class SourceCom:
         :param msg: The link packet (carrying the actual link (np array))
         :return:
         """
-        # The node_index of the link packet is the system's time in microseconds
-        data = Socket.reconstruct_array_from_bytes_message(msg)
+
+        # A specific worker with multiple outputs should send from its infinite loop a message with multiple parts
+        # (using multiple send_array(data, flags=zmq.SNDMORE) commands)
 
         new_message_data = []
         if len(self.sending_topics) > 1:
             for i in range(len(self.sending_topics)):
-                new_message_data.append(data[i])
+                new_message_data.append(Socket.reconstruct_array_from_bytes_message(msg[i]))
         else:
-            new_message_data.append(data)
+            new_message_data.append(Socket.reconstruct_array_from_bytes_message(msg))
 
         self.time = int(1000000 * time.perf_counter())
         self.index = self.index + 1
@@ -113,11 +114,6 @@ class SourceCom:
                 self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send_array(new_message_data[i], copy=False)
-
-        #self.socket_pub_data.send("{}".format(self.sending_topic).encode('ascii'), flags=zmq.SNDMORE)
-        #self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-        #self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
-        #self.socket_pub_data.send_array(data, copy=False)
 
         if self.verbose:
             dt = self.time - self.previous_time

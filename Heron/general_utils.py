@@ -193,7 +193,7 @@ def parse_arguments_to_worker(args):
     return port, parameters_topic, receiving_topics, verbose, ssh_local_ip, ssh_local_username,ssh_local_password
 
 
-def start_the_source_communications_process(multiple_outputs=None):
+def start_the_source_communications_process(node_attribute_type=None, node_attribute_names=None):
     """
     Creates a SourceCom object for a source process
     (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec and the forwarders)
@@ -202,7 +202,13 @@ def start_the_source_communications_process(multiple_outputs=None):
 
     push_port, _, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec =\
         parse_arguments_to_com(sys.argv)
-    #verbose = verbose == 'True'
+
+    multiple_outputs = None
+    if node_attribute_type is not None and node_attribute_names is not None:
+        multiple_outputs = []
+        for i, t in enumerate(node_attribute_type):
+            if t == 'Output':
+                multiple_outputs.append(node_attribute_names[i])
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
                            worker_exec=worker_exec, verbose=verbose, ssh_local_server_id=ssh_local_server_id,
