@@ -430,6 +430,11 @@ def on_drag(sender, data, user_data):
             dpg.set_item_pos(n.id, [n.coordinates[0] + int(move[0]), n.coordinates[1] + int(move[1])])
             n.coordinates = dpg.get_item_pos(n.id)
 
+    # If resizing the node_editor window then resize the node_editor itself
+    height = dpg.get_item_height(node_editor_window)
+    width = dpg.get_item_width(node_editor_window)
+    dpg.set_item_height(node_editor, height-40)
+    dpg.set_item_width(node_editor, width-20)
 
 def on_mouse_release(sender, app_data, user_data):
     global mouse_dragging_deltas
@@ -485,10 +490,10 @@ with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as n
                         dpg.set_item_theme(button, theme_id)
 
 
-with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0])as node_editor_window:
+with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
     # The node editor
     with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=on_delink,
-                         width=1300, height=dpg.get_item_height(main_window) - 80) as node_editor:
+                         width=1300, height=dpg.get_item_height(main_window) - 100) as node_editor:
 
         dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
 
