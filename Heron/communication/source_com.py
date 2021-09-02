@@ -4,6 +4,7 @@ import os
 import zmq
 import time
 import threading
+import numpy as np
 
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.socket_for_serialization import Socket
@@ -13,7 +14,7 @@ from Heron.communication.ssh_com import SSHCom
 
 class SourceCom:
     def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='',
-                 ssh_local_server_id='None', ssh_remote_server_id='None', multiple_outputs=None):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None):
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
         self.pull_data_port = port
@@ -25,8 +26,7 @@ class SourceCom:
         self.verbose = verbose
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
-        self.multiple_outputs = multiple_outputs
-
+        self.outputs = outputs
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
 
         self.context = None
@@ -46,6 +46,8 @@ class SourceCom:
                 self.logger = gu.setup_logger('Source', log_file_name)
                 self.logger.info('Index of data packet : Computer Time Data Out')
                 self.verbose = False
+
+
 
     def connect_sockets(self):
         """
@@ -90,27 +92,30 @@ class SourceCom:
         # sends data to the com from its data_callback function
         # TODO The bellow will not work for multiple outputs. I have to find out how many times a callback is called
         #  when data are send with SNDMORE flag !!!
+
+        ignoring_outputs = [False] * len(self.outputs)
         new_message_data = []
-        if len(self.sending_topics) > 1:
-            for i in range(len(self.sending_topics)):
-                new_message_data.append(Socket.reconstruct_array_from_bytes_message(msg[i]))
+        if len(self.outputs) > 1:
+            for i in range(len(self.outputs)):
+                array_data = Socket.reconstruct_array_from_bytes_message(msg[i])
+                new_message_data.append(array_data)
+                if type(array_data[0]) == np.str_:
+                    if array_data[0] == ct.IGNORE:
+                        ignoring_outputs[i] = True
         else:
-            new_message_data.append(Socket.reconstruct_array_from_bytes_message(msg))
+            array_data = Socket.reconstruct_array_from_bytes_message(msg)
+            new_message_data.append(array_data)
+            if type(array_data[0]) == np.str_:
+                if array_data[0] == ct.IGNORE:
+                    ignoring_outputs[0] = True
 
         self.time = int(1000000 * time.perf_counter())
         self.index = self.index + 1
 
         # Publish the results. Each array in the list of arrays is published to its own sending topic
         # (matched by order)
-        for st in self.sending_topics:
-            if st != 'NothingOut':
-                topic_output_attr = st.split('##')[0]
-                if self.multiple_outputs is not None:
-                    for mi, mo in enumerate(self.multiple_outputs):
-                        if mo in topic_output_attr:
-                            i = mi
-                else:
-                    i = 0
+        for i, st in enumerate(self.sending_topics):
+            if ignoring_outputs[i] is False:
 
                 self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)

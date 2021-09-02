@@ -12,7 +12,7 @@ import time
 import serial
 import threading
 from Heron.communication.socket_for_serialization import Socket
-from Heron import general_utils as gu
+from Heron import general_utils as gu, constants as ct
 
 need_parameters = True
 arduino_serial: serial.Serial
@@ -104,18 +104,22 @@ def start_availability_thread():
 def start_availability_period(data, parameters):
     global availability_period_is_running
 
-    topic = data[0].decode('utf-8')
+    # topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
 
-    if 'start' in message[0]:
-        if not availability_period_is_running:
-            try:
-                avail_thread = threading.Thread(target=start_availability_thread)
-                avail_thread.start()
-            except Exception as e:
-                print(e)
+    if ct.IGNORE == message[0]:
+        result = [np.array([ct.IGNORE])]
+    else:
+        if 'start' == message[0]:
+            if not availability_period_is_running:
+                try:
+                    avail_thread = threading.Thread(target=start_availability_thread)
+                    avail_thread.start()
+                except Exception as e:
+                    print(e)
+        result = [np.array([availability_period_is_running])]
 
-    return [np.array([availability_period_is_running])]
+    return result
 
 
 def on_end_of_life():

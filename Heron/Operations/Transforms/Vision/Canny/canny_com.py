@@ -24,7 +24,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'canny_worker.py')
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    canny_com = gu.start_the_transform_communications_process()
+    canny_com = gu.start_the_transform_communications_process(NodeAttributeType, NodeAttributeNames)
     gu.register_exit_signals(canny_com.on_kill)
     canny_com.start_ioloop()
 

@@ -95,7 +95,6 @@ class Node:
     def remove_from_editor(self):
         dpg.delete_item(self.id)
 
-
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
             if at == 'Input':
@@ -125,8 +124,8 @@ class Node:
         for at in self.operation.attribute_types:
             if 'Input' in at:
                 self.topics_in.append('NothingIn')
-            if 'Output' in at:
-                self.topics_out.append('NothingOut')
+            #if 'Output' in at:
+            #    self.topics_out.append('NothingOut')
 
     def add_topic_in(self, topic):
         topic = topic.replace(' ', '_')
@@ -137,10 +136,10 @@ class Node:
 
     def add_topic_out(self, topic):
         topic = topic.replace(' ', '_')
-        for i, t in enumerate(self.topics_out):
-            if t == 'NothingOut':
-                self.topics_out[i] = topic
-                break
+        for t in self.topics_out:
+            if topic == t:
+                return
+        self.topics_out.append(topic)
 
     def remove_topic_in(self, topic):
         if len(self.topics_in) == 1:
@@ -358,7 +357,7 @@ class Node:
         self.initialise_proof_of_life_socket()
         arguments_list = ['python', self.operation.executable, self.starting_port]
         num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
-        num_of_outputs = len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
+        num_of_outputs = len(self.topics_out) #len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
         arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
             for topic_in in self.topics_in:

@@ -167,18 +167,26 @@ def start_plotting_thread():
     while True:
         if visualisation_on:
             if not visualiser_showing:
-                dpg_ids['Viewport'] = dpg.create_viewport(title='Visualising', width=820,
-                                                          height=780)
+                dpg_ids['Viewport'] = dpg.create_viewport(title='Visualising', width=330,
+                                                          height=280)
 
-                with dpg.window(label="Visualisation", width=800, height=750, show=False) \
+                with dpg.window(label="Visualisation", width=300, height=250, show=False) \
                         as dpg_ids['Visualisation']:
 
                     if visualisation_type == 'Value':
                         dpg_ids['Text'] = dpg.add_text(default_value='__start__', label='Value')
                     elif visualisation_type == '1D Plot':
+                        dpg.set_viewport_width(750)
+                        dpg.set_viewport_height(850)
+                        dpg.set_item_width(dpg_ids['Visualisation'], 730)
+                        dpg.set_item_height(dpg_ids['Visualisation'], 820)
                         dpg_ids["Plot"] = \
                             dpg.add_plot(label="Plot", height=int(700), width=800, show=False)
                     elif visualisation_type == '2D Plot':
+                        dpg.set_viewport_width(750)
+                        dpg.set_viewport_height(850)
+                        dpg.set_item_width(dpg_ids['Visualisation'], 730)
+                        dpg.set_item_height(dpg_ids['Visualisation'], 820)
                         for n in channels:
                             dpg_ids["Plot {}".format(n)] = \
                                 dpg.add_plot(label="Plot {}".format(n), height=int(700/len(channels)), width=800, show=False)

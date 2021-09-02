@@ -149,7 +149,6 @@ class SinkCom:
         :return: Nothing
         """
         while self.all_loops_running:
-            # Get link from subsribed node
             t1 = time.perf_counter()
             try:
                 # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
@@ -161,9 +160,7 @@ class SinkCom:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
 
                     if self.verbose:
-                        print("-Sink from {}, data_index {} at time {}".format(topic, data_index, data_time))
-                    if self.logger:
-                        self.logger.info('{}: {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
+                        print("oooo Sink from {}, data_index {} at time {} s oooo".format(topic, data_index, data_time))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
@@ -171,7 +168,10 @@ class SinkCom:
                     t3 = time.perf_counter()
 
                     if self.verbose:
-                        print("---Time to transport link from worker_exec to worker_exec = {}".format((t3 - t1) * 1000))
+                        print("---Time to Transport link from previous com to worker_exec = {} ms".format((t3 - t1) * 1000))
+                        print('=============================')
+                    if self.logger:
+                        self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
 
                     self.index += 1
             except:
@@ -180,7 +180,6 @@ class SinkCom:
     def on_kill(self, signal, frame):
         try:
             self.all_loops_running = False
-            #self.poller.unregister(socket=self.socket_sub_data)
             self.socket_sub_data.close()
             self.socket_push_data.close()
             self.socket_push_heartbeat.close()

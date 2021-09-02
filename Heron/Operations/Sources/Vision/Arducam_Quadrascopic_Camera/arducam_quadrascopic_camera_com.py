@@ -25,7 +25,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'arducam_quadrasco
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    camera_com = gu.start_the_source_communications_process()
+    camera_com = gu.start_the_source_communications_process(NodeAttributeType, NodeAttributeNames)
     gu.register_exit_signals(camera_com.on_kill)
     camera_com.start_ioloop()
 # </editor-fold>

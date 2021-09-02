@@ -24,7 +24,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'visualiser_worker
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    visualiser_com = gu.start_the_transform_communications_process()
+    visualiser_com = gu.start_the_transform_communications_process(NodeAttributeType, NodeAttributeNames)
     gu.register_exit_signals(visualiser_com.on_kill)
     visualiser_com.start_ioloop()
 

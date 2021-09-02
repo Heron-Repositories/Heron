@@ -24,7 +24,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_poke_controlle
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph">
 if __name__ == "__main__":
-    tl_poke_controller_com = gu.start_the_transform_communications_process()
+    tl_poke_controller_com = gu.start_the_transform_communications_process(NodeAttributeType, NodeAttributeNames)
     gu.register_exit_signals(tl_poke_controller_com.on_kill)
     tl_poke_controller_com.start_ioloop()
 

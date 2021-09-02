@@ -1,6 +1,5 @@
 
-import atexit
-import signal
+import numpy as np
 import time
 import threading
 import zmq
@@ -14,7 +13,7 @@ from Heron.communication.ssh_com import SSHCom
 class TransformCom:
 
     def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True,
-                 ssh_local_server_id='None', ssh_remote_server_id='None', multiple_outputs=None):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None):
         self.receiving_topics = receiving_topics
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
@@ -25,7 +24,7 @@ class TransformCom:
         self.verbose = verbose
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
-        self.multiple_outputs = multiple_outputs
+        self.outputs = outputs
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
@@ -197,12 +196,16 @@ class TransformCom:
                 # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
                 sockets_in = dict(self.poller.poll(timeout=None))
 
+                ignoring_outputs= [False] * len(self.outputs)
                 new_message_data = []
-                for i in range(len(self.sending_topics)):
+                for i in range(len(self.outputs)):
                     header = self.socket_pull_data.recv()
                     bytes = self.socket_pull_data.recv()
                     array_data = Socket.reconstruct_array_from_bytes_message([header, bytes])
                     new_message_data.append(array_data)
+                    if type(array_data[0]) == np.str_:
+                        if array_data[0] == ct.IGNORE:
+                            ignoring_outputs[i] = True
 
                 t3 = time.perf_counter()
 
@@ -210,17 +213,9 @@ class TransformCom:
                     print('ooooo Results got back at time {} s ooooo'.format(t3))
 
                 # Publish the results. Each array in the list of arrays is published to its own sending topic
-                # (matched by order)
-                for st in self.sending_topics:
-                    if st != 'NothingOut':
-                        topic_output_attr = st.split('##')[0]
-                        if self.multiple_outputs is not None:
-                            for mi, mo in enumerate(self.multiple_outputs):
-                                mo = mo.replace(' ', '_')
-                                if mo in topic_output_attr:
-                                    i = mi
-                        else:
-                            i = 0
+                # (matched by order) assuming there is not ignore signal from the worker.
+                for i, st in enumerate(self.sending_topics):
+                    if ignoring_outputs[i] is False:
 
                         self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)

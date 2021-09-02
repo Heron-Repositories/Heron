@@ -139,7 +139,7 @@ def on_link(sender, link):
     input_node = input_node_label.split('##')[-2] + '##' + input_node_label.split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            topic_out = '{}->{}'.format(output_node_label, input_node_label)
+            topic_out = output_node_label
             n.add_topic_out(topic_out)
             n.links_list.append(link_id)
             user_data = dpg.get_item_user_data(link_id)
@@ -147,8 +147,8 @@ def on_link(sender, link):
             user_data['node_id_out'] = n.id
             dpg.set_item_user_data(link_id, user_data)
         if input_node == n.name:
-            topic_in = '{}->{}'.format(output_node_label, input_node_label)
-            n.add_topic_in('{}->{}'.format(output_node_label, input_node_label))
+            topic_in = output_node_label
+            n.add_topic_in(topic_in)
             n.links_list.append(link_id)
             user_data = dpg.get_item_user_data(link_id)
             user_data['topic_in'] = topic_in
@@ -171,21 +171,13 @@ def delete_link(sender, link):
     topic_out = link_conf['user_data']['topic_out'].replace(' ', '_')
     topic_in = link_conf['user_data']['topic_in'].replace(' ', '_')
 
-    print(output_node, input_node, topic_out)
     for n in nodes_list:
-        print('-----')
-        print(n.name)
-        print(n.id)
         if output_node == n.id:
-            print('Out {}'.format(output_node))
             n.remove_topic_out(topic_out)
             n.links_list.remove(link)
         if input_node == n.id:
-            print('In {}'.format(input_node))
             n.remove_topic_in(topic_in)
             n.links_list.remove(link)
-        print(n.topics_in)
-        print(n.topics_out)
     dpg.delete_item(link)
 
 
