@@ -21,17 +21,11 @@ from Heron import general_utils as gu
 from Heron.Operations.Transforms.Vision.TL_Cottonbud_Angle import tl_cottonbud_angle_com
 from Heron.communication.transform_worker import TransformWorker
 
-
 worker_object: TransformWorker
 predictor = None
 
-handler = logging.FileHandler('/mnt/e/temp/detect.log')
-logger = logging.getLogger('Hello')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
-
-def visualise_prediction(image, outputs):
+def put_boxes_on_image(image, outputs):
     v = Visualizer(image[:, :, ::-1], scale=1.0)
     v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
     im = v.get_image()[:, :, ::-1].astype(np.uint8)
@@ -41,9 +35,8 @@ def visualise_prediction(image, outputs):
 
 def get_parameters(worker_object):
     global predictor
-    global logger
+    global calculate_image_with_boxes
 
-    logger.debug(predictor)
     # The default value of the 1st parameter is a generic name that must always be changed. That is why the below is
     # a valid test of whether the parameters have been read
     if tl_cottonbud_angle_com.ParametersDefaultValues[0] == worker_object.parameters[0]:
@@ -93,41 +86,44 @@ def calculate_stick_angle(outputs):
 
 
 def detect(data, parameters):
-    global logger
     global worker_object
     global predictor
 
     image_with_predictions = np.array(np.random.random((100, 100)))
-    logger.debug(1)
+    worker_object.worker_visualisable_result = np.array(['Not calculated'])
 
-    if data is None or parameters is None:
-        worker_object.worker_visualisable_result = np.array(['Not Calculated'])
+    if data is None or parameters is None or predictor is None:
+        logging.debug('Passed')
     else:
-        message = data[1:]  # data[0] is the topic
-        image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
-        image = cv2.resize(image, (200, 204))
-        image = np.repeat(image[:, :, np.newaxis], 3, axis=2)
-
         try:
+            calculate_image_with_boxes = parameters[3]
+
+            message = data[1:]  # data[0] is the topic
+            image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+            image = cv2.resize(image, (200, 204))
+            image = np.repeat(image[:, :, np.newaxis], 3, axis=2)
             outputs = predictor(image)
             angle = calculate_stick_angle(outputs)
+
             if angle is not None:
                 angle = np.array([angle.tolist()])
                 worker_object.worker_visualisable_result = angle
-                image_with_predictions = np.ascontiguousarray(visualise_prediction(image, outputs))
-            else:
-                worker_object.worker_visualisable_result = np.array([None])
 
-            logger.debug('Angle = {}'.format(worker_object.worker_visualisable_result))
-            logger.debug('Pred Image shape = {}'.format(image_with_predictions.shape))
+                if calculate_image_with_boxes:
+                    image_with_predictions = np.ascontiguousarray(put_boxes_on_image(image, outputs))
+            else:
+                worker_object.worker_visualisable_result = np.array(['Not Calculated'])
 
         except Exception as e:
-            worker_object.worker_visualisable_result = np.array([None])
-            logger.debug('Detecting cottonbud angle {} operation failed'.format(worker_object.node_index))
-            logger.debug(e)
+            worker_object.worker_visualisable_result = np.array(['Error'])
+            logging.debug('Detecting cottonbud angle {} operation failed'.format(worker_object.node_index))
+            logging.debug(e)
 
-    # The order in the list should be the same as the order of outputs shown on the Node from top to bottom
-    return [worker_object.worker_visualisable_result, image_with_predictions]
+    # The order in the list should be the same as the order of outputs shown on the Node from top to bottom.
+    # The individual elements of the list should always have a value (not None) otherwise the order changes!
+    results = [worker_object.worker_visualisable_result, image_with_predictions]
+
+    return results
 
 
 def on_end_of_life():

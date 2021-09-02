@@ -14,9 +14,9 @@ Properties of the generated Node
 BaseName = 'TL Cottonbud Angle'
 NodeAttributeNames = ['Parameters', 'Frame In', 'Angle Out', 'Image Out']
 NodeAttributeType = ['Static', 'Input', 'Output', 'Output']
-ParameterNames = ['Model zoo yaml', 'Model Weights File', 'Number of Classes']
-ParameterTypes = ['str', 'str', 'int']
-ParametersDefaultValues = ['model_zoo_file.yaml', 'model_final.pth', 5]
+ParameterNames = ['Model zoo yaml', 'Model Weights File', 'Number of Classes', 'Calculate Image with Boxes']
+ParameterTypes = ['str', 'str', 'int', 'bool']
+ParametersDefaultValues = ['model_zoo_file.yaml', 'model_final.pth', 5, False]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_cottonbud_angle_worker.py')
 
 # </editor-fold>
