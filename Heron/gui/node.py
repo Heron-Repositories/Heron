@@ -31,6 +31,7 @@ class Node:
         self.process = None
         self.topics_out = []
         self.topics_in = []
+        self.links_list = []
         self.starting_port = None
         self.num_of_inputs = 0
         self.num_of_outputs = 0
@@ -44,7 +45,6 @@ class Node:
         self.socket_sub_proof_of_life = None
         self.theme_id = None
         self.extra_window_id = None
-
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -95,6 +95,7 @@ class Node:
     def remove_from_editor(self):
         dpg.delete_item(self.id)
 
+
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
             if at == 'Input':
@@ -120,39 +121,6 @@ class Node:
     def get_node_index(self):
         self.node_index = self.name.split('##')[-1]
 
-    '''
-    def generate_default_topics(self):
-        number_of_static_attrs = 0
-        number_of_input_attrs = 0
-        number_of_output_attrs = 0
-        for at in self.operation.attribute_types:
-            if 'Static' in at:
-                number_of_static_attrs += 1
-
-        for at, attr_order_num in zip(self.operation.attribute_types, range(len(self.operation.attributes))):
-            if 'Input' in at:
-                self.topics_in.append('{}:NothingIn'.format(self.operation.attributes[attr_order_num]))
-                number_of_input_attrs += 1
-            if 'Output' in at:
-                self.topics_out.append('{}:NothingOut'.format(self.operation.attributes[attr_order_num]))
-                number_of_output_attrs += 1
-
-    def add_topic_in(self, topic):
-        i = self.get_attribute_order('Input')[topic.split('->')[1].split('##')[0]]
-        topic = topic.replace(' ', '_')
-        for t in self.topics_in:
-            if 'NothingIn' in t:
-                self.topics_in[i] = '{}:{}'.format(i, topic)
-                break
-
-    def add_topic_out(self, topic):
-        i = self.get_attribute_order('Output')[topic.split('##')[0]]
-        topic = topic.replace(' ', '_')
-        for t in self.topics_out:
-            if 'NothingOut' in t:
-                self.topics_out[i] = '{}:{}'.format(i, topic)
-                break
-    '''
     def generate_default_topics(self):
         for at in self.operation.attribute_types:
             if 'Input' in at:

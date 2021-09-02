@@ -121,7 +121,7 @@ def on_link(sender, link):
     """
     global links_dict
 
-    dpg.add_node_link(link[0], link[1], parent=sender)
+    link_id = dpg.add_node_link(link[0], link[1], parent=sender, user_data={})
     link0_name = dpg.get_item_label(link[0])
     link1_name = dpg.get_item_label(link[1])
 
@@ -139,34 +139,53 @@ def on_link(sender, link):
     input_node = input_node_label.split('##')[-2] + '##' + input_node_label.split('##')[-1]
     for n in nodes_list:
         if output_node == n.name:
-            n.add_topic_out('{}->{}'.format(output_node_label, input_node_label))
+            topic_out = '{}->{}'.format(output_node_label, input_node_label)
+            n.add_topic_out(topic_out)
+            n.links_list.append(link_id)
+            user_data = dpg.get_item_user_data(link_id)
+            user_data['topic_out'] = topic_out
+            user_data['node_id_out'] = n.id
+            dpg.set_item_user_data(link_id, user_data)
         if input_node == n.name:
+            topic_in = '{}->{}'.format(output_node_label, input_node_label)
             n.add_topic_in('{}->{}'.format(output_node_label, input_node_label))
+            n.links_list.append(link_id)
+            user_data = dpg.get_item_user_data(link_id)
+            user_data['topic_in'] = topic_in
+            user_data['node_id_in'] = n.id
+            dpg.set_item_user_data(link_id, user_data)
 
 
-# TODO: Define what happens when user deletes a link.
-def on_delink(sender, link):
+def delete_link(sender, link):
+    """
+    Deletes a link and removes the topics (in and out) it represents from the corresponding nodes
+    :param sender: Not used
+    :param link: The id of the link item
+    :return: Nothing
+    """
     global links_dict
 
-    output_nade_label = dpg.get_item_label(link[0])
-    iput_node_label = dpg.get_item_label(link[1])
-    del links_dict[dpg.get_item_label(link[0])]
+    link_conf = dpg.get_item_configuration(link)
+    output_node = link_conf['user_data']['node_id_out']
+    input_node = link_conf['user_data']['node_id_in']
+    topic_out = link_conf['user_data']['topic_out'].replace(' ', '_')
+    topic_in = link_conf['user_data']['topic_in'].replace(' ', '_')
 
-    output_node = output_nade_label.split('##')[-2] + '##' + output_nade_label.split('##')[-1]
-    input_node = iput_node_label.split('##')[-2] + '##' + iput_node_label.split('##')[-1]
+    print(output_node, input_node, topic_out)
     for n in nodes_list:
-        #print(n.name)
-        #print(n.topics_in)
-        #print(n.topics_out)
-        #print('-------')
-        if output_node == n.name:
-            n.remove_topic_out(output_node)
-        if input_node == n.name:
-            n.remove_topic_in(output_node)
-        #print(n.topics_in)
-        #print(n.topics_out)
-        #print('-------')
-        #print('-------')
+        print('-----')
+        print(n.name)
+        print(n.id)
+        if output_node == n.id:
+            print('Out {}'.format(output_node))
+            n.remove_topic_out(topic_out)
+            n.links_list.remove(link)
+        if input_node == n.id:
+            print('In {}'.format(input_node))
+            n.remove_topic_in(topic_in)
+            n.links_list.remove(link)
+        print(n.topics_in)
+        print(n.topics_out)
     dpg.delete_item(link)
 
 
@@ -245,15 +264,20 @@ def on_end_graph(sender, data):
 
 def on_del_pressed(sender, key_value):
     indices_to_remove = []
-
+    print('Hello')
     for node in dpg.get_selected_nodes(node_editor=node_editor):
         node_name = dpg.get_item_label(node)
         for i in np.arange(len(nodes_list)-1, -1, -1):
             if nodes_list[i].name == node_name:
+
                 nodes_list[i].remove_from_editor()
                 indices_to_remove.append(i)
+
     for i in indices_to_remove:
         del nodes_list[i]
+
+    for link in dpg.get_selected_links(node_editor=node_editor):
+        delete_link(None, link)
 
 
 def update_control_graph_buttons(is_graph_running):
@@ -411,6 +435,12 @@ def on_drag(sender, data, user_data):
 
     data = np.array(data)
 
+    # If resizing the node_editor_window then resize the node_editor itself
+    height = dpg.get_item_height(node_editor_window)
+    width = dpg.get_item_width(node_editor_window)
+    dpg.set_item_height(node_editor, height - 40)
+    dpg.set_item_width(node_editor, width - 20)
+
     # If moving a selected node, update the node's stores coordinates
     if np.sum(np.abs(data)) > 0 and len(nodes_list) > 0:
         for sel in dpg.get_selected_nodes(node_editor=node_editor):
@@ -430,11 +460,8 @@ def on_drag(sender, data, user_data):
             dpg.set_item_pos(n.id, [n.coordinates[0] + int(move[0]), n.coordinates[1] + int(move[1])])
             n.coordinates = dpg.get_item_pos(n.id)
 
-    # If resizing the node_editor window then resize the node_editor itself
-    height = dpg.get_item_height(node_editor_window)
-    width = dpg.get_item_width(node_editor_window)
-    dpg.set_item_height(node_editor, height-40)
-    dpg.set_item_width(node_editor, width-20)
+
+
 
 def on_mouse_release(sender, app_data, user_data):
     global mouse_dragging_deltas
@@ -492,7 +519,7 @@ with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as n
 
 with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
     # The node editor
-    with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=on_delink,
+    with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
                          width=1300, height=dpg.get_item_height(main_window) - 100) as node_editor:
 
         dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
