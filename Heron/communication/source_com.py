@@ -44,7 +44,7 @@ class SourceCom:
             except:
                 log_file_name =  gu.add_timestamp_to_filename(self.verbose, datetime.now())
                 self.logger = gu.setup_logger('Source', log_file_name)
-                self.logger.info('Index of data packet : Computer Time')
+                self.logger.info('Index of data packet : Computer Time Data Out')
                 self.verbose = False
 
     def connect_sockets(self):
@@ -86,8 +86,10 @@ class SourceCom:
         """
 
         # A specific worker with multiple outputs should send from its infinite loop a message with multiple parts
-        # (using multiple send_array(data, flags=zmq.SNDMORE) commands)
-
+        # (using multiple send_array(data, flags=zmq.SNDMORE) commands). For an example see how the transform_worker
+        # sends data to the com from its data_callback function
+        # TODO The bellow will not work for multiple outputs. I have to find out how many times a callback is called
+        #  when data are send with SNDMORE flag !!!
         new_message_data = []
         if len(self.sending_topics) > 1:
             for i in range(len(self.sending_topics)):

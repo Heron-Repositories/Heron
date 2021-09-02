@@ -6,7 +6,7 @@ import time
 
 class Socket(zmq.Socket):
     """
-    A ZeroMQ socket that allows snding and receiving numpy arrays through their pointers.
+    A ZeroMQ socket that allows sending and receiving numpy arrays through their pointers.
     This socket needs to be initialised by taking a context (not through context.Socket that ZeroMQ
     uses to initialise sockets)
     """

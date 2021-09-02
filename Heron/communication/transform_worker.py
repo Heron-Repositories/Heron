@@ -12,6 +12,7 @@ from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
 import logging
 
+
 class TransformWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
                  parameters_topic, verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
@@ -104,14 +105,20 @@ class TransformWorker:
         The link is a three zmq.Frame list. The first is the topic (used for the worker_exec to distinguish which input the
         link has come from in the case of multiple input nodes). The other two items are the details and the link load
         of the numpy array coming from the previous node).
+        The link's load is then given to the work_function of the worker (together with the parameters of the node)
+        and the result is sent to the com process to be passed on.
+        The result must be a list of numpy arrays! Each element of the list represent one output of the node in the
+        same order as the order of Outputs specified in the xxx_com.py of the node
         :param data: The link received
         :return: Nothing
         """
         data = [data[0].bytes, data[1].bytes, data[2].bytes]
         results = self.work_function(data, self.parameters)
-        for array_in_list in results:
-            #print(array_in_list.shape)
-            self.socket_push_data.send_array(array_in_list, copy=False)
+        for i, array_in_list in enumerate(results):
+            if i < len(results) - 1:
+                self.socket_push_data.send_array(array_in_list, flags=zmq.SNDMORE, copy=False)
+            else:
+                self.socket_push_data.send_array(array_in_list, copy=False)
 
     def parameters_callback(self, parameters_in_bytes):
         """

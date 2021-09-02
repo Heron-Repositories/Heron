@@ -50,7 +50,8 @@ class TransformCom:
             except:
                 log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
                 self.logger = gu.setup_logger('Transform', log_file_name)
-                self.logger.info('Index of data packet given : Index of data packet received : Topic : Computer Time')
+                self.logger.info('Index of data packet given : Index of data packet received : Topic : '
+                                 'Computer Time of Data In : Computer Time of Data Out')
                 self.verbose = False
 
     def connect_sockets(self):
@@ -166,9 +167,8 @@ class TransformCom:
         :return: Nothing
         """
         while self.all_loops_running:
-            # Get link from subsribed node
             t1 = time.perf_counter()
-
+            data_in_time = datetime.now()
             try:
                 # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
                 # the CPU utilization goes to around 10% which quickly kills the CPU (if there are 2 or 3 Transforms in
@@ -178,13 +178,16 @@ class TransformCom:
                     sockets_in = dict(self.poller.poll(timeout=1))
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
-                    topic, data_index, data_time, messagedata = self.get_sub_data()
+                    # The following while ensures that the transform works only on the the latest available
+                    # message from the previous node. If the transform is too slow compared to the input node
+                    # this while throws all past messages away.
+                    while self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                        topic, data_index, data_time, messagedata = self.get_sub_data()
+                        sockets_in = dict(self.poller.poll(timeout=1))
 
                     if self.verbose:
-                        print("-Transform from {} to {}, node_index {} at time {}".format(topic, self.sending_topics,
-                                                                                          data_index, data_time))
-                    if self.logger:
-                        self.logger.info('{} : {} : {}: {}'.format(self.index, data_index, topic, datetime.now()))
+                        print("--- Transform from {} to {}, data index {} at time {} s" \
+                              .format(topic, self.sending_topics, data_index, data_time))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
@@ -192,22 +195,19 @@ class TransformCom:
                     t2 = time.perf_counter()
 
                 # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
-                sockets_in = dict(self.poller.poll(timeout=1))
-                while not sockets_in or self.socket_pull_data not in sockets_in \
-                        or sockets_in[self.socket_pull_data] != zmq.POLLIN:
-                    try:
-                        sockets_in = dict(self.poller.poll(timeout=1))
-                    except:
-                        pass  # When the poller is unregistered at kill time the above line will give an error
+                sockets_in = dict(self.poller.poll(timeout=None))
 
                 new_message_data = []
                 for i in range(len(self.sending_topics)):
-                    new_message_data.append(self.socket_pull_data.recv_array())
+                    header = self.socket_pull_data.recv()
+                    bytes = self.socket_pull_data.recv()
+                    array_data = Socket.reconstruct_array_from_bytes_message([header, bytes])
+                    new_message_data.append(array_data)
 
-                results_time = time.perf_counter()
+                t3 = time.perf_counter()
 
                 if self.verbose:
-                    print('--Results got back at time {}'.format(results_time))
+                    print('ooooo Results got back at time {} s ooooo'.format(t3))
 
                 # Publish the results. Each array in the list of arrays is published to its own sending topic
                 # (matched by order)
@@ -216,23 +216,30 @@ class TransformCom:
                         topic_output_attr = st.split('##')[0]
                         if self.multiple_outputs is not None:
                             for mi, mo in enumerate(self.multiple_outputs):
+                                mo = mo.replace(' ', '_')
                                 if mo in topic_output_attr:
                                     i = mi
                         else:
                             i = 0
-                        
+
                         self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
-                        self.socket_pub_data.send("{}".format(results_time).encode('ascii'), flags=zmq.SNDMORE)
+                        self.socket_pub_data.send("{}".format(t3).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send_array(new_message_data[i], copy=False)
-
-                t3 = time.perf_counter()
+                t4 = time.perf_counter()
 
                 self.index = self.index + 1
 
                 if self.verbose:
-                    print("---Times to: i) transport link from worker_exec to worker_exec = {}, "
-                          "2) publish transformed link = {}".format((t2 - t1) * 1000, (t3 - t1) * 1000))
+                    print("---Times to: "
+                          "\n1) Transport link from previous com to worker_exec = {} ms, "
+                          "\n2) Do the transformation in the worker and get back to the com the data = {} ms"
+                          "\n3) Publish transformed data to the next node = {} ms" \
+                          .format((t2 - t1) * 1000, (t3 - t2)*1000, (t4 - t3) * 1000))
+                    print('=============================')
+                if self.logger:
+                    self.logger.info('{} : {} : {} : {} : {}'.format(self.index, data_index, topic, data_in_time,
+                                                                     datetime.now()))
             except:
                 pass
 
