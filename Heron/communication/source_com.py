@@ -115,12 +115,16 @@ class SourceCom:
         # Publish the results. Each array in the list of arrays is published to its own sending topic
         # (matched by order)
         for i, st in enumerate(self.sending_topics):
-            if ignoring_outputs[i] is False:
+            for k, output in enumerate(self.outputs):
+                if output.replace(' ', '_') in st.split('##')[0]:
+                    break
 
+            if ignoring_outputs[k] is False:
                 self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send_array(new_message_data[i], copy=False)
+                self.socket_pub_data.send_array(new_message_data[k], copy=False)
+                gu.accurate_delay(1)  # This delay is critical to get single output to multiple inputs to work!
 
         if self.verbose:
             dt = self.time - self.previous_time

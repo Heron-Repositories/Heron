@@ -168,11 +168,13 @@ class TransformCom:
         while self.all_loops_running:
             t1 = time.perf_counter()
             data_in_time = datetime.now()
+
             try:
                 # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
                 # the CPU utilization goes to around 10% which quickly kills the CPU (if there are 2 or 3 Transforms in
                 # the pipeline)
                 sockets_in = dict(self.poller.poll(timeout=1))
+
                 while not sockets_in:
                     sockets_in = dict(self.poller.poll(timeout=1))
 
@@ -213,14 +215,19 @@ class TransformCom:
                     print('ooooo Results got back at time {} s ooooo'.format(t3))
 
                 # Publish the results. Each array in the list of arrays is published to its own sending topic
-                # (matched by order) assuming there is not ignore signal from the worker.
+                # (matched by order) assuming there is no ignore signal from the worker.
                 for i, st in enumerate(self.sending_topics):
-                    if ignoring_outputs[i] is False:
+                    for k, output in enumerate(self.outputs):
+                        if output.replace(' ', '_') in st.split('##')[0]:
+                            break
 
+                    if ignoring_outputs[k] is False:
                         self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(t3).encode('ascii'), flags=zmq.SNDMORE)
-                        self.socket_pub_data.send_array(new_message_data[i], copy=False)
+                        self.socket_pub_data.send_array(new_message_data[k], copy=False)
+                        gu.accurate_delay(1)  # This delay is critical to get single output to multiple inputs to work!
+
                 t4 = time.perf_counter()
 
                 self.index = self.index + 1
