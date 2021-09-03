@@ -31,7 +31,7 @@ pyzmq >= 22.x
 
 numpy
 
-dearpygui = 0.6.415 (The latest 0.8.x is a release that breaks everything. We are working on transitioning to it).
+dearpygui = 0.8.xx
 
 opencv = 4.x (3.x should work but not tested)
 
@@ -53,7 +53,7 @@ There are three types of nodes:
 
 The Source nodes which are meant to bring data from the outside world into the pipeline. Examples of these are cameras, microphones, data acquisition devices and in general any type of hardware that will generate data. For example, in the pipeline shown above, there is a single Source node live capturing camera frames. Source nodes have only outputs.
 
-Then there are the Transform nodes which grab data from one of their inputs, transform it and then pass it to their output (currently Heron supports multiple inputs but only a single discreet output). In the above example, each captured frame is passed through a canny filter.
+Then there are the Transform nodes which grab data from one of their inputs, transform it and then pass it to their output. Heron supports both one output to one input and one output to many inputs connectivity. It also supports Nodes with multiple inputs and multiple outputs. In the above example, each captured frame is passed through a canny filter.
 
 Finally there are Sink nodes which only have inputs and which are meant as final saving points for the data. In the above example this is the Save FFMPEG video which takes the canny transformed frame and adds it to a video file (through running ffmpeg).
 
