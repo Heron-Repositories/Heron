@@ -124,7 +124,7 @@ class SourceCom:
                 self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send_array(new_message_data[k], copy=False)
-                gu.accurate_delay(1)  # This delay is critical to get single output to multiple inputs to work!
+                #gu.accurate_delay(0.5)  # This delay is critical to get single output to multiple inputs to work!
 
         if self.verbose:
             dt = self.time - self.previous_time

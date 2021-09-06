@@ -17,7 +17,13 @@ output_names: list
 input_state: dict
 output_state: dict
 detected_angle_buffer_size = 10
-detected_angle_buffer: list
+detected_angle_buffer = []
+manipulandum_state: int
+poke_state: str
+angle_shown_state: int
+last_motor_state: str
+
+NOT_DETECTED = 'Not Detected'
 
 
 def initialise(worker_object):
@@ -34,6 +40,8 @@ def initialise(worker_object):
     output_state = {output_names[0]: 'Not Used', output_names[1]: False,
                     output_names[2]: False, output_names[3]: 'Ignore'}
 
+    return True
+
 
 def topic_to_input_state_key(topic):
     global input_names
@@ -44,28 +52,60 @@ def topic_to_input_state_key(topic):
     return 'No Key'
 
 
-#def update_angle
+def create_results_from_output_state():
+    global output_names
+    global output_state
+    results = []
+    for o_name in output_names:
+        results.append(np.array([output_state[o_name]]))
+
+    return results
+
+
+def update_manipulandum_state():
+    global input_names
+    global input_state
+    global detected_angle_buffer_size
+    global detected_angle_buffer
+    global manipulandum_state
+
+    if detected_angle_buffer_size > len(detected_angle_buffer):
+        detected_angle_buffer.append(input_state[input_names[0]])
+
+    manipulandum_state = None
+    if not NOT_DETECTED in detected_angle_buffer and np.std(detected_angle_buffer) < 0.5:
+        manipulandum_state = np.average(detected_angle_buffer)
+
 
 def main_loop(data, parameters):
     global input_names, output_names
     global input_state, output_state
 
+    try:
+        t = input_names[0]
+    except:
+        initialise(None)
+
     topic = data[0].decode('utf-8')
+    #print(topic)
+
     input_key = topic_to_input_state_key(topic)
-    if input_key != 'No Key':
-        message = data[1:]  # data[0] is the topic
-        data_array = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
-        input_state[input_key] = data_array[0]
+
+    if input_key == 'No Key':
+        return create_results_from_output_state()
+
+    message = data[1:]  # data[0] is the topic
+    data_array = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+    input_state[input_key] = data_array[0]
 
     if input_key == input_names[0]:
-        pass
+        update_manipulandum_state()
 
-    results = []
-    for value in output_state.values():
-        results.append(np.array(value))
 
-    print(input_state)
-    print(results)
+    results = create_results_from_output_state()
+
+    #print(results)
+    #print('-------------------------')
 
     return results
 
