@@ -23,7 +23,7 @@ from Heron.communication.transform_worker import TransformWorker
 
 worker_object: TransformWorker
 predictor = None
-
+instance_threshold_score = 0.85
 
 def put_boxes_on_image(image, outputs):
     v = Visualizer(image[:, :, ::-1], scale=1.0)
@@ -62,7 +62,7 @@ def calculate_stick_angle(outputs):
     if len(instances) > 1:
         for i in range(len(instances)):
             instance = instances[i]
-            if instance.pred_classes == 3 and instance.scores > 0.95:
+            if instance.pred_classes == 3 and instance.scores > instance_threshold_score:
                 bud_box = instance.pred_boxes
                 center_of_bud = bud_box.get_centers()
                 if center_of_bud_1 is None:
@@ -108,11 +108,11 @@ def detect(data, parameters):
             if angle is not None:
                 angle = np.array([angle.tolist()])
                 worker_object.worker_visualisable_result = angle
-
-                if calculate_image_with_boxes:
-                    image_with_predictions = np.ascontiguousarray(put_boxes_on_image(image, outputs))
             else:
                 worker_object.worker_visualisable_result = np.array(['Not Calculated'])
+
+            if calculate_image_with_boxes:
+                image_with_predictions = np.ascontiguousarray(put_boxes_on_image(image, outputs))
 
         except Exception as e:
             worker_object.worker_visualisable_result = np.array(['Error'])

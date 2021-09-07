@@ -12,12 +12,12 @@ Exec = os.path.realpath(__file__)
 Properties of the generated Node
 """
 BaseName = 'TL Experiment Phases 1 and 3'
-NodeAttributeNames = ['Detected Angle', 'Shown Angle', 'Poke Availability State',
+NodeAttributeNames = ['Parameters', 'Detected Angle', 'Shown Angle', 'Poke Availability State',
                       'Shown Angle Update', 'Move Motor CW', 'Move Motor CCW', 'Poke Command']
-NodeAttributeType = ['Input', 'Input', 'Input', 'Output', 'Output', 'Output', 'Output']
-ParameterNames = []
-ParameterTypes = []
-ParametersDefaultValues = []
+NodeAttributeType = ['Static', 'Input', 'Input', 'Input', 'Output', 'Output', 'Output', 'Output']
+ParameterNames = ['Starting Motor']
+ParameterTypes = ['list']
+ParametersDefaultValues = [['CW', 'CCW']]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_experiment_phases_1_3_worker.py')
 
 # </editor-fold>
