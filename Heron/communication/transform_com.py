@@ -25,8 +25,7 @@ class TransformCom:
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
-        print(len(self.sending_topics), len(self.outputs))
-        print('------')
+
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT
         self.port_pub_parameters = ct.PARAMETERS_FORWARDER_SUBMIT_PORT
@@ -89,7 +88,7 @@ class TransformCom:
         # Socket for publishing transformed data to the data forwarder
         self.socket_pub_data = Socket(self.context, zmq.PUB)
         self.socket_pub_data.setsockopt(zmq.LINGER, 0)
-        self.socket_pub_data.set_hwm(len(self.sending_topics) + 1)  # Without at least this hwm, messages from multi output nodes get lost
+        self.socket_pub_data.set_hwm(len(self.sending_topics))
         self.socket_pub_data.connect(r"tcp://127.0.0.1:{}".format(self.port_pub_data))
 
         # Socket for pushing the heartbeat to the worker_exec
@@ -227,7 +226,8 @@ class TransformCom:
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(t3).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send_array(new_message_data[k], copy=False)
-                        #gu.accurate_delay(0.5)  # This delay (100us) is critical to get single output to multiple inputs to work!
+                        # This delay is critical to get single output to multiple inputs to work!
+                        gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
 
                 t4 = time.perf_counter()
 
