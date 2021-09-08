@@ -42,9 +42,9 @@ def initialise(worker_object):
     for i, name in enumerate(output_names):
         output_names[i] = name.replace(' ', '_')
 
-    input_state = {input_names[0]: 'Not Detected', input_names[1]: 'Not Used', input_names[2]: False}
-    output_state = {output_names[0]: 'Not Used', output_names[1]: False,
-                    output_names[2]: False, output_names[3]: 'Ignore'}
+    input_state = {input_names[0]: 'Not Detected', input_names[1]: False, input_names[2]: False}
+    output_state = {output_names[0]: ct.IGNORE, output_names[1]: ct.IGNORE,
+                    output_names[2]: ct.IGNORE, output_names[3]: ct.IGNORE}
 
     return True
 
@@ -92,6 +92,22 @@ def update_poke_state():
         poke_state = 'Off'
 
 
+def update_angle_shown_state():
+    global input_names, input_state
+    global angle_shown_state
+
+    if input_state[input_names[1]]:
+        angle_shown_state = input_state[input_names[1]]
+
+    print(angle_shown_state)
+
+
+def compare_shown_angle_to_manipulandum_angle():
+    global manipulandum_state, angle_shown_state
+
+    return True
+
+
 def main_loop(data, parameters):
     global input_names, output_names
     global input_state, output_state
@@ -111,45 +127,54 @@ def main_loop(data, parameters):
             return get_results_array_from_output_state_dict()
 
     # 1) Initialise the output_state to defaults that do not send out any signal for downstream processes to do anything
-    output_state = {output_names[0]: 'Not Used', output_names[1]: False,
-                    output_names[2]: False, output_names[3]: ct.IGNORE}
+    output_state = {output_names[0]: ct.IGNORE, output_names[1]: ct.IGNORE,
+                    output_names[2]: ct.IGNORE, output_names[3]: ct.IGNORE}
 
-    # 2) Get the data in this Node, find the topic and update the input_state accordingly
+    # 2) Get the data that came in this Node, find the topic and update the input_state accordingly
     topic = data[0].decode('utf-8')
     input_key = topic_to_input_state_key(topic)
 
-    if input_key == 'No Key':
+    if input_key == 'No Key':  # This happens only if something is very wrong with the topic that came in!
         return get_results_array_from_output_state_dict()
 
     message = data[1:]  # data[0] is the topic
     data_array = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
     input_state[input_key] = data_array[0]
 
-    # 3) If the input is Detected Angle then get the value and update the manipuladum_state
+    # 3) If the input is "Shown Angle" then get the value and update the angle_shown_state
+    if input_key == input_names[1]:
+        update_angle_shown_state()
+
+    # 4) If the input is "Detected Angle" then get the value and update the manipuladum_state, then check to see
+    # if you need to send an 'Asked' signal to the Poke (5)
     if input_key == input_names[0]:
         update_manipulandum_state()
 
-        # 4) If the updated manipulandum_state is a number and the poke_state is not 'Asked' then send a signal
-        # to the Poke to get its state and set the poke_state to 'Asked'
+        # 5) If the updated manipulandum_state is a number and the poke_state is not 'Asked' then send a signal
+        # to the Poke to get its state, so set the poke_state to 'Asked'
         if (manipulandum_state is not None and poke_state == 'Off') or poke_state == 'On':
             output_state[output_names[3]] = 'Check'
             poke_state = 'Asked'
 
-    # 5) If the input is the Poke Availability State then update the poke_state with that info
+    # 6) If the input is the Poke Availability State then update the poke_state with that info then check to see if
+    # the trial needs to start (7)
     if input_key == input_names[2] and poke_state == 'Asked':
         update_poke_state()
 
-        # 6) If the manipulandum_state is a number and the poke_state is 'Off' then send a move command to the correct
-        # motor and send a 'start' command to the Poke
-        if manipulandum_state is not None and poke_state == 'Off':
-            output_state[output_names[3]] = 'start'
-            print(last_motor_state)
-            if last_motor_state == 'CW':
-                last_motor_state = 'CCW'
-                output_state[output_names[2]] = 1
-            elif last_motor_state == 'CCW':
-                last_motor_state = 'CW'
-                output_state[output_names[1]] = 1
+        # 7) If the manipulandum_state is a number and the poke_state is 'Off' then check the angle_shown_state and then
+        # send a move command to the correct motor and send a 'start' command to the Poke
+        if angle_shown_state is None or (angle_shown_state is not None and compare_shown_angle_to_manipulandum_angle()):
+            if manipulandum_state is not None and poke_state == 'Off':
+                output_state[output_names[3]] = 'start'
+                print(last_motor_state)
+                if last_motor_state == 'CW':
+                    last_motor_state = 'CCW'
+                    output_state[output_names[2]] = 1
+                elif last_motor_state == 'CCW':
+                    last_motor_state = 'CW'
+                    output_state[output_names[1]] = 1
+                if angle_shown_state is not None:
+                    output_state[output_names[0]] = 1
 
     return get_results_array_from_output_state_dict()
 
