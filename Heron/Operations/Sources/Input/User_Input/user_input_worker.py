@@ -9,7 +9,6 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
-from Heron import constants as ct
 from Heron import general_utils as gu
 from Heron.communication.source_worker import SourceWorker
 

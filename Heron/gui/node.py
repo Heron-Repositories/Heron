@@ -50,7 +50,7 @@ class Node:
         self.get_node_index()
         self.assign_default_parameters()
         self.get_numbers_of_inputs_and_outputs()
-        self.generate_default_topics()
+        #self.generate_default_topics()
 
         self.ssh_server_id_and_names = None
         self.get_ssh_server_names_and_ids()
@@ -120,6 +120,7 @@ class Node:
     def get_node_index(self):
         self.node_index = self.name.split('##')[-1]
 
+    # TODO: Currently the generate_default_topics is not used. Check if this causes any bugs and if not delete.
     def generate_default_topics(self):
         for at in self.operation.attribute_types:
             if 'Input' in at:
@@ -127,12 +128,21 @@ class Node:
             #if 'Output' in at:
             #    self.topics_out.append('NothingOut')
 
+    '''
     def add_topic_in(self, topic):
         topic = topic.replace(' ', '_')
         for i, t in enumerate(self.topics_in):
             if t == 'NothingIn':
                 self.topics_in[i] = topic
                 break
+    '''
+
+    def add_topic_in(self, topic):
+        topic = topic.replace(' ', '_')
+        for t in self.topics_in:
+            if t == topic:
+                return
+        self.topics_in.append(topic)
 
     def add_topic_out(self, topic):
         topic = topic.replace(' ', '_')
@@ -148,7 +158,8 @@ class Node:
         else:
             for i, t in enumerate(self.topics_in):
                 if t == topic:
-                    self.topics_in[i] = ''
+                    # self.topics_in[i] = ''
+                    del self.topics_in[i]
                     break
 
     def remove_topic_out(self, topic):
@@ -363,7 +374,7 @@ class Node:
     def start_com_process(self):
         self.initialise_proof_of_life_socket()
         arguments_list = ['python', self.operation.executable, self.starting_port]
-        num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
+        num_of_inputs = len(self.topics_in)  #num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(self.topics_out) #len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
         arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
@@ -375,8 +386,6 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name.replace(" ", "_"))
 
-        #verbocity = str(self.verbose > 0)
-        #arguments_list.append(verbocity)
         arguments_list.append(str(self.verbose))
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
