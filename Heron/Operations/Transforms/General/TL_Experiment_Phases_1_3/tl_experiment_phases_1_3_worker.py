@@ -23,6 +23,7 @@ detected_angle_buffer = []
 manipulandum_state: int  # Set = {None, -90<x<90 | x in R}
 poke_state = 'Off'  # Set = {'Off', 'Asked', 'On'}
 angle_shown_state = None  # Set = {None, -90<x<90 | x in R}
+angle_update_next = 0
 last_motor_state = None  # Set = {None, 'CW', 'CCW'} but the None state is only at initialisation
 
 NOT_DETECTED = 'Not Calculated'
@@ -96,7 +97,7 @@ def update_angle_shown_state():
     global input_names, input_state
     global angle_shown_state
 
-    if input_state[input_names[1]]:
+    if input_state[input_names[1]] != 'Not Detected':
         angle_shown_state = input_state[input_names[1]]
 
     print(angle_shown_state)
@@ -105,13 +106,24 @@ def update_angle_shown_state():
 def compare_shown_angle_to_manipulandum_angle():
     global manipulandum_state, angle_shown_state
 
+    man_angle = manipulandum_state
+    if man_angle < 0:
+        man_angle += 180
+    shown_angle = angle_shown_state
+    if shown_angle < 0:
+        shown_angle += 180
+
+    print('man_angle = {}, shown_angle = {}'.format(man_angle, shown_angle))
+    if np.abs(man_angle - shown_angle) > 20:
+        return False
+
     return True
 
 
 def main_loop(data, parameters):
     global input_names, output_names
     global input_state, output_state
-    global manipulandum_state, poke_state, angle_shown_state, last_motor_state
+    global manipulandum_state, poke_state, angle_shown_state, angle_update_next, last_motor_state
 
     # 0) If the main_loop has been called before the input_names and the last_motor_state parameter have been properly
     # initialised, detect that and try to initialise them. Also return the function with its defaults.
@@ -127,18 +139,28 @@ def main_loop(data, parameters):
             return get_results_array_from_output_state_dict()
 
     # 1) Initialise the output_state to defaults that do not send out any signal for downstream processes to do anything
-    output_state = {output_names[0]: ct.IGNORE, output_names[1]: ct.IGNORE,
+    angle_update_output = ct.IGNORE
+    if output_state[output_names[0]] is not ct.IGNORE and output_state[output_names[0]] < 3:
+        output_state[output_names[0]] += 1
+        angle_update_output = angle_update_output
+    output_state = {output_names[0]: angle_update_output, output_names[1]: ct.IGNORE,
                     output_names[2]: ct.IGNORE, output_names[3]: ct.IGNORE}
+
+    if angle_update_next:
+        output_state[output_names[0]] = 1
+        if angle_update_next < 4:
+            angle_update_next = 0
 
     # 2) Get the data that came in this Node, find the topic and update the input_state accordingly
     topic = data[0].decode('utf-8')
+    #print(topic)
     input_key = topic_to_input_state_key(topic)
 
     if input_key == 'No Key':  # This happens only if something is very wrong with the topic that came in!
         return get_results_array_from_output_state_dict()
 
     message = data[1:]  # data[0] is the topic
-    data_array = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+    data_array = Socket.reconstruct_array_from_bytes_message(message)
     input_state[input_key] = data_array[0]
 
     # 3) If the input is "Shown Angle" then get the value and update the angle_shown_state
@@ -163,10 +185,10 @@ def main_loop(data, parameters):
 
         # 7) If the manipulandum_state is a number and the poke_state is 'Off' then check the angle_shown_state and then
         # send a move command to the correct motor and send a 'start' command to the Poke
-        if angle_shown_state is None or (angle_shown_state is not None and compare_shown_angle_to_manipulandum_angle()):
-            if manipulandum_state is not None and poke_state == 'Off':
+        if manipulandum_state is not None and poke_state == 'Off':
+            if angle_shown_state is None or (
+                    angle_shown_state is not None and compare_shown_angle_to_manipulandum_angle()):
                 output_state[output_names[3]] = 'start'
-                print(last_motor_state)
                 if last_motor_state == 'CW':
                     last_motor_state = 'CCW'
                     output_state[output_names[2]] = 1
@@ -174,7 +196,7 @@ def main_loop(data, parameters):
                     last_motor_state = 'CW'
                     output_state[output_names[1]] = 1
                 if angle_shown_state is not None:
-                    output_state[output_names[0]] = 1
+                    angle_update_next += 1
 
     return get_results_array_from_output_state_dict()
 
