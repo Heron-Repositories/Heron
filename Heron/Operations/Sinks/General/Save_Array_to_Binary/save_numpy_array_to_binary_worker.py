@@ -126,8 +126,10 @@ def save_array(data, parameters):
 
 def on_end_of_life():
     global hdf5_file
-
-    hdf5_file.close()
+    try:
+        hdf5_file.close()
+    except:
+        pass
 
 
 if __name__ == "__main__":

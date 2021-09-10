@@ -223,7 +223,7 @@ def visualise(msg, parameters):
     global data
 
     message = msg[1:]  # data[0] is the topic
-    data = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+    data = Socket.reconstruct_array_from_bytes_message(message)
 
     if parameters is not None:
         visualisation_on = parameters[0]

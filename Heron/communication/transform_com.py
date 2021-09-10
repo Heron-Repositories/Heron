@@ -186,7 +186,7 @@ class TransformCom:
                         topic, data_index, data_time, messagedata = self.get_sub_data()
                         sockets_in = dict(self.poller.poll(timeout=1))
 
-                    if self.verbose:
+                    if self.verbose == 1:
                         print("--- Transform from {} to {}, data index {} at time {} s" \
                               .format(topic, self.sending_topics, data_index, data_time))
 
@@ -211,7 +211,7 @@ class TransformCom:
 
                 t3 = time.perf_counter()
 
-                if self.verbose:
+                if self.verbose == 1:
                     print('ooooo Results got back at time {} s ooooo'.format(t3))
 
                 # Publish the results. Each array in the list of arrays is published to its own sending topic
@@ -233,7 +233,7 @@ class TransformCom:
 
                 self.index = self.index + 1
 
-                if self.verbose:
+                if self.verbose == 1:
                     print("---Times to: "
                           "\n1) Transport link from previous com to worker_exec = {} ms, "
                           "\n2) Do the transformation in the worker and get back to the com the data = {} ms"

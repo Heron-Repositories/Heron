@@ -82,8 +82,8 @@ def change_camera_parameters(worker_object):
     if trigger_mode:
         result.append(os.system('v4l2-ctl -c trigger_mode=1'))
         time.sleep(0.2)
-        #result.append(os.system('v4l2-ctl -c disable_frame_timeout={}'.format(1)))
-        #time.sleep(0.2)
+        result.append(os.system('v4l2-ctl -c disable_frame_timeout={}'.format(1)))
+        time.sleep(0.2)
     else:
         result.append(os.system('v4l2-ctl -c trigger_mode=0'))
         time.sleep(0.2)

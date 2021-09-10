@@ -77,7 +77,7 @@ def calculate_stick_angle(outputs):
                 zeroed_tensor = torch.subtract(center_of_bud_2, center_of_bud_1)
             zeroed_tensor = zeroed_tensor.to('cpu')
             cos = zeroed_tensor[0]/(zeroed_tensor[0].pow(2) + zeroed_tensor[1].pow(2)).pow(0.5)
-            angle = torch.rad2deg(torch.acos(cos))
+            angle = -torch.rad2deg(torch.acos(cos))
 
             if zeroed_tensor[1] > 0:
                 angle = -angle

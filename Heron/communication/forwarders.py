@@ -30,13 +30,13 @@ def data_forwarder_loop():
 
         frontend = context.socket(zmq.SUB)
         frontend.setsockopt(zmq.LINGER, 0)
-        frontend.set_hwm(1)
+        frontend.set_hwm(2)
         frontend.bind("tcp://*:{}".format(ct.DATA_FORWARDER_SUBMIT_PORT))
         frontend.SUBSCRIBE = ""
 
         backend = context.socket(zmq.PUB)
         backend.setsockopt(zmq.LINGER, 0)
-        backend.set_hwm(1)
+        backend.set_hwm(2)
         backend.bind("tcp://*:{}".format(ct.DATA_FORWARDER_PUBLISH_PORT))
 
         all_sockets.append(frontend)
