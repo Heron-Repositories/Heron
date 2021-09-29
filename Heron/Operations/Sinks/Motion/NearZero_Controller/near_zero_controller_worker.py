@@ -39,6 +39,7 @@ def move_motor(data, parameters):
         pos_or_rot = parameters[3]
         value = parameters[4]
         current = parameters[5]
+        trigger = parameters[6]
     except:
         use_pylibi2c = near_zero_controller_com.ParametersDefaultValues[0]
         i2c_address = int(near_zero_controller_com.ParametersDefaultValues[1], base=16)
@@ -53,7 +54,7 @@ def move_motor(data, parameters):
 
     message = data[1:]  # data[0] is the topic
     message = Socket.reconstruct_array_from_bytes_message(message)[0]
-    if int(message):
+    if message == trigger:
         command = '{}{}{}c{}'.format(motor, pos_or_rot, value, current)
         if use_pylibi2c:
             motor_controller.write(0x0, command)

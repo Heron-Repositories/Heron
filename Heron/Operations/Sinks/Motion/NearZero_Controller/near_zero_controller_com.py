@@ -14,9 +14,9 @@ Properties of the generated Node
 BaseName = 'NearZero Gimbal Controller'
 NodeAttributeNames = ['Parameters', 'Command In']
 NodeAttributeType = ['Static', 'Input']
-ParameterNames = ['Use pylibi2c', 'I2C Address', 'Motor', 'Position OR Rotation', 'Value', 'Current']
-ParameterTypes = ['bool', 'str', 'int', 'list', 'str', 'str']
-ParametersDefaultValues = [False, '0x40', 1, ['p', 'r'], '+00000', '00000']
+ParameterNames = ['Use pylibi2c', 'I2C Address', 'Motor', 'Position OR Rotation', 'Value', 'Current', 'Trigger String']
+ParameterTypes = ['bool', 'str', 'int', 'list', 'str', 'str', 'str']
+ParametersDefaultValues = [False, '0x40', 1, ['p', 'r'], '+00000', '00000', 'move']
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'near_zero_controller_worker.py')
 # </editor-fold>
 

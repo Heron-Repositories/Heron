@@ -14,10 +14,10 @@ Properties of the generated Node
 BaseName = 'TL Poke Controller'
 NodeAttributeNames = ['Parameters', 'Start', 'Finished']
 NodeAttributeType = ['Static', 'Input', 'Output']
-ParameterNames = ['Com port', 'Availability Time (s)', 'Availability Freq (Hz)', 'Success Freq (Hz)']
-ParameterTypes = ['str', 'float', 'list', 'list']
+ParameterNames = ['Com port', 'Availability Time (s)', 'Availability Freq (Hz)', 'Success Freq (Hz)', 'Trigger String']
+ParameterTypes = ['str', 'float', 'list', 'list', 'str']
 ParametersDefaultValues = ['COM5', 40, [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-                           [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]]
+                           [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000], 'start']
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_poke_controller_worker.py')
 # </editor-fold>
 

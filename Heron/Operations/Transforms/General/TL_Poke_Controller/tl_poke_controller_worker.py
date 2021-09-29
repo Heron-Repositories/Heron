@@ -8,7 +8,6 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
-import time
 import serial
 import threading
 from Heron.communication.socket_for_serialization import Socket
@@ -19,6 +18,7 @@ arduino_serial: serial.Serial
 avail_time: float
 avail_freq: int
 succ_freq: int
+trigger_string: str
 availability_period_is_running = False
 
 
@@ -36,6 +36,7 @@ def initialise(_worker_object):
     global avail_time
     global avail_freq
     global succ_freq
+    global trigger_string
 
     try:
         parameters = _worker_object.parameters
@@ -43,6 +44,7 @@ def initialise(_worker_object):
         avail_time = parameters[1]
         avail_freq = parameters[2]
         succ_freq = parameters[3]
+        trigger_string = parameters[4]
     except Exception as e:
         print(e)
         return False
@@ -71,38 +73,36 @@ def start_availability_thread():
 
         bytes_in_buffer = arduino_serial.in_waiting
         string_in = arduino_serial.read(bytes_in_buffer).decode('utf-8')
-        #print(step)
-        if bytes_in_buffer:
-            #print(string_in)
-            if '555\r\n' in string_in:
-                #print('Play success sound and give food')
+        if bytes_in_buffer and '555\r\n' in string_in:
                 availability_period_is_running = False
                 try:
                     arduino_serial.write('a'.encode('utf-8'))
                     arduino_serial.write(freq_to_signal(succ_freq))
-                    time.sleep(1.5 * sleep_dt)
+                    gu.accurate_delay(1500 * sleep_dt)
                     arduino_serial.write(freq_to_signal(succ_freq))
                 except Exception as e:
                     print(e)
         elif step >= total_steps:
-            #print('Finish')
-            availability_period_is_running = False
-            arduino_serial.write(freq_to_signal(1000))
-            time.sleep(1.2 * sleep_dt)
-            arduino_serial.write(freq_to_signal(500))
+            try:
+                availability_period_is_running = False
+                arduino_serial.write(freq_to_signal(1000))
+                gu.accurate_delay(1200 * sleep_dt)
+                arduino_serial.write(freq_to_signal(500))
+            except Exception as e:
+                print(e)
         else:
-            #print('Play Availability sound')
             try:
                 arduino_serial.write(freq_to_signal(avail_freq))
                 arduino_serial.read(arduino_serial.in_waiting)
             except Exception as e:
                 print(e)
-            time.sleep(sleep_dt)
+            gu.accurate_delay(1000 * sleep_dt)
         step += 1
 
 
 def start_availability_period(data, parameters):
     global availability_period_is_running
+    global trigger_string
 
     # topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
@@ -110,7 +110,7 @@ def start_availability_period(data, parameters):
     if ct.IGNORE == message[0]:
         result = [np.array([ct.IGNORE])]
     else:
-        if 'start' == message[0]:
+        if trigger_string == message[0]:
             if not availability_period_is_running:
                 try:
                     avail_thread = threading.Thread(target=start_availability_thread)
