@@ -107,7 +107,7 @@ def register_exit_signals(function_to_register):
 
 
 def setup_logger(name, log_file, level=logging.DEBUG):
-    """To setup as many loggers as you want"""
+
     formatter = logging.Formatter(fmt='%(message)s')
     handler = logging.FileHandler(log_file)
     handler.setFormatter(formatter)

@@ -125,7 +125,7 @@ def main_loop(data, parameters):
     global input_state, output_state
     global manipulandum_state, poke_state, angle_shown_state, angle_update_next, last_motor_state
 
-    # 0) If the main_loop has been called before the input_names and the last_motor_state parameter have been properly
+    # 0) If the main_loop has been called before the input_names and the last_motor_state parameter has been properly
     # initialised, detect that and try to initialise them. Also return the function with its defaults.
     try:
         t = input_names[0]
@@ -138,7 +138,7 @@ def main_loop(data, parameters):
         else:
             return get_results_array_from_output_state_dict()
 
-    # 1) Initialise the output_state to defaults that do not send out any signal for downstream processes to do anything
+    # 1) Initialise the output_state to ct.IGNORE so no signals go out unless they need to
     angle_update_output = ct.IGNORE
     if output_state[output_names[0]] is not ct.IGNORE and output_state[output_names[0]] < 3:
         output_state[output_names[0]] += 1
@@ -146,12 +146,15 @@ def main_loop(data, parameters):
     output_state = {output_names[0]: angle_update_output, output_names[1]: ct.IGNORE,
                     output_names[2]: ct.IGNORE, output_names[3]: ct.IGNORE}
 
+    # 2) Check if angle_update_next is not 0 (and smaller than 4) and send out an angle update signal.
+    # This sends out the angle update signal multiple times so that the return signal from the Random Number
+    # Generator doesn't get missed.
     if angle_update_next:
         output_state[output_names[0]] = 1
         if angle_update_next < 4:
             angle_update_next = 0
 
-    # 2) Get the data that came in this Node, find the topic and update the input_state accordingly
+    # 3) Get the data that came in this Node, find the topic and update the input_state accordingly
     topic = data[0].decode('utf-8')
     #print(topic)
     input_key = topic_to_input_state_key(topic)
@@ -163,27 +166,27 @@ def main_loop(data, parameters):
     data_array = Socket.reconstruct_array_from_bytes_message(message)
     input_state[input_key] = data_array[0]
 
-    # 3) If the input is "Shown Angle" then get the value and update the angle_shown_state
+    # 4) If the input is "Shown Angle" then get the value and update the angle_shown_state
     if input_key == input_names[1]:
         update_angle_shown_state()
 
-    # 4) If the input is "Detected Angle" then get the value and update the manipuladum_state, then check to see
+    # 5) If the input is "Detected Angle" then get the value and update the manipuladum_state, then check to see
     # if you need to send an 'Asked' signal to the Poke (5)
     if input_key == input_names[0]:
         update_manipulandum_state()
 
-        # 5) If the updated manipulandum_state is a number and the poke_state is not 'Asked' then send a signal
+        # 6) If the updated manipulandum_state is a number and the poke_state is not 'Asked' then send a signal
         # to the Poke to get its state, so set the poke_state to 'Asked'
         if (manipulandum_state is not None and poke_state == 'Off') or poke_state == 'On':
             output_state[output_names[3]] = 'Check'
             poke_state = 'Asked'
 
-    # 6) If the input is the Poke Availability State then update the poke_state with that info then check to see if
+    # 7) If the input is the Poke Availability State then update the poke_state with that info then check to see if
     # the trial needs to start (7)
     if input_key == input_names[2] and poke_state == 'Asked':
         update_poke_state()
 
-        # 7) If the manipulandum_state is a number and the poke_state is 'Off' then check the angle_shown_state and then
+        # 8) If the manipulandum_state is a number and the poke_state is 'Off' then check the angle_shown_state and then
         # send a move command to the correct motor and send a 'start' command to the Poke
         if manipulandum_state is not None and poke_state == 'Off':
             if angle_shown_state is None or (

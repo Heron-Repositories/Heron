@@ -275,7 +275,7 @@ def on_end_of_life():
     global acquiring_on
     try:
         acquiring_on = False
-        cv2.waitKey(500)
+        gu.accurate_delay(500)
         cam.EndAcquisition()
         cam.DeInit()
         del cam

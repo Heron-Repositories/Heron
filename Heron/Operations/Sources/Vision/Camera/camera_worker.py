@@ -44,7 +44,7 @@ def on_end_of_life():
     global capture
     global acquiring_on
 
-    acquiring_on = True
+    acquiring_on = False
 
     try:
         capture.release()

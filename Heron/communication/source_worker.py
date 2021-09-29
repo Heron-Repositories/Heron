@@ -133,6 +133,7 @@ class SourceWorker:
                 self.end_of_life_function()
                 self.on_kill(pid)
                 os.kill(pid, signal.SIGTERM)
+                time.sleep(0.5)
             time.sleep(int(ct.HEARTBEAT_RATE))
         self.socket_pull_heartbeat.close()
 

@@ -200,13 +200,13 @@ def on_end_of_life():
     logging.debug("Average FPS: " + str(1 / avgtime))
 
     acquiring_on = False
-    time.sleep(0.5)
+    time.sleep(2)
 
     capture.release()
     try:
         output_video.release()
-    except:
-        pass
+    except Exception as e:
+        logging.debug(e)
 
 
 if __name__ == "__main__":

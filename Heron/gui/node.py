@@ -121,20 +121,13 @@ class Node:
         self.node_index = self.name.split('##')[-1]
 
     # TODO: Currently the generate_default_topics is not used. Check if this causes any bugs and if not delete.
+    '''
     def generate_default_topics(self):
         for at in self.operation.attribute_types:
             if 'Input' in at:
                 self.topics_in.append('NothingIn')
             #if 'Output' in at:
             #    self.topics_out.append('NothingOut')
-
-    '''
-    def add_topic_in(self, topic):
-        topic = topic.replace(' ', '_')
-        for i, t in enumerate(self.topics_in):
-            if t == 'NothingIn':
-                self.topics_in[i] = topic
-                break
     '''
 
     def add_topic_in(self, topic):
@@ -402,7 +395,6 @@ class Node:
 
         dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], parent=self.theme_id,
                             category=dpg.mvThemeCat_Nodes)
-
 
     def sending_parameters_multiple_times(self):
         for i in range(ct.NUMBER_OF_INITIAL_PARAMETERS_UPDATES):
