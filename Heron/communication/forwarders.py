@@ -4,6 +4,10 @@ import threading
 import zmq
 import zmq.ssh
 import time
+import sys
+import os
+from os.path import dirname
+sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 from Heron import constants as ct, general_utils as gu
 
 debug_data = False

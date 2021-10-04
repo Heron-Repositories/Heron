@@ -4,12 +4,13 @@ import signal
 import time
 import subprocess
 import os
+from os.path import dirname
 from pathlib import Path
 import numpy as np
 import json
 import copy
 import sys
-sys.path.insert(0, '../../')
+sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
