@@ -20,6 +20,7 @@ avail_freq: int
 succ_freq: int
 trigger_string: str
 availability_period_is_running = False
+reward_amount = 1
 
 
 def freq_to_signal(freq):
@@ -76,10 +77,13 @@ def start_availability_thread():
         if bytes_in_buffer and '555\r\n' in string_in:
                 availability_period_is_running = False
                 try:
-                    arduino_serial.write('a'.encode('utf-8'))
                     arduino_serial.write(freq_to_signal(succ_freq))
                     gu.accurate_delay(1500 * sleep_dt)
                     arduino_serial.write(freq_to_signal(succ_freq))
+                    gu.accurate_delay(1500 * sleep_dt)
+                    for i in np.arange(reward_amount):
+                        arduino_serial.write('a'.encode('utf-8'))
+                        gu.accurate_delay(500)
                 except Exception as e:
                     print(e)
         elif step >= total_steps:
@@ -103,6 +107,8 @@ def start_availability_thread():
 def start_availability_period(data, parameters):
     global availability_period_is_running
     global trigger_string
+    global reward_amount
+    reward_amount = 1
 
     # topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
@@ -110,8 +116,10 @@ def start_availability_period(data, parameters):
     if ct.IGNORE == message[0]:
         result = [np.array([ct.IGNORE])]
     else:
-        if trigger_string == message[0]:
-            if not availability_period_is_running:
+        if not availability_period_is_running:
+            if trigger_string == message[0] or trigger_string == 'number':
+                if trigger_string == 'number':
+                    reward_amount = int(message[0])
                 try:
                     avail_thread = threading.Thread(target=start_availability_thread)
                     avail_thread.start()
