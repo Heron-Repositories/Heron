@@ -23,7 +23,8 @@ screen_texture_id: int
 photodiode_on = False
 overlay_image_pos = []
 screen_pos = []
-angle = 0.0
+previous_angle = None
+show_inner_image: bool
 
 
 def screen_image_to_blue_with_red_spot():
@@ -77,12 +78,13 @@ def screen_image_to_black():
     photodiode_on = False
 
 
-def overlay_image(angle):
+def overlay_image(angles):
     global overlayed_image
     global screen_image
     global overlay_image_pos
     global screen_texture_id
 
+    x_offset_for_second_image = 200
     oi_image_height, oi_image_width, oi_channels = overlayed_image.shape
 
     screen_image = np.zeros((image_width, image_height, 4))
@@ -91,8 +93,16 @@ def overlay_image(angle):
 
     screen_image = np.reshape(screen_image, (image_width, image_height, 4), order='C').astype(np.float16)
 
-    rotated_overlayed_image = rotate(overlayed_image, angle, (0, 1), reshape=False).astype(np.float16) / overlayed_image.max()
-    rotated_overlayed_image = np.flipud(rotated_overlayed_image)
+    if show_inner_image:
+        rotated_overlayed_image_shown = rotate(overlayed_image, angles[1], (0, 1), reshape=False).astype(np.float16) / overlayed_image.max()
+        rotated_overlayed_image_shown = np.flipud(rotated_overlayed_image_shown)
+    else:
+        rotated_overlayed_image_shown = np.copy(overlayed_image)
+        rotated_overlayed_image_shown[:, :, :] = 0
+        rotated_overlayed_image_shown[:, :, [0, 3]] = 255 / 255
+
+    rotated_overlayed_image_next = rotate(overlayed_image, angles[0], (0, 1), reshape=False).astype(np.float16) / overlayed_image.max()
+    rotated_overlayed_image_next = np.flipud(rotated_overlayed_image_next)
 
     if screen_image.shape[0] < overlay_image_pos[0] + oi_image_width:
         print('Picture pos_x + size_x bigger than screen size_x')
@@ -101,7 +111,10 @@ def overlay_image(angle):
 
     try:
         screen_image[overlay_image_pos[0]:overlay_image_pos[0] + oi_image_width,
-                     overlay_image_pos[1]:overlay_image_pos[1] + oi_image_height, :] = rotated_overlayed_image
+                     overlay_image_pos[1]:overlay_image_pos[1] + oi_image_height, :] = rotated_overlayed_image_shown
+        screen_image[overlay_image_pos[0] + x_offset_for_second_image:overlay_image_pos[0] + x_offset_for_second_image
+                     + oi_image_width,
+                     overlay_image_pos[1]:overlay_image_pos[1] + oi_image_height, :] = rotated_overlayed_image_next
         pass
     except Exception as e:
         print(e)
@@ -144,7 +157,7 @@ def initialise(_worker_object):
     global overlayed_image
     global overlay_image_pos
     global screen_pos
-
+    global show_inner_image
 
     parameters = _worker_object.parameters
 
@@ -152,6 +165,7 @@ def initialise(_worker_object):
         overlay_image_file_name = parameters[0]
         screen_pos = [parameters[1], parameters[2]]
         overlay_image_pos = [parameters[3], parameters[4]]
+        show_inner_image = parameters[5]
         overlayed_image = cv2.imread(overlay_image_file_name).astype(np.float16) / 255
         oi_image_height, oi_image_width, oi_channels = overlayed_image.shape
         if oi_channels == 3:
@@ -174,6 +188,7 @@ def update_output(data, parameters):
     global overlayed_image
     global overlay_image_pos
     global screen_pos
+    global previous_angle
 
     # Once the parameters are received at the starting of the graph then they cannot be updated any more.
 
@@ -190,7 +205,12 @@ def update_output(data, parameters):
         if photodiode_on:
             message = message[0]
             if type(message) == np.int32 or type(message) == np.float32:
-                overlay_image(message + 90)
+                if previous_angle is None:
+                    angles = [message + 90, message + 90]
+                else:
+                    angles = [message + 90, previous_angle]
+                previous_angle = message + 90
+                overlay_image(angles)
 
 
 def on_end_of_life():

@@ -14,9 +14,9 @@ Properties of the generated Node
 BaseName = 'TL Projector Output'
 NodeAttributeNames = ['Parameters', 'Trigger Photodiode.', 'Angle of Pic']
 NodeAttributeType = ['Static', 'Input', 'Input']
-ParameterNames = ['Picture file name', 'Screen X', 'Screen Y', 'Picture X', 'Picture Y']
-ParameterTypes = ['str', 'int', 'int', 'int', 'int']
-ParametersDefaultValues = ['pic.png', 2560, 0, 540, 570]
+ParameterNames = ['Picture file name', 'Screen X', 'Screen Y', 'Picture X', 'Picture Y', 'Show Inner Pic']
+ParameterTypes = ['str', 'int', 'int', 'int', 'int', 'bool']
+ParametersDefaultValues = ['pic.png', 2560, 0, 540, 570, True]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_projector_output_worker.py')
 # </editor-fold>
 
