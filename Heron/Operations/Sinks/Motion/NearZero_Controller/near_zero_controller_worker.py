@@ -47,6 +47,7 @@ def move_motor(data, parameters):
         pos_or_rot = near_zero_controller_com.ParametersDefaultValues[3]
         value = near_zero_controller_com.ParametersDefaultValues[4]
         current = near_zero_controller_com.ParametersDefaultValues[5]
+        trigger = near_zero_controller_com.ParametersDefaultValues[6]
     if pos_or_rot == 'r':
         pos_or_rot = 'v'
     if use_pylibi2c and motor_controller is None:
