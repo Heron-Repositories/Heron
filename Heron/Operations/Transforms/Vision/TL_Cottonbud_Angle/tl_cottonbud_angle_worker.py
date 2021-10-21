@@ -25,6 +25,7 @@ worker_object: TransformWorker
 predictor = None
 instance_threshold_score = 0.85
 
+
 def put_boxes_on_image(image, outputs):
     v = Visualizer(image[:, :, ::-1], scale=1.0)
     v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
@@ -100,7 +101,7 @@ def detect(data, parameters):
 
             message = data[1:]  # data[0] is the topic
             image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
-            image = cv2.resize(image, (200, 204))
+
             image = np.repeat(image[:, :, np.newaxis], 3, axis=2)
             outputs = predictor(image)
             angle = calculate_stick_angle(outputs)
