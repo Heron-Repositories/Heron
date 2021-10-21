@@ -51,7 +51,7 @@ def generate_node_tree():
     path_to_nodes = os.path.join(heron_path, 'Operations')
     node_dirs = []
     dir_ids = {}
-    dir_id = 1000
+    dir_id = 100000
     for d in os.walk(path_to_nodes):
         if len(d[1]) > 0:
             temp = d[0].split('\\')
@@ -60,7 +60,7 @@ def generate_node_tree():
             while temp[i] != 'Heron':
                 parent = parent + temp[i] + '##'
                 if not dir_ids:
-                    parent_int = 1000
+                    parent_int = 100000
                 else:
                     try:
                         parent_int = dir_ids[parent]
