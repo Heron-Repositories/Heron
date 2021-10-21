@@ -1,5 +1,13 @@
 
 import os
+import sys
+from os import path
+
+current_dir = path.dirname(path.abspath(__file__))
+while path.split(current_dir)[-1] != r'Heron':
+    current_dir = path.dirname(current_dir)
+sys.path.insert(0, path.dirname(current_dir))
+
 from Heron import general_utils as gu
 Exec = os.path.realpath(__file__)
 

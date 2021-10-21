@@ -4,6 +4,7 @@ import time
 import ffmpeg
 from datetime import datetime
 from subprocess import Popen
+import cv2
 import sys
 from os import path
 
@@ -34,11 +35,14 @@ def add_timestamp_to_filename():
 def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, width, height):
     return(
         ffmpeg
-        .input('pipe:', format='rawvideo', vcodec='rawvideo', r=fps, pix_fmt=pixel_format_in,
+        .input('pipe:', format='rawvideo', vcodec='rawvideo', hwaccel='auto', r=fps, pix_fmt=pixel_format_in,
                 s='{}x{}'.format(width, height))
-        .output(out_filename, vcodec='h264_nvenc', pix_fmt=pixel_format_out, r=fps, preset='medium', bitrate='50M')
+        .output(out_filename, vcodec='hevc_nvenc', rc='vbr', profile='main10',
+                pix_fmt=pixel_format_out, r=fps, preset='fast', gpu=0, tune='zerolatency',
+                maxrate='50M', delay=0)
         .overwrite_output()
         .run_async(pipe_stdin=True)
+        #vcodec='h264_nvenc'
     )
 
 
