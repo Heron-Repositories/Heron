@@ -35,46 +35,48 @@ class Table:
 
     def add_row(self, row_content: list[any]):
         self.ssh_info[row_content[1]] = {}
-        for i, item in enumerate(row_content):
-            item_name = f"##{self.name}_{self.row}_{self.column}"
+        with dpg.table_row(parent=self.id):
+            for i, item in enumerate(row_content):
+                item_name = f"##{self.name}_{self.row}_{self.column}"
 
-            if i > 1:
-                self.ssh_info[row_content[1]][self.header[i]] = item
-            if type(item) is str:
-                self.rows_ids[item_name] = dpg.add_input_text(label=item_name, default_value=item,
-                                                              width=-1, callback=self.on_edit, parent=self.id)
-            if type(item) is int:
-                self.rows_ids[item_name] = dpg.add_input_int(label=item_name, default_value=item, width=-1, step=0,
-                                                             callback=self.on_edit, parent=self.id)
-            if type(item) is float:
-                self.rows_ids[item_name] = dpg.add_input_float(label=item_name, default_value=item, width=-1, step=0,
-                                                               callback=self.on_edit, parent=self.id)
-            if type(item) is bool:
-                self.rows_ids[item_name] = dpg.add_checkbox(label=item_name, default_value=False, parent=self.id)
-            if i == 1:
-                dpg.configure_item(self.rows_ids[item_name], enabled=False)
-            if i == 6:
-                #dpg.configure_item(self.rows_ids[item_name], default_value='None')
-                with dpg.tooltip(self.rows_ids[item_name]):
-                    dpg.add_text("If the password is 'None' for the local machine\'s IP then the \n"
-                                 'local machine does not need to run an SSH server and the \n'
-                                 'communication between computers happens through normal sockets. \n'
-                                 'If there is a password other than "None" then Heron assumes an \n'
-                                 'SSH server is running on the local machine and all data and \n'
-                                 'parameters are passed through SSH tunnels.\nWARNING! '
-                                 'The SSH tunneling is slow and results in constant dropping of\n'
-                                 'data packets!')
+                if i > 1:
+                    self.ssh_info[row_content[1]][self.header[i]] = item
+                if type(item) is str:
+                    self.rows_ids[item_name] = dpg.add_input_text(label=item_name, default_value=item,
+                                                                  width=-1, callback=self.on_edit)
+                if type(item) is int:
+                    self.rows_ids[item_name] = dpg.add_input_int(label=item_name, default_value=item, width=-1, step=0,
+                                                                 callback=self.on_edit)
+                if type(item) is float:
+                    self.rows_ids[item_name] = dpg.add_input_float(label=item_name, default_value=item, width=-1, step=0,
+                                                                   callback=self.on_edit)
+                if type(item) is bool:
+                    self.rows_ids[item_name] = dpg.add_checkbox(label=item_name, default_value=False)
+                if i == 1:
+                    dpg.configure_item(self.rows_ids[item_name], enabled=False)
+                if i == 6:
+                    with dpg.tooltip(self.rows_ids[item_name]):
+                        dpg.add_text("If the password is 'None' for the local machine\'s IP then the \n"
+                                     'local machine does not need to run an SSH server and the \n'
+                                     'communication between computers happens through normal sockets. \n'
+                                     'If there is a password other than "None" then Heron assumes an \n'
+                                     'SSH server is running on the local machine and all data and \n'
+                                     'parameters are passed through SSH tunnels.\nWARNING! '
+                                     'The SSH tunneling is slow and results in constant dropping of\n'
+                                     'data packets!')
+                self.column += 1
 
-            sep_name = f"##{self.name}_{self.row}_sep"
-            self.rows_ids[sep_name] = dpg.add_separator(label=sep_name, parent=self.id)
-            dpg.add_table_next_column(parent=self.id)
-            self.column += 1
+            with dpg.table_row(parent=self.id):
+                sep_name = f"##{self.name}_{self.row}_sep"
+                self.rows_ids[sep_name] = dpg.add_separator(label=sep_name)
+
         self.num_of_rows += 1
         self.row += 1
         self.column = 0
 
     def delete_selected_rows(self):
         sel_rows = []
+
         for row in range(self.num_of_rows):
             if dpg.get_value(self.rows_ids[f"##{self.name}_{row}_{0}"]):
                 sel_rows.append(row)
@@ -138,9 +140,9 @@ def edit_ssh_info():
     global parent_id
 
     with dpg.window(label='ssh info editor', width=800, height=500, on_close=on_close):
-        dpg.add_button(label='Add ssh server', callback=add_ssh_server_row)
-        dpg.add_same_line()
-        dpg.add_button(label='Remove ssh server', callback=remove_ssh_server_rows)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label='Add ssh server', callback=add_ssh_server_row)
+            dpg.add_button(label='Remove ssh server', callback=remove_ssh_server_rows)
         ssh_table = Table('ssh info editor', ['', 'ID', 'Name', 'IP', 'Port', 'username', 'password'], parent_id)
 
 

@@ -184,18 +184,19 @@ class Node:
         with dpg.node(label=self.name, parent=self.parent, pos=[self.coordinates[0], self.coordinates[1]]) as self.id:
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
             with dpg.theme() as self.theme_id:
-                dpg.add_theme_color(dpg.mvNodeCol_TitleBar, colour, category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, colour, category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, colour, category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundSelected, [120, 120, 120, 255],
-                                    category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_NodeBackground, [70, 70, 70, 255],
-                                    category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundHovered, [80, 80, 80, 255],
-                                    category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], category=dpg.mvThemeCat_Nodes)
-                dpg.add_theme_style(dpg.mvNodeStyleVar_NodeBorderThickness, x=4, category=dpg.mvThemeCat_Nodes)
-            dpg.set_item_theme(self.id, self.theme_id)
+                with dpg.theme_component(0):
+                    dpg.add_theme_color(dpg.mvNodeCol_TitleBar, colour, category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, colour, category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, colour, category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundSelected, [120, 120, 120, 255],
+                                        category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackground, [70, 70, 70, 255],
+                                        category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundHovered, [80, 80, 80, 255],
+                                        category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_style(dpg.mvNodeStyleVar_NodeBorderThickness, x=4, category=dpg.mvThemeCat_Nodes)
+            dpg.bind_item_theme(self.id, self.theme_id)
 
             # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
             # the node
@@ -213,8 +214,8 @@ class Node:
 
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type):
                     if attribute_type == 1:
-                        dpg.add_dummy()
-                        same_line_widget_ids.append(dpg.add_same_line())
+                        dpg.add_spacer()
+                        #same_line_widget_ids.append(dpg.add_same_line())
                     dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                  default_value=attr)
 
@@ -251,10 +252,10 @@ class Node:
 
                             self.parameter_inputs_ids[parameter] = id
 
-                    dpg.add_spacing(label='##Spacing##'+attribute_name, count=3)
+                    dpg.add_spacer(label='##Spacing##'+attribute_name, indent =3)
 
-            for same_line_id in same_line_widget_ids:
-                dpg.configure_item(same_line_id, xoffset=0)
+            #for same_line_id in same_line_widget_ids:
+            #    dpg.configure_item(same_line_id, xoffset=0)
 
             # Add the extra input button with its popup window for extra inputs like ssh and verbosity
             self.extra_input_window()
@@ -272,7 +273,7 @@ class Node:
             with dpg.texture_registry():
                 texture_id = dpg.add_static_texture(width, height, data)
 
-            image_button = dpg.add_image_button(texture_id=texture_id,
+            image_button = dpg.add_image_button(texture_tag =texture_id,
                                                 label='##' + attr + ' Name{}##{}'.format(self.operation.name,
                                                                                          self.node_index),
                                                 callback=self.update_ssh_combo_boxes)
@@ -282,56 +283,53 @@ class Node:
                             show=False, popup=True) as self.extra_window_id:
 
                 # Add the local ssh input
-                dpg.add_dummy(height=10)
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                dpg.add_text('SSH local server')
+                dpg.add_spacer(height=10)
 
-                dpg.add_same_line()
-                dpg.add_dummy(width=80)
-                dpg.add_same_line()
-                dpg.add_text('SSH remote server')
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_text('SSH local server')
+                    dpg.add_spacer(width=80)
+                    dpg.add_text('SSH remote server')
 
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                id = dpg.add_combo(label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                          items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
-                          callback=self.assign_local_server)
-                self.parameter_inputs_ids['SSH local server'] = id
-                dpg.add_same_line()
-                dpg.add_dummy(width=40)
-                dpg.add_same_line()
-                id = dpg.add_combo(
-                    label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                    items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
-                    callback=self.assign_remote_server)
-                self.parameter_inputs_ids['SSH remote server'] = id
-                dpg.add_dummy(height=10)
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                dpg.add_text('Python script of worker process OR Python.exe and script:')
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    id = dpg.add_combo(label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                              items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
+                              callback=self.assign_local_server)
+                    self.parameter_inputs_ids['SSH local server'] = id
+                    dpg.add_spacer(width=40)
+                    id = dpg.add_combo(
+                        label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                        items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
+                        callback=self.assign_remote_server)
+                    self.parameter_inputs_ids['SSH remote server'] = id
 
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                dpg.add_input_text(
-                    label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                    width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
+                dpg.add_spacer(height=10)
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_text('Python script of worker process OR Python.exe and script:')
+
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_input_text(
+                        label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                        width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
 
                 # Add the verbocity input
-                dpg.add_dummy(height=6)
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                attr = 'Log file or Verbosity level:'
-                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-                self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                                                 default_value=attr)
-                dpg.add_dummy(width=10)
-                dpg.add_same_line()
-                #dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
-                #                  callback=self.update_verbosity, width=100)
-                dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
-                                   callback=self.update_verbosity, width=400,
-                                   hint='Log file name or verbosity level integer.')
+                dpg.add_spacer(height=6)
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    attr = 'Log file or Verbosity level:'
+                    attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+                    self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                                                     default_value=attr)
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    #dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
+                    #                  callback=self.update_verbosity, width=100)
+                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
+                                       callback=self.update_verbosity, width=400,
+                                       hint='Log file name or verbosity level integer.')
 
     def update_verbosity(self, sender, data):
         self.verbose = dpg.get_value(sender)
@@ -393,8 +391,8 @@ class Node:
         self.update_parameters()
         self.start_thread_to_send_parameters_multiple_times()
 
-        dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], parent=self.theme_id,
-                            category=dpg.mvThemeCat_Nodes)
+        with dpg.theme_component(0, parent=self.theme_id):
+            dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], category=dpg.mvThemeCat_Nodes)
 
     def sending_parameters_multiple_times(self):
         for i in range(ct.NUMBER_OF_INITIAL_PARAMETERS_UPDATES):
@@ -424,8 +422,10 @@ class Node:
         time.sleep(0.5)
         self.process.kill()
         self.process = None
-        dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], parent=self.theme_id,
-                            category=dpg.mvThemeCat_Nodes)
+
+        with dpg.theme_component(0, parent=self.theme_id):
+            dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], category=dpg.mvThemeCat_Nodes)
+
 
 
 

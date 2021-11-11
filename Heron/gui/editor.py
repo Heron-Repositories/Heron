@@ -1,4 +1,3 @@
-
 import platform
 import signal
 import time
@@ -10,6 +9,7 @@ import numpy as np
 import json
 import copy
 import sys
+
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
 from Heron.gui import operations_list as op_list
@@ -17,7 +17,6 @@ from Heron.gui.node import Node
 from Heron import constants as ct
 from Heron.gui import ssh_info_editor
 import dearpygui.dearpygui as dpg
-
 
 operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
@@ -28,7 +27,6 @@ links_dict = {}
 panel_coordinates = [0, 0]
 mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
-
 
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
@@ -102,7 +100,7 @@ def on_add_node(sender, data):
     for n in all_nodes:
         name = dpg.get_item_label(n)
         if operation.name in name:
-            num_of_same_nodes = num_of_same_nodes+1
+            num_of_same_nodes = num_of_same_nodes + 1
 
     # Create the Node
     name = operation.name + '##{}'.format(num_of_same_nodes)
@@ -169,8 +167,12 @@ def delete_link(sender, link):
     link_conf = dpg.get_item_configuration(link)
     output_node = link_conf['user_data']['node_id_out']
     input_node = link_conf['user_data']['node_id_in']
-    topic_out = link_conf['user_data']['topic_out'].replace(' ', '_')
+    topic_out = link_conf['user_data']['topic_out']
     topic_in = link_conf['user_data']['topic_in'].replace(' ', '_')
+
+    del links_dict[topic_out.split('-')[0]]
+
+    topic_out = topic_out.replace(' ', '_')
 
     for n in nodes_list:
         if output_node == n.id:
@@ -244,7 +246,7 @@ def on_end_graph(sender, data):
                                                 overlay='Closing worker_exec processes')
         t = 0
         while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
-            dpg.set_value(killing_proc_bar, t/(ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
+            dpg.set_value(killing_proc_bar, t / (ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
             t = t + 0.1
             time.sleep(0.1)
         dpg.delete_item(killing_proc_bar)
@@ -259,13 +261,15 @@ def on_del_pressed(sender, key_value):
     indices_to_remove = []
     for node in dpg.get_selected_nodes(node_editor=node_editor):
         node_name = dpg.get_item_label(node)
-        for i in np.arange(len(nodes_list)-1, -1, -1):
+        for i in np.arange(len(nodes_list) - 1, -1, -1):
             if nodes_list[i].name == node_name:
-
-                nodes_list[i].remove_from_editor()
                 indices_to_remove.append(i)
 
     for i in indices_to_remove:
+        node = nodes_list[i]
+        for link in node.links_list:
+            delete_link(None, link)
+        nodes_list[i].remove_from_editor()
         del nodes_list[i]
 
     for link in dpg.get_selected_links(node_editor=node_editor):
@@ -280,21 +284,23 @@ def update_control_graph_buttons(is_graph_running):
     :return: Nothing
     """
     with dpg.theme() as theme_active:
-        dpg.add_theme_color(dpg.mvThemeCol_Button, [50, 50, 180, 255], category=dpg.mvThemeCat_Core)
+        with dpg.theme_component(0):
+            dpg.add_theme_color(dpg.mvThemeCol_Button, [50, 50, 180, 255], category=dpg.mvThemeCat_Core)
 
     with dpg.theme() as theme_non_active:
-        dpg.add_theme_color(dpg.mvThemeCol_Button, [150, 150, 150, 255], category=dpg.mvThemeCat_Core)
+        with dpg.theme_component(0):
+            dpg.add_theme_color(dpg.mvThemeCol_Button, [150, 150, 150, 255], category=dpg.mvThemeCat_Core)
 
     if is_graph_running:
         dpg.configure_item(start_graph_button_id, enabled=False)
-        dpg.set_item_theme(start_graph_button_id, theme_non_active)
+        dpg.bind_item_theme(start_graph_button_id, theme_non_active)
         dpg.configure_item(end_graph_button_id, enabled=True)
-        dpg.set_item_theme(end_graph_button_id, theme_active)
+        dpg.bind_item_theme(end_graph_button_id, theme_active)
     else:
         dpg.configure_item(start_graph_button_id, enabled=True)
-        dpg.set_item_theme(start_graph_button_id, theme_active)
+        dpg.bind_item_theme(start_graph_button_id, theme_active)
         dpg.configure_item(end_graph_button_id, enabled=False)
-        dpg.set_item_theme(end_graph_button_id, theme_non_active)
+        dpg.bind_item_theme(end_graph_button_id, theme_non_active)
 
 
 def save_graph():
@@ -302,6 +308,7 @@ def save_graph():
     Saves the current graph
     :return: Nothing
     """
+
     def on_file_select(sender, app_data, user_data):
         global links_dict
 
@@ -352,7 +359,7 @@ def load_graph():
         global links_dict
 
         load_file = app_data['file_path_name']
-        
+
         with open(load_file, 'r') as file:
             raw_dict = json.load(file)
             nodes_list = []
@@ -386,11 +393,16 @@ def load_graph():
 
                 elif key == 'links':
                     links_dict = raw_dict[key]
+                    print(links_dict)
                     for l1_name in links_dict:
                         l1 = get_attribute_id_from_label(l1_name)
-                        for l2_name in links_dict[l1_name]:
+                        print(l1)
+                        print(links_dict[l1_name])
+                        for l2_name in copy.copy(links_dict[l1_name]):
                             l2 = get_attribute_id_from_label(l2_name)
-                            dpg.add_node_link(l1, l2, parent=node_editor)
+                            print(l2)
+                            on_link(node_editor, [l1, l2])
+                            #dpg.add_node_link(l1, l2, parent=node_editor)
 
         last_used_port = int(nodes_list[-1].starting_port) + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
         port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
@@ -453,27 +465,28 @@ def on_drag(sender, data, user_data):
             n.coordinates = dpg.get_item_pos(n.id)
 
 
-
-
 def on_mouse_release(sender, app_data, user_data):
     global mouse_dragging_deltas
 
     mouse_dragging_deltas = [0, 0]
 
 
-vp = dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
+dpg.create_context()
+dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
 
 with dpg.font_registry():
     # add font (set as default for entire app)
-    dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18, default_font=True)
+    default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
 
-with dpg.window(width=1700, height=1000, pos=[0,0 ]) as main_window:
+with dpg.window(width=1700, height=1000, pos=[0, 0]) as main_window:
     dpg.set_primary_window(main_window, True)
     # The Start Graph button that starts all processes
-    start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
-    dpg.add_same_line()
-    end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
+    with dpg.group(horizontal=True):
+        start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
+        end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
     update_control_graph_buttons(False)
+
+    dpg.bind_font(default_font)
 
     with dpg.menu_bar(label='Menu Bar'):
         with dpg.menu(label='File'):
@@ -484,7 +497,6 @@ with dpg.window(width=1700, height=1000, pos=[0,0 ]) as main_window:
             ssh_info_editor.set_parent_id(menu)
             dpg.add_menu_item(label='Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
 
-
 with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
     # Create the window of the Node selector
 
@@ -492,7 +504,7 @@ with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as n
     base_id = node_tree[0][0]
     base_name = node_tree[0][1]
 
-    with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id):
+    with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id, open_on_arrow=True):
 
         # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
         # tree_node widget
@@ -503,23 +515,22 @@ with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as n
                         colour = gu.choose_color_according_to_operations_type(node)
                         button = dpg.add_button(label=op.name, width=150, height=30, callback=on_add_node)
                         with dpg.theme() as theme_id:
-                            dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
-                            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
+                            with dpg.theme_component(0):
+                                dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
+                                dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
 
-                        dpg.set_item_theme(button, theme_id)
-
+                        dpg.bind_item_theme(button, theme_id)
 
 with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
     # The node editor
     with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
                          width=1300, height=dpg.get_item_height(main_window) - 100) as node_editor:
-
         dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
 
-#dpg.show_debug()
-#dpg.show_logger()
-#dpg.show_documentation()
-#dpg.show_style_editor()
+# dpg.show_debug()
+# dpg.show_logger()
+# dpg.show_documentation()
+# dpg.show_style_editor()
 
 
 # Button and mouse callback registers
@@ -528,6 +539,7 @@ with dpg.handler_registry():
     dpg.add_mouse_drag_handler(callback=on_drag)
     dpg.add_mouse_release_handler(callback=on_mouse_release)
 
-dpg.setup_dearpygui(viewport=vp)
-dpg.show_viewport(vp)
+dpg.setup_dearpygui()
+dpg.show_viewport()
 dpg.start_dearpygui()
+dpg.destroy_context()
