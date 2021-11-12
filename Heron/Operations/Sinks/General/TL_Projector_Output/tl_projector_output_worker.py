@@ -18,7 +18,7 @@ need_parameters = True
 screen_image = []
 overlayed_image = []
 image_height = 800
-image_width = 1280
+image_width = 1260  # This should be put to 1280 if there is no 3rd screen connected to the computer
 screen_texture_id: int
 photodiode_on = False
 overlay_image_pos = []
@@ -132,6 +132,9 @@ def start_dpg_thread():
     global screen_texture_id
     global screen_pos
 
+    dpg.create_context()
+    dpg.create_viewport()
+
     screen_image = np.zeros((image_width, image_height, 4))
     screen_image[:, :, 3] = 255 / 255
     screen_image = list(screen_image.flatten(order='C').astype(np.float16))
@@ -143,14 +146,15 @@ def start_dpg_thread():
                     no_background=True):
         dpg.add_image(screen_texture_id, width=image_width, height=image_height)
 
-    dpg.setup_viewport()
+    dpg.setup_dearpygui()
     dpg.set_viewport_title(title='Custom Title')
     dpg.set_viewport_width(image_width + 20)
     dpg.set_viewport_height(image_height + 20)
     dpg.set_viewport_pos(screen_pos)
     dpg.set_viewport_decorated(False)
-
+    dpg.show_viewport()
     dpg.start_dearpygui()
+    dpg.destroy_context()
 
 
 def initialise(_worker_object):

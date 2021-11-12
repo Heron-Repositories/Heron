@@ -24,7 +24,7 @@ NodeAttributeNames = ['Parameters', 'Trigger Photodiode.', 'Angle of Pic']
 NodeAttributeType = ['Static', 'Input', 'Input']
 ParameterNames = ['Picture file name', 'Screen X', 'Screen Y', 'Picture X', 'Picture Y', 'Show Inner Pic']
 ParameterTypes = ['str', 'int', 'int', 'int', 'int', 'bool']
-ParametersDefaultValues = ['pic.png', 2560, 0, 540, 570, True]
+ParametersDefaultValues = ['pic.png', 2560, 0, 535, 545, True]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_projector_output_worker.py')
 # </editor-fold>
 
