@@ -167,8 +167,8 @@ def start_plotting_thread():
     while True:
         if visualisation_on:
             if not visualiser_showing:
-                dpg_ids['Viewport'] = dpg.create_viewport(title='Visualising', width=330,
-                                                          height=280)
+                dpg.create_context()
+                dpg.create_viewport(title='Visualising', width=330, height=280)
 
                 with dpg.window(label="Visualisation", width=300, height=250, show=False) \
                         as dpg_ids['Visualisation']:
@@ -196,9 +196,10 @@ def start_plotting_thread():
                                 dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
 
                 dpg.set_viewport_resize_callback(on_resize_viewport)
-                dpg.setup_dearpygui(viewport=dpg_ids['Viewport'])
-                dpg.show_viewport(dpg_ids['Viewport'])
+                dpg.setup_dearpygui()
+                dpg.show_viewport()
                 dpg.start_dearpygui()
+                dpg.destroy_context()
 
 
 def on_resize_viewport():
