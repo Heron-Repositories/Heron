@@ -6,6 +6,7 @@ import os
 import signal
 import zmq
 import cv2
+import numpy as np
 from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
@@ -17,13 +18,15 @@ class SinkWorker:
                  parameters_topic, verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
-        self.pull_heartbeat_port = str(int(self.pull_data_port) + 1)
+        self.push_data_port = str(int(self.pull_data_port) + 1)
+        self.pull_heartbeat_port = str(int(self.pull_data_port) + 2)
         self.work_function = work_function
         self.initialisation_function = initialisation_function
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
+        self.work_function_running = False
         self.visualisation_on = False
         self.visualisation_thread = None
         self.loops_on = True
@@ -41,6 +44,7 @@ class SinkWorker:
         self.context = None
         self.socket_pull_data = None
         self.stream_pull_data = None
+        self.socket_push_data = None
         self.socket_sub_parameters = None
         self.stream_parameters = None
         self.parameters = None
@@ -74,6 +78,12 @@ class SinkWorker:
         self.stream_parameters = zmqstream.ZMQStream(self.socket_sub_parameters)
         self.stream_parameters.on_recv(self.parameters_callback, copy=False)
 
+        # Setup the socket that pushes the end of worker function signal to the com
+        self.socket_push_data = Socket(self.context, zmq.PUSH)
+        self.socket_push_data.setsockopt(zmq.LINGER, 0)
+        self.socket_push_data.set_hwm(1)
+        self.socket_push_data.bind(r"tcp://127.0.0.1:{}".format(self.push_data_port))
+
         # Setup the socket that receives the heartbeat from the com
         self.socket_pull_heartbeat = self.context.socket(zmq.PULL)
         self.socket_pull_heartbeat.setsockopt(zmq.LINGER, 0)
@@ -100,6 +110,7 @@ class SinkWorker:
         """
         data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
         self.work_function(data, self.parameters)
+        self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -232,6 +243,7 @@ class SinkWorker:
             self.stream_parameters.close()
             self.stream_heartbeat.close()
             self.socket_pull_data.close()
+            self.socket_push_data.close()
             self.socket_sub_parameters.close()
             self.socket_pub_proof_of_life.close()
         except Exception as e:

@@ -18,7 +18,8 @@ class SinkCom:
         self.receiving_topics = receiving_topics
         self.parameters_topic = parameters_topic
         self.push_data_port = push_port
-        self.push_heartbeat_port = str(int(self.push_data_port) + 1)
+        self.pull_data_port = str(int(self.push_data_port) + 1)
+        self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
         self.all_loops_running = True
@@ -33,6 +34,7 @@ class SinkCom:
         self.socket_sub_data = None
         self.stream_sub = None
         self.socket_push_data = None
+        self.socket_pull_data = None
         self.socket_push_heartbeat = None
 
         self.index = 0
@@ -74,6 +76,12 @@ class SinkCom:
         self.socket_push_data.setsockopt(zmq.LINGER, 0)
         self.socket_push_data.set_hwm(1)
         self.socket_push_data.bind(r"tcp://*:{}".format(self.push_data_port))
+
+        # Socket for pulling the end of worker function signal from the worker_exec
+        self.socket_pull_data = Socket(self.context, zmq.PULL)
+        self.socket_pull_data.setsockopt(zmq.LINGER, 0)
+        self.socket_pull_data.set_hwm(1)
+        self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
 
         # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
@@ -150,13 +158,24 @@ class SinkCom:
         """
         while self.all_loops_running:
             t1 = time.perf_counter()
+
             try:
                 # The timeout=1 means things coming in faster than 1000Hz will be lost but if timeout is set to 0 then
                 # the CPU utilization goes to around 10% which quickly kills the CPU (if there are 2 or 3 Sinks in the
                 # pipeline)
                 sockets_in = dict(self.poller.poll(timeout=1))
 
+                while not sockets_in:
+                    sockets_in = dict(self.poller.poll(timeout=1))
+
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                    # The following while ensures that the sink works only on the the latest available
+                    # message from the previous node. If the sink is too slow compared to the input node
+                    # this while throws all past messages away.
+                    while self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
+                        topic, data_index, data_time, messagedata = self.get_sub_data()
+                        sockets_in = dict(self.poller.poll(timeout=1))
+
                     topic, data_index, data_time, messagedata = self.get_sub_data()
 
                     if self.verbose:
@@ -165,15 +184,21 @@ class SinkCom:
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
                     self.socket_push_data.send_array(messagedata, copy=False)
-                    t3 = time.perf_counter()
+                    t2 = time.perf_counter()
 
-                    if self.verbose:
-                        print("---Time to Transport link from previous com to worker_exec = {} ms".format((t3 - t1) * 1000))
-                        print('=============================')
-                    if self.logger:
-                        self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
+                # Get the end of worker function link (wait for the socket_pull_data to get some link from the worker_exec)
+                sockets_in = dict(self.poller.poll(timeout=None))
+                self.socket_pull_data.recv()
+                t3 = time.perf_counter()
 
-                    self.index += 1
+                if self.verbose:
+                    print("---Time to Transport link from previous com to worker_exec = {} ms".format((t2 - t1) * 1000))
+                    print("---Time to to finish with the worker_exec = {} ms".format((t3 - t2) * 1000))
+                    print('=============================')
+                if self.logger:
+                    self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
+
+                self.index += 1
             except:
                 pass
 
@@ -182,6 +207,7 @@ class SinkCom:
             self.all_loops_running = False
             self.socket_sub_data.close()
             self.socket_push_data.close()
+            self.socket_pull_data.close()
             self.socket_push_heartbeat.close()
         except Exception as e:
             print('Trying to kill Sink com {} failed with error: {}'.format(self.worker_exec, e))
