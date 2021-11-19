@@ -1,7 +1,6 @@
 
 import sys
 from os import path
-import cv2
 import numpy as np
 
 current_dir = path.dirname(path.abspath(__file__))
@@ -10,7 +9,7 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 import logging
-import torch, detectron2
+import torch
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
@@ -18,7 +17,7 @@ from detectron2.utils.visualizer import Visualizer
 
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-from Heron.Operations.Transforms.Vision.TL_Cottonbud_Angle import tl_cottonbud_angle_com
+from Heron.Operations.Transforms.Transfer_Learning.TL_Cottonbud_Angle import tl_cottonbud_angle_com
 from Heron.communication.transform_worker import TransformWorker
 
 worker_object: TransformWorker

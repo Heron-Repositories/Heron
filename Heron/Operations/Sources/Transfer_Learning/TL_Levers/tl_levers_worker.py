@@ -20,7 +20,6 @@ buffer = ''
 
 def initialise(_worker_object):
     global arduino_serial
-
     try:
         parameters = _worker_object.parameters
         com_port = parameters[0]
@@ -78,12 +77,10 @@ def arduino_data_capture(_worker_object):
                 final_string = get_string(string_in)
                 if final_string:
                     time = get_lever_pressing_time(final_string)
-                    if time:
-                        worker_object.worker_visualisable_result = np.array([time])
-                        worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+                    worker_object.worker_visualisable_result = np.array([time])
+                    worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
         except:
             pass
-
 
 
 def on_end_of_life():

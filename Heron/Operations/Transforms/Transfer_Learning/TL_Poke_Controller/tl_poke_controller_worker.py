@@ -108,7 +108,7 @@ def start_availability_period(data, parameters):
     global availability_period_is_running
     global trigger_string
     global reward_amount
-    reward_amount = 1
+    #reward_amount = 1
 
     # topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
