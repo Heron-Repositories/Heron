@@ -513,7 +513,7 @@ with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as n
                 for op in operations_list:
                     if node == op.parent_dir:
                         colour = gu.choose_color_according_to_operations_type(node)
-                        button = dpg.add_button(label=op.name, width=150, height=30, callback=on_add_node)
+                        button = dpg.add_button(label=op.name, width=200, height=30, callback=on_add_node)
                         with dpg.theme() as theme_id:
                             with dpg.theme_component(0):
                                 dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
