@@ -26,7 +26,6 @@ class SinkWorker:
         self.parameters_topic = parameters_topic
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
-        self.work_function_running = False
         self.visualisation_on = False
         self.visualisation_thread = None
         self.loops_on = True
@@ -104,7 +103,8 @@ class SinkWorker:
         (receives link from and shares a common topic) and pushes the link to the worker_exec.
         The link are a three zmq.Frame list. The first is the topic (used for the worker_exec to distinguish which input the
         link have come from in the case of multiple input nodes). The other two items are the details and the link load
-        of the numpy array coming from the previous node).
+        of the numpy array coming from the previous node). Once the work function returns the com process is notified
+        with a ct.IGNORE signal
         :param data: The link received
         :return: Nothing
         """

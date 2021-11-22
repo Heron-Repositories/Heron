@@ -187,7 +187,7 @@ class TransformCom:
                         sockets_in = dict(self.poller.poll(timeout=1))
 
                     if self.verbose == 1:
-                        print("--- Transform from {} to {}, data index {} at time {} s" \
+                        print("--- Transform from {} to {}, data index {} at time {} s"
                               .format(topic, self.sending_topics, data_index, data_time))
 
                     # Send link to be transformed to the worker_exec
@@ -228,7 +228,6 @@ class TransformCom:
                         self.socket_pub_data.send_array(new_message_data[k], copy=False)
                         # This delay is critical to get single output to multiple inputs to work!
                         gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
-
                 t4 = time.perf_counter()
 
                 self.index = self.index + 1

@@ -83,6 +83,8 @@ class SinkCom:
         self.socket_pull_data.set_hwm(1)
         self.socket_pull_data.connect(r"tcp://127.0.0.1:{}".format(self.pull_data_port))
 
+        self.poller.register(self.socket_pull_data, zmq.POLLIN)
+
         # Socket for pushing the heartbeat to the worker_exec
         self.socket_push_heartbeat = self.context.socket(zmq.PUSH)
         self.socket_push_heartbeat.setsockopt(zmq.LINGER, 0)
@@ -176,10 +178,9 @@ class SinkCom:
                         topic, data_index, data_time, messagedata = self.get_sub_data()
                         sockets_in = dict(self.poller.poll(timeout=1))
 
-                    topic, data_index, data_time, messagedata = self.get_sub_data()
-
                     if self.verbose:
-                        print("oooo Sink from {}, data_index {} at time {} s oooo".format(topic, data_index, data_time))
+                        print("oooo Sink from {}, data_index {} at time {} s oooo"
+                              .format(topic, data_index, data_time))
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
