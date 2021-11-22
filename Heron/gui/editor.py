@@ -393,14 +393,11 @@ def load_graph():
 
                 elif key == 'links':
                     links_dict = raw_dict[key]
-                    print(links_dict)
+
                     for l1_name in links_dict:
                         l1 = get_attribute_id_from_label(l1_name)
-                        print(l1)
-                        print(links_dict[l1_name])
                         for l2_name in copy.copy(links_dict[l1_name]):
                             l2 = get_attribute_id_from_label(l2_name)
-                            print(l2)
                             on_link(node_editor, [l1, l2])
                             #dpg.add_node_link(l1, l2, parent=node_editor)
 
