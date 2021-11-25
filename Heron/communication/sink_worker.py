@@ -15,7 +15,8 @@ from Heron.communication.ssh_com import SSHCom
 
 class SinkWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
-                 parameters_topic, verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
+                 parameters_topic, num_sending_topics, verbose,
+                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
         self.push_data_port = str(int(self.pull_data_port) + 1)
@@ -24,6 +25,7 @@ class SinkWorker:
         self.initialisation_function = initialisation_function
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
+        self.num_sending_topics = int(num_sending_topics)
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
         self.visualisation_on = False
@@ -108,8 +110,9 @@ class SinkWorker:
         :param data: The link received
         :return: Nothing
         """
-        data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
-        self.work_function(data, self.parameters)
+        if self.initialised:
+            data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
+            self.work_function(data, self.parameters)
         self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
     def parameters_callback(self, parameters_in_bytes):

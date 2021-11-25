@@ -133,6 +133,8 @@ class TransformCom:
         arguments_list.append(str(len(self.receiving_topics)))
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])
+        arguments_list.append(str(len(self.sending_topics)))
+        arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
         worker_pid = self.ssh_com.start_process(arguments_list)

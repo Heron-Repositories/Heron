@@ -12,13 +12,14 @@ from Heron.communication.ssh_com import SSHCom
 
 
 class SourceWorker:
-    def __init__(self, port, parameters_topic, initialisation_function, end_of_life_function, verbose=False,
-                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
+    def __init__(self, port, parameters_topic, initialisation_function, end_of_life_function, num_sending_topics,
+                 verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
         self.parameters_topic = parameters_topic
         self.data_port = port
         self.pull_heartbeat_port = str(int(self.data_port) + 1)
         self.initialisation_function = initialisation_function
         self.end_of_life_function = end_of_life_function
+        self.num_sending_topics = int(num_sending_topics)
         self.verbose = verbose
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = parameters_topic.split('##')[-1]
@@ -55,9 +56,6 @@ class SourceWorker:
         :return: Nothing
         """
         self.context = zmq.Context()
-
-        if self.verbose:
-            print('Starting Source worker_exec on port {}'.format(self.data_port))
 
         # Setup the socket that receives the parameters of the worker_exec function from the node
         self.socket_sub_parameters = Socket(self.context, zmq.SUB)
@@ -96,9 +94,6 @@ class SourceWorker:
             self.parameters = args
             if not self.initialised and self.initialisation_function is not None:
                 self.initialised = self.initialisation_function(self)
-            # print('TOPIC {}'.format(topic))
-            #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
-            # print(args)
         except zmq.Again as e:
             pass
 

@@ -47,8 +47,6 @@ class SourceCom:
                 self.logger.info('Index of data packet : Computer Time Data Out')
                 self.verbose = False
 
-
-
     def connect_sockets(self):
         """
         Start the required sockets to communicate with the link forwarder and the source_com processes
@@ -172,6 +170,7 @@ class SourceCom:
         arguments_list.append(str(self.pull_data_port))
         arguments_list.append(str(self.parameters_topic))
         arguments_list.append(str(0))
+        arguments_list.append(str(len(self.sending_topics)))
         arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 

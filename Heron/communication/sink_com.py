@@ -128,6 +128,7 @@ class SinkCom:
         arguments_list.append(str(len(self.receiving_topics)))
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])
+        arguments_list.append(str(0))
         arguments_list.append(str(self.verbose))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
@@ -206,6 +207,8 @@ class SinkCom:
     def on_kill(self, signal, frame):
         try:
             self.all_loops_running = False
+            self.poller.unregister(socket=self.socket_sub_data)
+            self.poller.unregister(socket=self.socket_pull_data)
             self.socket_sub_data.close()
             self.socket_push_data.close()
             self.socket_pull_data.close()

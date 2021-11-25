@@ -6,16 +6,17 @@ import os
 import signal
 import zmq
 import cv2
+import numpy as np
 from Heron import constants as ct
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
-import logging
 
 
 class TransformWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
-                 parameters_topic, verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
+                 parameters_topic, num_sending_topics, verbose,
+                 ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
         self.push_data_port = str(int(self.pull_data_port) + 1)
@@ -24,6 +25,7 @@ class TransformWorker:
         self.work_function = work_function
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
+        self.num_sending_topics = int(num_sending_topics)
         self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
         self.node_name = parameters_topic.split('##')[-2]
@@ -109,16 +111,26 @@ class TransformWorker:
         and the result is sent to the com process to be passed on.
         The result must be a list of numpy arrays! Each element of the list represent one output of the node in the
         same order as the order of Outputs specified in the xxx_com.py of the node
+        The callback will call the work_function only if the self.initialised is True (i.e. if the parameters_callback
+        has had a chance to call the initialisation_function and get back a True). Otherwise it will pass to the com
+        a set of ct.IGNORE (as many as the Node's outputs).
         :param data: The link received
         :return: Nothing
         """
-        data = [data[0].bytes, data[1].bytes, data[2].bytes]
-        results = self.work_function(data, self.parameters)
-        for i, array_in_list in enumerate(results):
-            if i < len(results) - 1:
-                self.socket_push_data.send_array(array_in_list, flags=zmq.SNDMORE, copy=False)
-            else:
-                self.socket_push_data.send_array(array_in_list, copy=False)
+        if self.initialised:
+            data = [data[0].bytes, data[1].bytes, data[2].bytes]
+            results = self.work_function(data, self.parameters)
+            for i, array_in_list in enumerate(results):
+                if i < len(results) - 1:
+                    self.socket_push_data.send_array(array_in_list, flags=zmq.SNDMORE, copy=False)
+                else:
+                    self.socket_push_data.send_array(array_in_list, copy=False)
+        else:
+            send_topics = 0
+            while send_topics < self.num_sending_topics - 1:
+                self.socket_push_data.send_array(np.array([ct.IGNORE]), flags=zmq.SNDMORE, copy=False)
+                send_topics += 1
+            self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -135,7 +147,7 @@ class TransformWorker:
                 self.parameters = args
                 if not self.initialised and self.initialisation_function is not None:
                     self.initialised = self.initialisation_function(self)
-                #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+            #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
     def heartbeat_callback(self, pulse):
         """
