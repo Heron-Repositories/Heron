@@ -51,15 +51,17 @@ def get_string(string_in):
 def get_lever_pressing_time(string):
     """
     Returns the time a Lever is pressed
-    :return: The time in ms that one of the levers is being pressed. Positive time means Left lever, negative means Right
+    :return: A list with whether the poke beam break is broken (if yes then 1) and the time in ms that one of the
+    levers is being pressed. Positive time means Left lever, negative means Right
     """
-    [left_string, right_string] = string.split('#')
+    [poke_string, left_string, right_string] = string.split('#')
+    poke_on = int(not int(poke_string.split('=')[1]))
     left_time = int(left_string.split('=')[1])
     right_time = -int(right_string.split('=')[1])
     if left_time != 0:
-        return left_time
+        return [poke_on, left_time]
     else:
-        return right_time
+        return [poke_on, right_time]
 
 
 def arduino_data_capture(_worker_object):
@@ -76,8 +78,8 @@ def arduino_data_capture(_worker_object):
 
                 final_string = get_string(string_in)
                 if final_string:
-                    time = get_lever_pressing_time(final_string)
-                    worker_object.worker_visualisable_result = np.array([time])
+                    poke_and_time = get_lever_pressing_time(final_string)
+                    worker_object.worker_visualisable_result = np.array(poke_and_time)
                     worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
         except:
             pass
