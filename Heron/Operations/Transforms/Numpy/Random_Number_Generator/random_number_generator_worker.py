@@ -13,6 +13,8 @@ from Heron.communication.transform_worker import TransformWorker
 
 worker_object: TransformWorker
 
+def initialise(worker_object):
+    return True
 
 def create_evaulation_string(parameters):
     function_name = parameters[1].split(':')[0]
@@ -50,5 +52,6 @@ def on_end_of_life():
 
 if __name__ == "__main__":
     worker_object = gu.start_the_transform_worker_process(work_function=random_number,
-                                                          end_of_life_function=on_end_of_life)
+                                                          end_of_life_function=on_end_of_life,
+                                                          initialisation_function=initialise)
     worker_object.start_ioloop()
