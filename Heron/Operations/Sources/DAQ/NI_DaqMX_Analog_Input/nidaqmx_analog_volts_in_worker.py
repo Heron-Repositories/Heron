@@ -24,6 +24,7 @@ channels: list
 rate: int
 sample_mode: int
 dpg_ids = {}
+visualisation_thread_on = False
 
 
 def plot(data):
@@ -46,30 +47,40 @@ def plot_callback():
     global channels
     global dpg_ids
     global buffer_size
+    global visualisation_thread_on
 
-    if worker_object.visualisation_on:
-        if not window_showing:
+    print('P1')
+    print(worker_object.visualisation_on)
+    if visualisation_thread_on:
+        if worker_object.visualisation_on:
+            print('P2')
+            if not window_showing:
+                print('P3')
+                dpg.show_item(dpg_ids['Visualisation'])
 
-            dpg.show_item(dpg_ids['Visualisation'])
+                window_showing = True
+                for n in channels:
+                    dpg.show_item(dpg_ids["Plot {}".format(n)])
+                    dpg_ids['Series {}'.format(n)] = dpg.add_line_series(np.arange(buffer_size), np.arange(buffer_size),
+                                                                        parent=dpg_ids['Voltage of {} / Volts'.format(n)])
 
-            window_showing = True
-            for n in channels:
-                dpg.show_item(dpg_ids["Plot {}".format(n)])
-                dpg_ids['Series {}'.format(n)] = dpg.add_line_series(np.arange(buffer_size), np.arange(buffer_size),
-                                                                    parent=dpg_ids['Voltage of {} / Volts'.format(n)])
+            if window_showing:
+                try:
+                    if len(channels) == 1:
+                        plot([worker_object.worker_visualisable_result])
+                    else:
+                        plot(worker_object.worker_visualisable_result)
+                except Exception as e:
+                    print(e)
 
-        if window_showing:
-            try:
-                if len(channels) == 1:
-                    plot([worker_object.worker_visualisable_result])
-                else:
-                    plot(worker_object.worker_visualisable_result)
-            except Exception as e:
-                print(e)
-
-    if not worker_object.visualisation_on:
-        window_showing = False
-        dpg.stop_dearpygui()
+        if not worker_object.visualisation_on and visualisation_thread_on == True:
+            print('P11')
+            window_showing = False
+            print('P12')
+            dpg.minimize_viewport()
+            print('P13')
+            #dpg.stop_dearpygui()
+            print('P14')
 
 
 def start_plotting_thread():
@@ -83,13 +94,14 @@ def start_plotting_thread():
     global dpg_ids
     global worker_object
     global window_showing
+    global visualisation_thread_on
 
     while True:
         if worker_object.visualisation_on:
             if not window_showing:
-                dpg_ids['Viewport'] = dpg.create_viewport(title='Visualising NIDAQ', width=820,
-                                                          height=780)
-
+                dpg.create_context()
+                dpg.create_viewport(title='Visualising NIDAQ', width=820, height=780)
+                print('H1')
                 with dpg.window(label="Visualisation", width=800, height=750, show=False) \
                         as dpg_ids['Visualisation']:
                     for n in channels:
@@ -99,11 +111,14 @@ def start_plotting_thread():
                             dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
                         dpg_ids['Voltage of {} / Volts'.format(n)] = \
                             dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
-
+                print('H2')
                 dpg.set_viewport_resize_callback(on_resize_viewport)
-                dpg.setup_dearpygui(viewport=dpg_ids['Viewport'])
-                dpg.show_viewport(dpg_ids['Viewport'])
+                dpg.setup_dearpygui()
+                dpg.show_viewport()
+                visualisation_thread_on = True
                 dpg.start_dearpygui()
+                print('H3')
+                dpg.destroy_context()
 
 
 def on_resize_viewport():
@@ -163,14 +178,14 @@ def acquire(_worker_object):
         worker_object.worker_visualisable_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
         worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
 
-        plot_callback()
-
         try:
             worker_object.visualisation_on = worker_object.parameters[0]
         except:
             worker_object.visualisation_on = nidaqmx_analog_volts_in_com.ParametersDefaultValues[0]
 
         worker_object.visualisation_loop_init()
+
+        plot_callback()
 
 
 def on_end_of_life():
@@ -184,6 +199,8 @@ def on_end_of_life():
         task.close()
         del task
         dpg.stop_dearpygui()
+        dpg.destroy_context()
+        del dpg
     except Exception as e:
         print(e)
 
