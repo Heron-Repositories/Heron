@@ -10,7 +10,7 @@ sys.path.insert(0, path.dirname(current_dir))
 import numpy as np
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu, constants as ct
-from Heron.Operations.Transforms.General.TL_Experiment_Phases_1_3 import tl_experiment_phases_1_3_com as the_com
+from Heron.Operations.Transforms.Transfer_Learning.TL_Experiment_Phases_1_3 import tl_experiment_phases_1_3_com as the_com
 
 input_names: list
 output_names: list
