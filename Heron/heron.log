@@ -1,0 +1,1015 @@
+12:00:10 Using proactor: IocpProactor
+12:00:11 Using proactor: IocpProactor
+12:00:12 Using proactor: IocpProactor
+12:00:14 Using proactor: IocpProactor
+12:00:15 Using proactor: IocpProactor
+12:00:38 KILLING THE PROCESSES []
+12:00:38 KILLING THE PROCESSES []
+12:00:38 KILLING THE PROCESSES []
+12:00:38 KILLING THE PROCESSES []
+12:00:39 KILLING THE PROCESSES []
+12:01:14 Using proactor: IocpProactor
+12:01:16 Using proactor: IocpProactor
+12:01:17 Using proactor: IocpProactor
+12:01:18 Using proactor: IocpProactor
+12:01:19 Using proactor: IocpProactor
+12:01:34 KILLING THE PROCESSES []
+12:01:35 KILLING THE PROCESSES []
+12:01:35 KILLING THE PROCESSES []
+12:01:36 KILLING THE PROCESSES []
+12:01:37 KILLING THE PROCESSES []
+12:02:22 Using proactor: IocpProactor
+12:02:24 Using proactor: IocpProactor
+12:02:25 Using proactor: IocpProactor
+12:02:26 Using proactor: IocpProactor
+12:02:27 Using proactor: IocpProactor
+12:02:37 KILLING THE PROCESSES []
+12:02:38 KILLING THE PROCESSES []
+12:02:38 KILLING THE PROCESSES []
+12:02:39 KILLING THE PROCESSES []
+12:02:39 KILLING THE PROCESSES []
+12:03:00 Using proactor: IocpProactor
+12:03:01 Using proactor: IocpProactor
+12:03:02 Using proactor: IocpProactor
+12:03:04 Using proactor: IocpProactor
+12:03:05 Using proactor: IocpProactor
+12:06:06 KILLING THE PROCESSES []
+12:06:06 KILLING THE PROCESSES []
+12:06:06 KILLING THE PROCESSES []
+12:06:07 KILLING THE PROCESSES []
+12:06:08 KILLING THE PROCESSES []
+12:06:51 Using proactor: IocpProactor
+12:06:53 Using proactor: IocpProactor
+12:06:54 Using proactor: IocpProactor
+12:06:55 Using proactor: IocpProactor
+12:06:56 Using proactor: IocpProactor
+12:07:14 KILLING THE PROCESSES []
+12:07:15 KILLING THE PROCESSES []
+12:07:15 KILLING THE PROCESSES []
+12:07:15 KILLING THE PROCESSES []
+12:07:16 KILLING THE PROCESSES []
+12:10:03 Using proactor: IocpProactor
+12:10:05 Using proactor: IocpProactor
+12:10:06 Using proactor: IocpProactor
+12:10:08 Using proactor: IocpProactor
+12:10:31 KILLING THE PROCESSES []
+12:10:31 KILLING THE PROCESSES []
+12:10:32 KILLING THE PROCESSES []
+12:10:32 KILLING THE PROCESSES []
+12:11:15 Using proactor: IocpProactor
+12:11:16 Using proactor: IocpProactor
+12:11:18 Using proactor: IocpProactor
+12:11:26 KILLING THE PROCESSES []
+12:11:26 KILLING THE PROCESSES []
+12:11:27 KILLING THE PROCESSES []
+12:11:52 Using proactor: IocpProactor
+12:11:54 Using proactor: IocpProactor
+12:11:55 Using proactor: IocpProactor
+12:12:03 KILLING THE PROCESSES []
+12:12:03 KILLING THE PROCESSES []
+12:12:03 KILLING THE PROCESSES []
+12:13:15 Using proactor: IocpProactor
+12:13:17 Using proactor: IocpProactor
+12:13:17 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+NameError: name 'np' is not defined
+12:13:17 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+NameError: name 'np' is not defined
+12:13:17 Exception in callback AddThreadSelectorEventLoop._handle_select([<socket.socke....0.1', 52299)>, 1332, 1552], [])
+handle: <Handle AddThreadSelectorEventLoop._handle_select([<socket.socke....0.1', 52299)>, 1332, 1552], [])>
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 579, in _handle_select
+    self._handle_event(r, self._readers)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 591, in _handle_event
+    callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 189, in _handle_events
+    handler_func(fileobj, events)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+NameError: name 'np' is not defined
+12:13:18 Using proactor: IocpProactor
+12:13:22 KILLING THE PROCESSES []
+12:13:33 KILLING THE PROCESSES []
+12:13:33 KILLING THE PROCESSES []
+12:14:15 Using proactor: IocpProactor
+12:14:16 Using proactor: IocpProactor
+12:14:17 Using proactor: IocpProactor
+12:14:40 KILLING THE PROCESSES []
+12:14:41 KILLING THE PROCESSES []
+12:14:41 KILLING THE PROCESSES []
+12:15:08 Using proactor: IocpProactor
+12:15:10 Using proactor: IocpProactor
+12:15:21 KILLING THE PROCESSES []
+12:15:21 KILLING THE PROCESSES []
+12:15:30 Using proactor: IocpProactor
+12:15:31 Using proactor: IocpProactor
+12:15:32 Using proactor: IocpProactor
+12:15:42 KILLING THE PROCESSES []
+12:15:43 KILLING THE PROCESSES []
+12:15:43 KILLING THE PROCESSES []
+12:17:21 Using proactor: IocpProactor
+12:17:22 Using proactor: IocpProactor
+12:17:23 Using proactor: IocpProactor
+12:17:48 KILLING THE PROCESSES []
+12:17:49 KILLING THE PROCESSES []
+12:17:49 KILLING THE PROCESSES []
+12:19:06 Using proactor: IocpProactor
+12:19:08 Using proactor: IocpProactor
+12:19:09 Using proactor: IocpProactor
+12:19:17 KILLING THE PROCESSES []
+12:19:17 KILLING THE PROCESSES []
+12:19:17 KILLING THE PROCESSES []
+12:19:42 Using proactor: IocpProactor
+12:19:44 Using proactor: IocpProactor
+12:19:45 Using proactor: IocpProactor
+12:19:46 Using proactor: IocpProactor
+12:19:47 Using proactor: IocpProactor
+12:20:06 KILLING THE PROCESSES []
+12:20:06 KILLING THE PROCESSES []
+12:20:06 KILLING THE PROCESSES []
+12:20:07 KILLING THE PROCESSES []
+12:20:07 KILLING THE PROCESSES []
+12:23:06 Using proactor: IocpProactor
+12:23:11 Using proactor: IocpProactor
+12:23:12 Using proactor: IocpProactor
+12:23:47 Got events for closed stream None
+12:23:52 KILLING THE PROCESSES []
+12:23:52 KILLING THE PROCESSES []
+12:23:53 KILLING THE PROCESSES []
+12:24:12 Using proactor: IocpProactor
+12:24:13 Using proactor: IocpProactor
+12:24:14 Using proactor: IocpProactor
+12:24:33 KILLING THE PROCESSES []
+12:24:33 KILLING THE PROCESSES []
+12:24:35 KILLING THE PROCESSES []
+12:25:44 Using proactor: IocpProactor
+12:25:45 Using proactor: IocpProactor
+12:25:46 Using proactor: IocpProactor
+12:25:58 KILLING THE PROCESSES []
+12:25:58 KILLING THE PROCESSES []
+12:25:59 KILLING THE PROCESSES []
+12:28:42 Using proactor: IocpProactor
+12:28:43 Using proactor: IocpProactor
+12:28:44 Using proactor: IocpProactor
+12:28:46 Using proactor: IocpProactor
+12:28:47 Using proactor: IocpProactor
+12:30:15 KILLING THE PROCESSES []
+12:30:15 KILLING THE PROCESSES []
+12:30:15 KILLING THE PROCESSES []
+12:30:16 KILLING THE PROCESSES []
+12:30:16 KILLING THE PROCESSES []
+12:31:22 Using proactor: IocpProactor
+12:31:24 Using proactor: IocpProactor
+12:31:25 Using proactor: IocpProactor
+12:31:26 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 120, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+12:31:26 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 120, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+12:31:26 Exception in callback AddThreadSelectorEventLoop._handle_select([1200], [])
+handle: <Handle AddThreadSelectorEventLoop._handle_select([1200], [])>
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 579, in _handle_select
+    self._handle_event(r, self._readers)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 591, in _handle_event
+    callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 189, in _handle_events
+    handler_func(fileobj, events)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 120, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+12:31:26 Using proactor: IocpProactor
+12:31:27 Using proactor: IocpProactor
+12:31:31 KILLING THE PROCESSES []
+12:31:41 KILLING THE PROCESSES []
+12:31:42 KILLING THE PROCESSES []
+12:31:43 KILLING THE PROCESSES []
+12:31:43 KILLING THE PROCESSES []
+13:31:24 Using proactor: IocpProactor
+13:31:25 Using proactor: IocpProactor
+13:31:32 KILLING THE PROCESSES []
+13:31:34 KILLING THE PROCESSES []
+13:32:02 Using proactor: IocpProactor
+13:32:04 Using proactor: IocpProactor
+13:32:12 KILLING THE PROCESSES []
+13:32:13 KILLING THE PROCESSES []
+13:34:22 Using proactor: IocpProactor
+13:34:24 Using proactor: IocpProactor
+13:34:33 KILLING THE PROCESSES []
+13:34:34 KILLING THE PROCESSES []
+13:40:53 Using proactor: IocpProactor
+13:40:55 Using proactor: IocpProactor
+13:41:02 KILLING THE PROCESSES []
+13:41:03 KILLING THE PROCESSES []
+13:45:36 Using proactor: IocpProactor
+13:46:23 Using proactor: IocpProactor
+13:46:25 Using proactor: IocpProactor
+13:47:10 KILLING THE PROCESSES []
+13:47:10 KILLING THE PROCESSES []
+13:47:55 Using proactor: IocpProactor
+13:47:57 Using proactor: IocpProactor
+13:47:58 Using proactor: IocpProactor
+13:48:14 KILLING THE PROCESSES []
+13:48:15 KILLING THE PROCESSES []
+13:48:15 KILLING THE PROCESSES []
+13:53:25 Using proactor: IocpProactor
+13:53:26 Using proactor: IocpProactor
+13:53:28 Using proactor: IocpProactor
+13:54:31 KILLING THE PROCESSES []
+13:54:31 KILLING THE PROCESSES []
+13:54:31 KILLING THE PROCESSES []
+13:54:47 Using proactor: IocpProactor
+13:54:49 Using proactor: IocpProactor
+13:54:50 Using proactor: IocpProactor
+13:55:56 KILLING THE PROCESSES []
+13:55:56 KILLING THE PROCESSES []
+13:55:56 KILLING THE PROCESSES []
+13:56:10 Using proactor: IocpProactor
+13:56:12 Using proactor: IocpProactor
+13:56:13 Using proactor: IocpProactor
+13:56:25 KILLING THE PROCESSES []
+13:56:25 KILLING THE PROCESSES []
+13:56:25 KILLING THE PROCESSES []
+14:02:55 Using proactor: IocpProactor
+14:02:57 Using proactor: IocpProactor
+14:02:58 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 119, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+14:02:58 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 119, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+14:02:58 Exception in callback AddThreadSelectorEventLoop._handle_select([1236], [])
+handle: <Handle AddThreadSelectorEventLoop._handle_select([1236], [])>
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 579, in _handle_select
+    self._handle_event(r, self._readers)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 591, in _handle_event
+    callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 189, in _handle_events
+    handler_func(fileobj, events)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 119, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 198, in experiment
+    return [np.array([False], np.array([ct.IGNORE]))]
+TypeError: Cannot construct a dtype from an array
+14:02:58 Using proactor: IocpProactor
+14:02:59 Using proactor: IocpProactor
+14:03:02 KILLING THE PROCESSES []
+14:03:10 KILLING THE PROCESSES []
+14:03:10 KILLING THE PROCESSES []
+14:03:10 KILLING THE PROCESSES []
+14:04:59 Using proactor: IocpProactor
+14:05:01 Using proactor: IocpProactor
+14:05:02 Using proactor: IocpProactor
+14:05:02 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:05:02 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:05:02 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x00000260B7658160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 129, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:05:03 Using proactor: IocpProactor
+14:05:04 Using proactor: IocpProactor
+14:05:31 KILLING THE PROCESSES []
+14:05:32 KILLING THE PROCESSES []
+14:05:32 KILLING THE PROCESSES []
+14:05:33 KILLING THE PROCESSES []
+14:05:34 KILLING THE PROCESSES []
+14:06:22 Using proactor: IocpProactor
+14:06:24 Using proactor: IocpProactor
+14:06:25 Using proactor: IocpProactor
+14:06:25 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:06:25 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:06:25 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001F9A761B160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:06:26 Using proactor: IocpProactor
+14:06:27 Using proactor: IocpProactor
+14:06:40 KILLING THE PROCESSES []
+14:06:40 KILLING THE PROCESSES []
+14:06:40 KILLING THE PROCESSES []
+14:06:40 KILLING THE PROCESSES []
+14:06:41 KILLING THE PROCESSES []
+14:07:22 Using proactor: IocpProactor
+14:07:24 Using proactor: IocpProactor
+14:07:25 Using proactor: IocpProactor
+14:07:25 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:07:25 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:07:25 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000002903C10B160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 130, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:07:26 Using proactor: IocpProactor
+14:07:27 Using proactor: IocpProactor
+14:07:40 KILLING THE PROCESSES []
+14:07:41 KILLING THE PROCESSES []
+14:07:41 KILLING THE PROCESSES []
+14:07:42 KILLING THE PROCESSES []
+14:07:42 KILLING THE PROCESSES []
+14:08:57 Using proactor: IocpProactor
+14:08:59 Using proactor: IocpProactor
+14:09:00 Using proactor: IocpProactor
+14:09:00 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:00 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:00 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001D824078160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:01 Using proactor: IocpProactor
+14:09:02 Using proactor: IocpProactor
+14:09:11 KILLING THE PROCESSES []
+14:09:12 KILLING THE PROCESSES []
+14:09:12 KILLING THE PROCESSES []
+14:09:12 KILLING THE PROCESSES []
+14:09:12 KILLING THE PROCESSES []
+14:09:54 Using proactor: IocpProactor
+14:09:56 Using proactor: IocpProactor
+14:09:57 Using proactor: IocpProactor
+14:09:57 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:57 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:57 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x00000256B5218160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:09:58 Using proactor: IocpProactor
+14:09:59 Using proactor: IocpProactor
+14:10:23 KILLING THE PROCESSES []
+14:10:24 KILLING THE PROCESSES []
+14:10:24 KILLING THE PROCESSES []
+14:10:24 KILLING THE PROCESSES []
+14:10:25 KILLING THE PROCESSES []
+14:10:37 Using proactor: IocpProactor
+14:10:39 Using proactor: IocpProactor
+14:10:40 Using proactor: IocpProactor
+14:10:40 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:10:40 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:10:40 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x0000029912168160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:10:41 Using proactor: IocpProactor
+14:10:42 Using proactor: IocpProactor
+14:10:50 KILLING THE PROCESSES []
+14:10:50 KILLING THE PROCESSES []
+14:10:50 KILLING THE PROCESSES []
+14:10:51 KILLING THE PROCESSES []
+14:10:51 KILLING THE PROCESSES []
+14:11:07 Using proactor: IocpProactor
+14:11:09 Using proactor: IocpProactor
+14:11:10 Using proactor: IocpProactor
+14:11:10 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:10 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:10 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001EDB88AB160>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:11 Using proactor: IocpProactor
+14:11:12 Using proactor: IocpProactor
+14:11:19 KILLING THE PROCESSES []
+14:11:19 KILLING THE PROCESSES []
+14:11:19 KILLING THE PROCESSES []
+14:11:20 KILLING THE PROCESSES []
+14:11:20 KILLING THE PROCESSES []
+14:11:26 Using proactor: IocpProactor
+14:11:28 Using proactor: IocpProactor
+14:11:29 Using proactor: IocpProactor
+14:11:29 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:29 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:29 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001B4EF60B9D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:11:30 Using proactor: IocpProactor
+14:11:31 Using proactor: IocpProactor
+14:11:37 KILLING THE PROCESSES []
+14:11:38 KILLING THE PROCESSES []
+14:11:38 KILLING THE PROCESSES []
+14:11:38 KILLING THE PROCESSES []
+14:11:38 KILLING THE PROCESSES []
+14:12:16 Using proactor: IocpProactor
+14:12:18 Using proactor: IocpProactor
+14:12:19 Using proactor: IocpProactor
+14:12:19 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:12:19 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:12:19 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x0000020CBBF3B9D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:12:20 Using proactor: IocpProactor
+14:12:21 Using proactor: IocpProactor
+14:12:30 KILLING THE PROCESSES []
+14:12:30 KILLING THE PROCESSES []
+14:12:30 KILLING THE PROCESSES []
+14:12:31 KILLING THE PROCESSES []
+14:12:31 KILLING THE PROCESSES []
+14:12:57 Using proactor: IocpProactor
+14:12:59 Using proactor: IocpProactor
+14:13:00 Using proactor: IocpProactor
+14:13:00 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:13:00 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:13:00 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001AFCB0089D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:13:01 Using proactor: IocpProactor
+14:13:02 Using proactor: IocpProactor
+14:13:10 KILLING THE PROCESSES []
+14:13:10 KILLING THE PROCESSES []
+14:13:10 KILLING THE PROCESSES []
+14:13:11 KILLING THE PROCESSES []
+14:13:11 KILLING THE PROCESSES []
+14:14:38 Using proactor: IocpProactor
+14:14:40 Using proactor: IocpProactor
+14:14:41 Using proactor: IocpProactor
+14:14:41 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:14:41 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:14:41 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x00000276C40989D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 132, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:14:42 Using proactor: IocpProactor
+14:14:43 Using proactor: IocpProactor
+14:14:51 KILLING THE PROCESSES []
+14:14:52 KILLING THE PROCESSES []
+14:14:52 KILLING THE PROCESSES []
+14:14:52 KILLING THE PROCESSES []
+14:14:52 KILLING THE PROCESSES []
+14:15:35 Using proactor: IocpProactor
+14:15:36 Using proactor: IocpProactor
+14:15:37 Using proactor: IocpProactor
+14:15:37 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:15:37 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:15:37 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x00000257F08489D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 131, in data_callback
+    while send_topics < self.num_sending_topics - 1:
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:15:39 Using proactor: IocpProactor
+14:15:40 Using proactor: IocpProactor
+14:15:49 KILLING THE PROCESSES []
+14:15:50 KILLING THE PROCESSES []
+14:15:51 KILLING THE PROCESSES []
+14:15:51 KILLING THE PROCESSES []
+14:15:51 KILLING THE PROCESSES []
+14:17:00 Using proactor: IocpProactor
+14:17:02 Using proactor: IocpProactor
+14:17:03 Using proactor: IocpProactor
+14:17:03 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 128, in data_callback
+    print(send_topics < self.num_sending_topics - 1)
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:17:03 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 128, in data_callback
+    print(send_topics < self.num_sending_topics - 1)
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:17:03 Exception in callback functools.partial(<function ZMQStream._update_handler.<locals>.<lambda> at 0x000001C52CAFB9D0>)
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\ioloop.py", line 741, in _run_callback
+    ret = callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 532, in <lambda>
+    self.io_loop.add_callback(lambda: self._handle_events(self.socket, 0))
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 128, in data_callback
+    print(send_topics < self.num_sending_topics - 1)
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+14:17:04 Using proactor: IocpProactor
+14:17:05 Using proactor: IocpProactor
+14:17:14 KILLING THE PROCESSES []
+14:17:14 KILLING THE PROCESSES []
+14:17:14 KILLING THE PROCESSES []
+14:17:15 KILLING THE PROCESSES []
+14:17:15 KILLING THE PROCESSES []
+14:18:41 Using proactor: IocpProactor
+14:18:43 Using proactor: IocpProactor
+14:18:44 Using proactor: IocpProactor
+14:18:45 Using proactor: IocpProactor
+14:18:46 Using proactor: IocpProactor
+14:19:15 KILLING THE PROCESSES []
+14:19:16 KILLING THE PROCESSES []
+14:19:16 KILLING THE PROCESSES []
+14:19:17 KILLING THE PROCESSES []
+14:19:17 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\sink_worker.py", line 116, in data_callback
+    self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+  File "E:\Development\Repos\Heron\Heron\communication\socket_for_serialization.py", line 26, in send_array
+    self.send_json(md, flags|zmq.SNDMORE)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\sugar\socket.py", line 795, in send_json
+    return self.send(msg, flags=flags, **send_kwargs)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\sugar\socket.py", line 541, in send
+    return super(Socket, self).send(data, flags=flags, copy=copy, track=track)
+  File "zmq/backend/cython/socket.pyx", line 718, in zmq.backend.cython.socket.Socket.send
+  File "zmq/backend/cython/socket.pyx", line 765, in zmq.backend.cython.socket.Socket.send
+  File "zmq/backend/cython/socket.pyx", line 247, in zmq.backend.cython.socket._send_copy
+  File "zmq/backend/cython/socket.pyx", line 242, in zmq.backend.cython.socket._send_copy
+  File "zmq/backend/cython/checkrc.pxd", line 25, in zmq.backend.cython.checkrc._check_rc
+zmq.error.ContextTerminated: Context was terminated
+14:19:17 KILLING THE PROCESSES []
+14:24:52 Using proactor: IocpProactor
+14:24:53 Using proactor: IocpProactor
+14:24:54 Using proactor: IocpProactor
+14:24:56 Using proactor: IocpProactor
+14:24:57 Using proactor: IocpProactor
+14:26:49 KILLING THE PROCESSES []
+14:26:50 KILLING THE PROCESSES []
+14:26:50 KILLING THE PROCESSES []
+14:26:50 KILLING THE PROCESSES []
+14:26:51 KILLING THE PROCESSES []
+14:36:38 Using proactor: IocpProactor
+14:36:39 Using proactor: IocpProactor
+14:36:40 Using proactor: IocpProactor
+14:36:42 Using proactor: IocpProactor
+14:36:43 Using proactor: IocpProactor
+14:37:27 Uncaught exception in ZMQStream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 122, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 209, in experiment
+    initialise_trial()
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 98, in initialise_trial
+    target = np.random.randint(-90, manipulandum - 10)
+  File "mtrand.pyx", line 746, in numpy.random.mtrand.RandomState.randint
+  File "_bounded_integers.pyx", line 1338, in numpy.random._bounded_integers._rand_int32
+ValueError: low >= high
+14:37:27 Uncaught exception in zmqstream callback
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 122, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 209, in experiment
+    initialise_trial()
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 98, in initialise_trial
+    target = np.random.randint(-90, manipulandum - 10)
+  File "mtrand.pyx", line 746, in numpy.random.mtrand.RandomState.randint
+  File "_bounded_integers.pyx", line 1338, in numpy.random._bounded_integers._rand_int32
+ValueError: low >= high
+14:37:27 Exception in callback AddThreadSelectorEventLoop._handle_select([1520], [])
+handle: <Handle AddThreadSelectorEventLoop._handle_select([1520], [])>
+Traceback (most recent call last):
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 579, in _handle_select
+    self._handle_event(r, self._readers)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 591, in _handle_event
+    callback()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\tornado\platform\asyncio.py", line 189, in _handle_events
+    handler_func(fileobj, events)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 448, in _handle_events
+    self._handle_recv()
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 477, in _handle_recv
+    self._run_callback(callback, msg)
+  File "E:\Development\Languages\Python\Miniconda_Python_3.9.4\lib\site-packages\zmq\eventloop\zmqstream.py", line 431, in _run_callback
+    callback(*args, **kwargs)
+  File "E:\Development\Repos\Heron\Heron\communication\transform_worker.py", line 122, in data_callback
+    results = self.work_function(data, self.parameters)
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 209, in experiment
+    initialise_trial()
+  File "E:\Development\Repos\Heron\Heron\Operations\Transforms\Transfer_Learning\TL_Experiment_Phase_2\tl_experiment_phase_2_worker.py", line 98, in initialise_trial
+    target = np.random.randint(-90, manipulandum - 10)
+  File "mtrand.pyx", line 746, in numpy.random.mtrand.RandomState.randint
+  File "_bounded_integers.pyx", line 1338, in numpy.random._bounded_integers._rand_int32
+ValueError: low >= high
+14:37:32 KILLING THE PROCESSES []
+14:37:51 KILLING THE PROCESSES []
+14:37:52 KILLING THE PROCESSES []
+14:37:53 KILLING THE PROCESSES []
+14:37:53 KILLING THE PROCESSES []
+14:56:14 Using proactor: IocpProactor
+14:56:16 Using proactor: IocpProactor
+14:56:17 Using proactor: IocpProactor
+14:56:19 Using proactor: IocpProactor
+14:56:20 Using proactor: IocpProactor
+14:57:57 KILLING THE PROCESSES []
+14:57:57 KILLING THE PROCESSES []
+14:57:58 KILLING THE PROCESSES []
+14:57:59 KILLING THE PROCESSES []
+14:57:59 KILLING THE PROCESSES []
+14:58:04 Using proactor: IocpProactor
+14:58:06 Using proactor: IocpProactor
+14:58:07 Using proactor: IocpProactor
+14:58:08 Using proactor: IocpProactor
+14:58:09 Using proactor: IocpProactor
+14:58:59 KILLING THE PROCESSES []
+14:59:00 KILLING THE PROCESSES []
+14:59:00 KILLING THE PROCESSES []
+14:59:01 KILLING THE PROCESSES []
+14:59:01 KILLING THE PROCESSES []
