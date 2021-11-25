@@ -78,7 +78,7 @@ def pygame_thread():
     #Init and background
     pygame.init()
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode((2*sprite_screens_x_size, 1080))
+    screen = pygame.display.set_mode((2 * sprite_screens_x_size, 1080))
 
     background = pygame.image.load(path.join(resources_path, 'Background_3820_1080.png'))
 
