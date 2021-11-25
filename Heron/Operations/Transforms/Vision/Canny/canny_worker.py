@@ -17,6 +17,10 @@ from Heron.communication.transform_worker import TransformWorker
 worker_object: TransformWorker
 
 
+def initialise(worker_object):
+    return True
+
+
 def canny(data, parameters):
     global worker_object
 
@@ -48,5 +52,5 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_transform_worker_process(canny, on_end_of_life)
+    worker_object = gu.start_the_transform_worker_process(canny, on_end_of_life, initialise)
     worker_object.start_ioloop()
