@@ -12,43 +12,45 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.Operations.Transforms.Vision.Canny import canny_com
-from Heron.communication.transform_worker import TransformWorker
+from Heron.gui.visualisation import Visualisation
 
-worker_object: TransformWorker
+vis: Visualisation
 
 
 def initialise(worker_object):
+    global vis
+
+    vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.visualisation_init()
     return True
 
 
 def canny(data, parameters):
-    global worker_object
+    global vis
 
     try:
-        worker_object.visualisation_on = parameters[0]
+        vis.visualisation_on = parameters[0]
         min_val = parameters[1]
         max_val = parameters[2]
     except:
-        worker_object.visualisation_on = canny_com.ParametersDefaultValues[0]
+        vis.visualisation_on = canny_com.ParametersDefaultValues[0]
         min_val = canny_com.ParametersDefaultValues[1]
         max_val = canny_com.ParametersDefaultValues[2]
 
     message = data[1:]  # data[0] is the topic
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
     try:
-        worker_object.worker_visualisable_result = cv2.Canny(image, min_val, max_val)
+        vis.visualised_data = cv2.Canny(image, min_val, max_val)
     except:
-        worker_object.worker_visualisable_result = np.array((10, 10))
+        vis.visualised_data = np.array((10, 10))
         print('Canny {} operation failed'.format(worker_object.node_index))
 
-    worker_object.visualisation_loop_init()
-
-    return [worker_object.worker_visualisable_result]
+    return [vis.visualised_data]
 
 
 def on_end_of_life():
-    global worker_object
-    del worker_object
+    global vis
+    vis.kill()
 
 
 if __name__ == "__main__":

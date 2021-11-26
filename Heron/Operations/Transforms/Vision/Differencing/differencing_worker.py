@@ -11,21 +11,35 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron.Operations.Transforms.Vision.Differencing import differencing_com
+from Heron.gui.visualisation import Visualisation
+from Heron.communication.transform_worker import TransformWorker
 
-# Initialised in the start_the_worker_process function
-worker_object = None
+vis: Visualisation
+worker_object: TransformWorker
+
+
+def initialise(_worker_object):
+    global worker_object
+    global vis
+
+    worker_object = _worker_object
+    vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.visualisation_init()
+    return True
 
 
 def differencing(data, parameters):
+    global vis
     global worker_object
 
     topic = data[0].decode('ascii')
     message = data[1:]
+
     try:
-        worker_object.visualisation_on = parameters[0]
+        vis.visualisation_on = parameters[0]
         frame2_minus_frame1 = parameters[1]
     except:
-        worker_object.visualisation_on = differencing_com.ParametersDefaultValues[0]
+        vis.visualisation_on = differencing_com.ParametersDefaultValues[0]
         frame2_minus_frame1 = differencing_com.ParametersDefaultValues[1]
 
     image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
@@ -52,7 +66,7 @@ def differencing(data, parameters):
         worker_object.worker_result = np.random.random((100,100))
         print('Differencing {} failed. The frame buffer is empty.'.format(worker_object.node_index))
 
-    worker_object.visualisation_loop_init()
+    vis.visualised_data = worker_object.worker_result
 
     return [worker_object.worker_result]
 
@@ -62,5 +76,5 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_transform_worker_process(differencing, on_end_of_life)
+    worker_object = gu.start_the_transform_worker_process(differencing, on_end_of_life, initialise)
     worker_object.start_ioloop()

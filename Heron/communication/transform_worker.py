@@ -37,8 +37,8 @@ class TransformWorker:
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
-        self.visualisation_on = False
-        self.visualisation_thread = None
+        #self.visualisation_on = False
+        #self.visualisation_thread = None
         self.loops_on = True
         self.initialised = False
 
@@ -192,6 +192,7 @@ class TransformWorker:
             time.sleep(0.1)
         #print('--- Finished sending POL from {} {}'.format(self.node_name, self.node_index))
 
+    '''
     def set_new_visualisation_loop(self, new_visualisation_loop):
         """
         If a specific source_worker needs to do something else regarding visualisation then it needs to implement a
@@ -241,6 +242,7 @@ class TransformWorker:
             self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True)
             self.visualisation_on = True
             self.visualisation_thread.start()
+    '''
 
     def start_ioloop(self):
         """

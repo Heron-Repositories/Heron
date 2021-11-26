@@ -14,9 +14,7 @@ import threading
 import pprint as pp
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
-from Heron.communication.transform_worker import TransformWorker
 
-worker_object: TransformWorker
 visualisation_on: bool
 visualisation_type: str
 buffer: int
@@ -218,7 +216,6 @@ def on_resize_viewport():
 
 
 def visualise(msg, parameters):
-    global worker_object
     global visualisation_type
     global visualisation_on
     global data

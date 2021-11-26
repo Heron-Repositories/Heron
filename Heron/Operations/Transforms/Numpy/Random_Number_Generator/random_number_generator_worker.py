@@ -9,12 +9,11 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
 from Heron import general_utils as gu, constants as ct
-from Heron.communication.transform_worker import TransformWorker
 
-worker_object: TransformWorker
 
 def initialise(worker_object):
     return True
+
 
 def create_evaulation_string(parameters):
     function_name = parameters[1].split(':')[0]
