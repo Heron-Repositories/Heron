@@ -13,6 +13,7 @@ import cv2
 from scipy.ndimage import rotate
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
+from Heron.gui.visualisation import Visualisation
 
 need_parameters = True
 screen_image = []
@@ -25,7 +26,7 @@ overlay_image_pos = []
 screen_pos = []
 previous_angle = None
 show_inner_image: bool
-
+vis: Visualisation
 
 def screen_image_to_blue_with_red_spot():
     global image_width
@@ -162,6 +163,11 @@ def initialise(_worker_object):
     global overlay_image_pos
     global screen_pos
     global show_inner_image
+    global vis
+
+    vis = Visualisation(_worker_object.node_name, _worker_object.node_index)
+    vis.set_new_visualisation_loop(start_dpg_thread)
+    vis.visualisation_init()
 
     parameters = _worker_object.parameters
 
@@ -179,8 +185,8 @@ def initialise(_worker_object):
             overlayed_image = np.dstack(
                 (overlayed_image, overlayed_image, overlayed_image, np.ones((oi_image_height, oi_image_width))))
 
-        _worker_object.visualisation_on = True
-        _worker_object.visualisation_loop_init()
+        vis.visualisation_on = True
+        #_worker_object.visualisation_loop_init()
     except:
         return False
 
@@ -218,11 +224,13 @@ def update_output(data, parameters):
 
 
 def on_end_of_life():
-    pass
+    global vis
+
+    vis.kill()
 
 
 if __name__ == "__main__":
     worker_object = gu.start_the_sink_worker_process(work_function=update_output, end_of_life_function=on_end_of_life,
                                                      initialisation_function=initialise)
-    worker_object.set_new_visualisation_loop(start_dpg_thread)
+    #worker_object.set_new_visualisation_loop(start_dpg_thread)
     worker_object.start_ioloop()
