@@ -30,7 +30,7 @@ def start_user_input_capture(_worker_object):
 
     while loop_on:
         try:
-            worker_object.visualisation_on = worker_object.parameters[0]
+            visualisation_on = worker_object.parameters[0]
             latest_user_input = str(worker_object.parameters[1])
 
             if latest_user_input != '':
@@ -43,11 +43,11 @@ def start_user_input_capture(_worker_object):
                     except:
                         pass
 
-                if worker_object.visualisation_on:
+                if visualisation_on:
                     print(latest_user_input)
 
-                worker_object.worker_visualisable_result = np.array([latest_user_input])
-                worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+                result = np.array([latest_user_input])
+                worker_object.socket_push_data.send_array(result, copy=False)
                 latest_user_input = ''
                 worker_object.parameters[1] = latest_user_input
         except:

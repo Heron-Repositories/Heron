@@ -32,8 +32,8 @@ class SourceWorker:
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT
         self.running_thread = True
         self.loops_on = True
-        self.visualisation_on = False
-        self.visualisation_thread = None
+        #self.visualisation_on = False
+        #self.visualisation_thread = None
         self.initialised = False
 
         self.context = None
@@ -47,7 +47,7 @@ class SourceWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
-        self.worker_visualisable_result = None
+        #self.worker_visualisable_result = None
 
     def connect_socket(self):
         """

@@ -12,6 +12,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Input.Key_Press import key_press_com
 from Heron.communication.source_worker import SourceWorker
+from Heron.gui.visualisation import Visualisation
 from pynput.keyboard import Listener
 
 worker_object: SourceWorker
@@ -20,6 +21,8 @@ key_pressed_and_released = [None, None]
 previous_user_input = False
 loop_on = True
 new_input_for_vis = ''
+vis: Visualisation
+
 
 def on_key_pressed(key):
     global key_pressed_and_released
@@ -41,18 +44,17 @@ def on_key_released(key):
         new_input_for_vis = 'No special keys please'
 
 
-def visualisation_to_stdout():
-    global worker_object
+def visualisation_to_stdout(vis_object):
     global previous_user_input
     global key_pressed_and_released
     global new_input_for_vis
 
     while True:
-        while worker_object.visualisation_on:
+        while vis_object.visualisation_on:
             if new_input_for_vis:
                 print(new_input_for_vis)
-                if new_input_for_vis == worker_object.worker_visualisable_result:
-                    print('Outputing :{}'.format(worker_object.worker_visualisable_result))
+                if len(vis_object.visualised_data) == 1 and new_input_for_vis == vis_object.visualised_data[0]:
+                    print('Outputing :{}'.format(vis_object.visualised_data))
                 new_input_for_vis = False
 
 
@@ -61,9 +63,12 @@ def start_key_press_capture(_worker_object):
     global key_pressed_and_released
     global listener
     global loop_on
+    global vis
 
     worker_object = _worker_object
-    worker_object.set_new_visualisation_loop(visualisation_to_stdout)
+    vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.set_new_visualisation_loop(visualisation_to_stdout)
+    vis.visualisation_init()
     listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
     listener.start()
 
@@ -75,15 +80,14 @@ def start_key_press_capture(_worker_object):
 
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
-            worker_object.worker_visualisable_result = np.array([waiting_for_key])
-            worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+            vis.visualised_data = np.array([waiting_for_key])
+            worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
             key_pressed_and_released = [None, None]
         try:
-            worker_object.visualisation_on = worker_object.parameters[0]
+            vis.visualisation_on = worker_object.parameters[0]
         except:
-            worker_object.visualisation_on = key_press_com.ParametersDefaultValues[0]
+            vis.visualisation_on = key_press_com.ParametersDefaultValues[0]
 
-        worker_object.visualisation_loop_init()
         time.sleep(0.1)
 
 

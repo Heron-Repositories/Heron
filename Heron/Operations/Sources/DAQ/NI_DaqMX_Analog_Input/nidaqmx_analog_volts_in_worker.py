@@ -1,4 +1,7 @@
 
+# TODO: Waiting for dpg to correct the issue with closing down dpg in a thread (kills the process) to get this to work
+# properly
+
 import sys
 from os import path
 
@@ -13,6 +16,7 @@ import nidaqmx
 import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.DAQ.NI_DaqMX_Analog_Input import nidaqmx_analog_volts_in_com
+from Heron.gui.visualisation import Visualisation
 from Heron.communication.source_worker import SourceWorker
 
 acquiring_on = False
@@ -25,6 +29,7 @@ rate: int
 sample_mode: int
 dpg_ids = {}
 visualisation_thread_on = False
+vis: Visualisation
 
 
 def plot(data):
@@ -43,47 +48,39 @@ def plot(data):
 
 def plot_callback():
     global worker_object
+    global vis
     global window_showing
     global channels
     global dpg_ids
     global buffer_size
     global visualisation_thread_on
 
-    print('P1')
-    print(worker_object.visualisation_on)
     if visualisation_thread_on:
-        if worker_object.visualisation_on:
-            print('P2')
-            if not window_showing:
-                print('P3')
+        if vis.visualisation_on:
+            if not vis.window_showing:
                 dpg.show_item(dpg_ids['Visualisation'])
 
-                window_showing = True
+                vis.window_showing = True
                 for n in channels:
                     dpg.show_item(dpg_ids["Plot {}".format(n)])
                     dpg_ids['Series {}'.format(n)] = dpg.add_line_series(np.arange(buffer_size), np.arange(buffer_size),
                                                                         parent=dpg_ids['Voltage of {} / Volts'.format(n)])
 
-            if window_showing:
+            if vis.window_showing:
                 try:
                     if len(channels) == 1:
-                        plot([worker_object.worker_visualisable_result])
+                        plot([vis.visualised_data])
                     else:
-                        plot(worker_object.worker_visualisable_result)
+                        plot(vis.visualised_data)
                 except Exception as e:
                     print(e)
 
-        if not worker_object.visualisation_on and visualisation_thread_on == True:
-            print('P11')
-            window_showing = False
-            print('P12')
+        if not vis.visualisation_on and visualisation_thread_on == True:
+            vis.window_showing = False
             dpg.minimize_viewport()
-            print('P13')
-            #dpg.stop_dearpygui()
-            print('P14')
 
 
-def start_plotting_thread():
+def start_plotting_thread(vis_object):
     """
     The outside loop runs forever and blocks when the dpg.start_dearpygui() is called.
     When the plot_callback() calls dpg.stop_dearpygui() then it continues running forever until the
@@ -97,11 +94,10 @@ def start_plotting_thread():
     global visualisation_thread_on
 
     while True:
-        if worker_object.visualisation_on:
-            if not window_showing:
+        if vis_object.visualisation_on:
+            if not vis_object.window_showing:
                 dpg.create_context()
                 dpg.create_viewport(title='Visualising NIDAQ', width=820, height=780)
-                print('H1')
                 with dpg.window(label="Visualisation", width=800, height=750, show=False) \
                         as dpg_ids['Visualisation']:
                     for n in channels:
@@ -111,13 +107,11 @@ def start_plotting_thread():
                             dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
                         dpg_ids['Voltage of {} / Volts'.format(n)] = \
                             dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
-                print('H2')
                 dpg.set_viewport_resize_callback(on_resize_viewport)
                 dpg.setup_dearpygui()
                 dpg.show_viewport()
                 visualisation_thread_on = True
                 dpg.start_dearpygui()
-                print('H3')
                 dpg.destroy_context()
 
 
@@ -144,10 +138,13 @@ def acquire(_worker_object):
     global channels
     global rate
     global sample_mode
+    global vis
 
     worker_object = _worker_object
 
-    worker_object.set_new_visualisation_loop(start_plotting_thread)
+    vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.set_new_visualisation_loop(start_plotting_thread)
+    vis.visualisation_init()
 
     while not acquiring_on:
         try:
@@ -175,15 +172,13 @@ def acquire(_worker_object):
     task.start()
 
     while acquiring_on:
-        worker_object.worker_visualisable_result = np.array(task.read(number_of_samples_per_channel=buffer_size))
-        worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+        vis.visualised_data = np.array(task.read(number_of_samples_per_channel=buffer_size))
+        worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
 
         try:
-            worker_object.visualisation_on = worker_object.parameters[0]
+            vis.visualisation_on = worker_object.parameters[0]
         except:
-            worker_object.visualisation_on = nidaqmx_analog_volts_in_com.ParametersDefaultValues[0]
-
-        worker_object.visualisation_loop_init()
+            vis.visualisation_on = nidaqmx_analog_volts_in_com.ParametersDefaultValues[0]
 
         plot_callback()
 
@@ -192,9 +187,12 @@ def on_end_of_life():
     global task
     global figure
     global acquiring_on
+    global vis
 
     acquiring_on = False
     try:
+        vis.kill()
+
         task.stop()
         task.close()
         del task

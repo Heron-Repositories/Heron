@@ -23,9 +23,12 @@ def run_camera(worker_object):
     global vis
 
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.visualisation_init()
 
     if not acquiring_on:  # Get the parameters from the node
+
         while not acquiring_on:
+
             try:
                 cam_index = worker_object.parameters[1]
                 capture = cv2.VideoCapture(cam_index, cv2.CAP_DSHOW)
@@ -42,8 +45,6 @@ def run_camera(worker_object):
         except:
             vis.visualisation_on = camera_com.ParametersDefaultValues[0]
 
-        vis.visualisation_loop_update()
-
 
 def on_end_of_life():
     global capture
@@ -52,9 +53,8 @@ def on_end_of_life():
 
     acquiring_on = False
     try:
-        vis.kill()
         capture.release()
-        #cv2.destroyAllWindows()
+        vis.kill()
     except:
         pass
 

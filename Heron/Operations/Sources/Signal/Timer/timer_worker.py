@@ -19,8 +19,10 @@ delay_generator = None
 def constant(a, b, c):
     return a
 
+
 def uniform(a, b, c):
     return np.random.randint(a, b)
+
 
 def exponential(a, b, c):
     scale = 1/a
@@ -81,12 +83,12 @@ def run_timer(worker_object):
             gu.accurate_delay(1)
 
     while running:
-        worker_object.visualisation_on = worker_object.parameters[0]
-        worker_object.worker_visualisable_result = np.array([signal_out])
-        worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+        visualise = worker_object.parameters[0]
+        result = np.array([signal_out])
+        worker_object.socket_push_data.send_array(result, copy=False)
 
-        if worker_object.visualisation_on:
-            print(worker_object.worker_visualisable_result)
+        if visualise:
+            print(result)
 
         sleep_for = 1000 * delay_generator(a, b, c)
         gu.accurate_delay(sleep_for)

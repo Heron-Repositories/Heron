@@ -182,8 +182,8 @@ def run_camera(worker_object):
                     dst_width = sub_camera_scale * new_width
                     frame = resize(frame, dst_width)
 
-            worker_object.worker_visualisable_result = frame
-            worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+            #worker_object.worker_visualisable_result = frame
+            worker_object.socket_push_data.send_array(frame, copy=False)
 
             total_frame_time = total_frame_time + (datetime.now() - start).total_seconds()
 

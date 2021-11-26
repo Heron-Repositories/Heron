@@ -14,10 +14,12 @@ import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Spinnaker_Camera import spinnaker_camera_com
 from Heron.communication.source_worker import SourceWorker
+from Heron.gui.visualisation import Visualisation
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 worker_object: SourceWorker
 cam: CameraPtr
+vis: Visualisation
 
 acquiring_on = False
 fps = 0
@@ -205,24 +207,22 @@ def grab_frame():
     return image_data
 
 
-def new_visualisation():
-    global worker_object
-    window_showing = False
+def new_visualisation(vis_object):
 
-    aspect_ratio = worker_object.worker_visualisable_result.shape[0] / worker_object.worker_visualisable_result.shape[1]
+    aspect_ratio = vis_object.visualised_data.shape[0] / vis_object.visualised_data.shape[1]
     width = 400
     height = int(width * aspect_ratio)
-    while True:
-        while worker_object.visualisation_on:
-            if not window_showing:
-                window_name = '{} {}'.format(worker_object.node_name, worker_object.node_index)
+    while vis_object.running:
+        while vis_object.visualisation_on:
+            if not vis_object.window_showing:
+                window_name = '{} {}'.format(vis_object.node_name, vis_object.node_index)
                 cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                cv2.imshow(window_name, worker_object.worker_visualisable_result)
+                cv2.imshow(window_name, vis_object.visualised_data)
                 cv2.waitKey(1)
-                window_showing = True
-            if window_showing and worker_object.worker_visualisable_result is not None:
+                vis_object.window_showing = True
+            if vis_object.window_showing and vis_object.visualised_data is not None:
                 try:
-                    image = cv2.cvtColor(worker_object.worker_visualisable_result, cv2.COLOR_BAYER_RG2RGB)
+                    image = cv2.cvtColor(vis_object.visualised_data, cv2.COLOR_BAYER_RG2RGB)
                     image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
                     cv2.imshow(window_name, image)
                     cv2.waitKey(1)
@@ -230,15 +230,20 @@ def new_visualisation():
                     print(e)
         cv2.destroyAllWindows()
         cv2.waitKey(1)
-        window_showing = False
+        vis_object.window_showing = False
 
 
 def run_spinnaker_camera(_worker_object):
     global acquiring_on
     global worker_object
+    global vis
+
     worker_object = _worker_object
+    vis = Visualisation(worker_object.node_name, worker_object.node_index)
+    vis.set_new_visualisation_loop(new_visualisation)
+    vis.visualisation_init()
+
     cam_index = None
-    worker_object.set_new_visualisation_loop(new_visualisation)
 
     # Get the parameters from the node
     while not acquiring_on:
@@ -258,22 +263,23 @@ def run_spinnaker_camera(_worker_object):
 
     # The infinite loop that does the frame capture and push to the output of the node
     while acquiring_on:
-        worker_object.worker_visualisable_result = grab_frame()
-        if worker_object.worker_visualisable_result is not None:
-            worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+        vis.visualised_data = grab_frame()
+        if vis.visualised_data is not None:
+            worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
 
             try:
-                worker_object.visualisation_on = worker_object.parameters[0]
+                vis.visualisation_on = worker_object.parameters[0]
             except:
-                worker_object.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
-
-            worker_object.visualisation_loop_init()
+                vis.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
 
 
 def on_end_of_life():
     global cam
     global acquiring_on
+    global vis
     try:
+        vis.kill()
+
         acquiring_on = False
         gu.accurate_delay(500)
         cam.EndAcquisition()
