@@ -221,10 +221,10 @@ def start_the_source_communications_process(node_attribute_type, node_attribute_
     return com_object
 
 
-def start_the_source_worker_process(worker_function, end_of_life_function, initialisation_function=None):
+def start_the_source_worker_process(work_function, end_of_life_function, initialisation_function=None):
     """
     Creates a SourceWorker for a worker_exec process of a Source
-    :param worker_function:
+    :param work_function:
     :return:
     """
     port, parameters_topic, _, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, ssh_local_password =\
@@ -240,7 +240,7 @@ def start_the_source_worker_process(worker_function, end_of_life_function, initi
     worker_object.connect_socket()
     worker_object.start_heartbeat_thread()
     worker_object.start_parameters_thread()
-    worker_function(worker_object)
+    work_function(worker_object)
 
 
 def start_the_transform_communications_process(node_attribute_type, node_attribute_names):

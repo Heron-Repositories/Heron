@@ -92,6 +92,5 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(worker_function=arduino_data_capture,
-                                       end_of_life_function=on_end_of_life,
+    gu.start_the_source_worker_process(work_function=arduino_data_capture, end_of_life_function=on_end_of_life,
                                        initialisation_function=initialise)
