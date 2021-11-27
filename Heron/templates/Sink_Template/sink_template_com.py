@@ -29,11 +29,11 @@ Properties of the generated Node
 """
 BaseName = 'Sink Template'  # The base name can have spaces.
 
-NodeAttributeNames = ['Parameters', 'Signal Out']  # The names of all the inputs and outputs of the Node. If the Node
+NodeAttributeNames = ['Parameters', 'Signal 1 In', 'Signal 2 In']  # The names of all the inputs and outputs of the Node. If the Node
 # has any parameters then the first name has to be Parameters. This is neither an input or an output but provides space
 # on the Node to show parameter widgets
 
-NodeAttributeType = ['Static', 'Output']  # Whether the above names are outputs or inputs. A Sink can only have Outputs.
+NodeAttributeType = ['Static', 'Input', 'Input']  # Whether the above names are outputs or inputs. A Sink can only have Outputs.
 # Currently a Sink can only have a single Output. In the future multiple Outputs will be allowed.
 # If the first attribute name is Parameters then the first attribute type must be Static (i.e. neither an Output nor
 # and Input.
@@ -62,7 +62,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'sink_template_wor
 #  You can refactor the name of the xxx_com variable but do not change anything else">
 if __name__ == "__main__":
     #  In this case refactor the name sink_template_com to whatever_com
-    sink_template_com = gu.start_the_source_communications_process(NodeAttributeType, NodeAttributeNames)
+    sink_template_com = gu.start_the_sink_communications_process()
     gu.register_exit_signals(sink_template_com.on_kill)
     sink_template_com.start_ioloop()
 # </editor-fold>
