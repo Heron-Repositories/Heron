@@ -186,7 +186,6 @@ def initialise(_worker_object):
                 (overlayed_image, overlayed_image, overlayed_image, np.ones((oi_image_height, oi_image_width))))
 
         vis.visualisation_on = True
-        #_worker_object.visualisation_loop_init()
     except:
         return False
 
@@ -232,5 +231,4 @@ def on_end_of_life():
 if __name__ == "__main__":
     worker_object = gu.start_the_sink_worker_process(work_function=update_output, end_of_life_function=on_end_of_life,
                                                      initialisation_function=initialise)
-    #worker_object.set_new_visualisation_loop(start_dpg_thread)
     worker_object.start_ioloop()
