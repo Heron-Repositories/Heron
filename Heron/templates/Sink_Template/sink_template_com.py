@@ -29,17 +29,16 @@ Properties of the generated Node
 """
 BaseName = 'Sink Template'  # The base name can have spaces.
 
-NodeAttributeNames = ['Parameters', 'Signal 1 In', 'Signal 2 In']  # The names of all the inputs and outputs of the Node. If the Node
-# has any parameters then the first name has to be Parameters. This is neither an input or an output but provides space
-# on the Node to show parameter widgets
+NodeAttributeNames = ['Parameters', 'Signal 1 In', 'Signal 2 In']  # The names of all the inputs to the Node.
+# If the Node has any parameters then the first name has to be Parameters. This is neither an input or an output but
+# provides space on the Node to show parameter widgets.
 
-NodeAttributeType = ['Static', 'Input', 'Input']  # Whether the above names are outputs or inputs. A Sink can only have Outputs.
-# Currently a Sink can only have a single Output. In the future multiple Outputs will be allowed.
-# If the first attribute name is Parameters then the first attribute type must be Static (i.e. neither an Output nor
-# and Input.
+NodeAttributeType = ['Static', 'Input', 'Input']  # Whether the above names are outputs or inputs. A Sink can only have
+# Inputs. Sinks allow multiple inputs. If the first attribute name is Parameters then the first attribute type must be
+# Static (i.e. neither an Output nor and Input).
 
-ParameterNames = ['Visualisation', 'Parameter 1', 'Parameter 2', 'Parameter 3', 'Parameter 4']  # If there are parameters then
-# write their names here. If there are not make an empty list (i.e. ParameterNames = [])
+ParameterNames = ['Visualisation', 'Parameter 1', 'Parameter 2', 'Parameter 3', 'Parameter 4']  # If there are
+# parameters then write their names here. If there are not make an empty list (i.e. ParameterNames = [])
 
 ParameterTypes = ['bool', 'str', 'list', 'float', 'int']  # The types of the parameters (in string form).
 # types allowed are: 'bool', 'str', 'list', 'int' and 'float'. Again for no parameters make an empty list.
@@ -53,7 +52,7 @@ ParametersDefaultValues = [False,
 # have when first created into the Node Editor. Parameter of 'list' type become drop down menus and the list of their
 # default values becomes the drop down menu items. The Node by default uses the first item (so the order matters).
 
-# The following line needs to e
+# The following line needs to exist with the correct name for the xxx_worker.py script
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'sink_template_worker.py')
 # </editor-fold>
 

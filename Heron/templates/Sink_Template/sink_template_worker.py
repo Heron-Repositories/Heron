@@ -14,6 +14,7 @@ sys.path.insert(0, path.dirname(current_dir))
 # </editor-fold>
 
 # <editor-fold desc="Extra imports if required">
+import numpy as np
 from Heron.communication.socket_for_serialization import Socket
 from Heron.gui.visualisation import Visualisation
 from Heron import general_utils as gu
@@ -31,6 +32,7 @@ global_var_4: int
 # The following global is useful if you need a updatable visualisation window in the Node
 vis: Visualisation
 # </editor-fold>
+
 
 # The initialise function is called when the worker process is fired up from the com process and it gets called
 # as long as it is returning False. It gets passed the worker_object which carries the parameters from the GUI so it is
@@ -74,7 +76,7 @@ def initialise(_worker_object):
 # Graph pipeline is running.
 # The data is a list with two items. The first is the topic of the connection. If the Node has multiple Inputs then
 # the topic will tell you which Input the data packet arrived from.
-def running(data, parameters):
+def work_function(data, parameters):
     global global_var_1
     global global_var_2
     global global_var_3
@@ -107,9 +109,13 @@ def running(data, parameters):
         vis.visualisation_on = parameters[0]
     except:
         pass
-    # In the case of multiple inputs the topic will tell you which input the message has come from
+    # In the case of multiple inputs the topic will tell you which input the message has come from. The topic is a
+    # string that is formatted as follows:
+    # previous_node_name##previous_node_index##previous_node_output_name -> this_none_name##this_node_index##this_node_input_name
+    # so you can see which input the data is coming from by looking at the ##this_node_input_name part. Also although
+    # the names of the inputs and outputs can have spaces, these become underscores in the names of the topics.
     topic = data[0]
-    print(topic)
+    print(topic)  # prints will not work if the operation is running on a different computer.
 
     # The message is a numpy array send in two parts, a header dic (as bytes0 with the array's info and list of bytes
     # that carry the array's payload.
@@ -118,24 +124,26 @@ def running(data, parameters):
     # that comes in into the numpy array that it is.
 
     # Now do stuff
-    print(message)
+    print(message.shape)
+
+    # Whatever data the Node must visualise should be put in the vis.visualised_data variable
+    vis.visualised_data = np.random.random((100,100))
 
     # This function does not return anything.
 
 
-
+# The on_end_of_life function must exist even if it is just a pass
 def on_end_of_life():
-    global need_parameters
     global vis
 
     # If using in Node visualisation then the vis object must be cleared here like this
     vis.kill()
-    need_parameters = False
+
 
 # This needs to exist. The worker_function and the end_of_life function must be defined and passed. The initialisation_
 # function is optional.
 if __name__ == "__main__":
-    worker_object = gu.start_the_sink_worker_process(work_function=running,
+    worker_object = gu.start_the_sink_worker_process(work_function=work_function,
                                                      end_of_life_function=on_end_of_life,
                                                      initialisation_function=initialise)
     worker_object.start_ioloop()
