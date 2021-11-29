@@ -43,7 +43,7 @@ def canny(data, parameters):
         vis.visualised_data = cv2.Canny(image, min_val, max_val)
     except:
         vis.visualised_data = np.array((10, 10))
-        print('Canny {} operation failed'.format(worker_object.node_index))
+        print('Canny operation failed')
 
     return [vis.visualised_data]
 
