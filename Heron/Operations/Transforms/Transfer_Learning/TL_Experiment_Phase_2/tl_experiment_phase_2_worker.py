@@ -19,6 +19,7 @@ from Heron import constants as ct
 reward_on_poke: bool
 movement_type: bool
 trap_on: bool
+max_distance_to_target: int
 speed: float
 angles_of_visuals: np.empty(3)
 initial_angle_of_manipulandum: int
@@ -32,13 +33,13 @@ experiment_state = ExperimentState.PokeOut
 number_of_pellets = 1
 #end_trial_in_the_next_ms = 0
 #millis_to_wait_from_poke_empty_to_end_trial = 500
-worker_object: TransformWorker
 
 
 def initialise(_worker_object):
     global reward_on_poke
     global movement_type
     global trap_on
+    global max_distance_to_target
     global speed
     global number_of_pellets
     global worker_object
@@ -46,9 +47,9 @@ def initialise(_worker_object):
         parameters = _worker_object.parameters
         reward_on_poke = parameters[0]
         trap_on = parameters[1]
-        speed = parameters[2]
-        number_of_pellets = parameters[3]
-        worker_object = _worker_object
+        max_distance_to_target = parameters[2]
+        speed = parameters[3]
+        number_of_pellets = parameters[4]
     except Exception as e:
         print(e)
         return False
@@ -59,6 +60,7 @@ def initialise(_worker_object):
 def initialise_trial():
     global angles_of_visuals
     global initial_angle_of_manipulandum
+    global max_distance_to_target
     global up_or_down
     global experiment_state
 
@@ -66,11 +68,11 @@ def initialise_trial():
     initial_angle_of_manipulandum = manipulandum
     up_or_down = np.random.binomial(n=1, p=0.5)
     if up_or_down:
-        target = np.random.randint(manipulandum + 11, 0)
+        target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
         trap = np.random.randint(-90, manipulandum - 9)
     else:
         trap = np.random.randint(manipulandum + 11, 0)
-        target = np.random.randint(-90, manipulandum - 9)
+        target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
     angles_of_visuals = np.array([manipulandum, target, trap])
 
 
@@ -92,13 +94,15 @@ def update_of_visuals(lever_pressed_time):
             if new_position < angles_of_visuals[0] and trap_on:  # If the wrong lever was pressed and the trap is on
                     angles_of_visuals[0] = new_position
 
-        elif np.abs(angles_of_visuals[0] - angles_of_visuals[1]) < np.abs(angles_of_visuals[0] - angles_of_visuals[2]):  # If the manipulandum reached the target
+        elif angles_of_visuals[0] > angles_of_visuals[1] - 3:  # If the manipulandum reached the target
             experiment_state = ExperimentState.PokeIn_Finished_Sucess
-        else:  # If the manipulandum reached the trap
+            print(0, new_position, angles_of_visuals)
+        elif angles_of_visuals[0] < angles_of_visuals[2] + 3:  # If the manipulandum reached the trap
             experiment_state = ExperimentState.PokeIn_Finished_Failure
+            print(0, new_position, angles_of_visuals[0])
 
     else:  # If the target is under (right) of the manipulandum do as before with reversed movement
-        if new_position in np.arange(angles_of_visuals[1], angles_of_visuals[2]): # If the manipulandum still hasn't reached either the target or the trap
+        if new_position in np.arange(angles_of_visuals[1], angles_of_visuals[2]):  # If the manipulandum still hasn't reached either the target or the trap
             experiment_state = ExperimentState.PokeIn_Running
             if new_position < angles_of_visuals[0]:  # If the correct lever was pressed
                     angles_of_visuals[0] = new_position
@@ -106,10 +110,12 @@ def update_of_visuals(lever_pressed_time):
             if new_position > angles_of_visuals[0] and trap_on:  # If the wrong lever was pressed and the trap is on
                     angles_of_visuals[0] = new_position
 
-        elif np.abs(angles_of_visuals[0] - angles_of_visuals[1]) < np.abs(angles_of_visuals[0] - angles_of_visuals[2]):  # If the manipulandum reached the target
+        elif angles_of_visuals[0] < angles_of_visuals[1] + 3:  # If the manipulandum reached the target
             experiment_state = ExperimentState.PokeIn_Finished_Sucess
-        else:  # If the manipulandum reached the trap
+            print(1, new_position, angles_of_visuals)
+        elif angles_of_visuals[0] > angles_of_visuals[2] - 3:  # If the manipulandum reached the trap
             experiment_state = ExperimentState.PokeIn_Finished_Failure
+            print(1, new_position, angles_of_visuals[0])
 
 
 def experiment(data, parameters):
@@ -125,72 +131,55 @@ def experiment(data, parameters):
     except:
         pass
 
-    topic = data[0].decode('utf-8')
     message = data[1:]  # data[0] is the topic
     message = Socket.reconstruct_array_from_bytes_message(message)
+    # The first element of the array is whether the rat is in the poke. The second is the milliseconds it has been
+    # pressing either the left or the right lever (one is positive the other negative). It is 0 is the rat is not
+    # pressing a lever
     poke_on = message[0]
     lever_press_time = message[1]
 
-    # 1. If the topic is 'Trial end' that means that the poke has not send a message for the last
-    # millis_to_wait_from_poke_empty_to_end_trial milliseconds so send to the TL Task2 Screens Node a False
-    # to tell it to turn off the visuals.
-    #if topic == 'Trial end':
-    #    #print('Trial end')
-    #    return [np.array([0]), np.array([ct.IGNORE])]
+    result = [np.array([ct.IGNORE]), np.array([ct.IGNORE])]
 
-    # 2. If there is a signal and the topic is not 'Trial end', that means the rat is in the poke.
-    # 2. a. If the reward_on_poke is on then tell the screens to turn on and the poke controller
+    # 1. If the reward_on_poke is on then
+    # 1. a. If the rat is in the poke then tell the screens to turn on and the poke controller
     # to deliver number_of_pellets (assuming the TL Poke Controller Trigger String is set to 'number').
-    # Also (re)set the end_trial_in_the_next_ms to millis_to_wait_from_poke_empty_to_end_trial (since the poke is
-    # still giving signal).
-    # 2. b. If the reward_on_poke is off then:
-    # 2. b. i. If the trial has finished successfully then turn off the screens, do not update the
-    # end_trial_in_the_next_ms and give reward (the reward signal will be send multiple times but that is ok).
-    # 2. b. ii. If the trial has finished unsuccessfully then turn off the screens and do not update the
-    # end_trial_in_the_next_ms.
-    # 2. b. iii. If the trial just started then put the state to running, update the end_trial_in_the_next_ms and
-    # initialise the visuals.
+    # 1. b. If the rat is not in the poke turn the screens off and do not send a message to the poke controller
+    # 2. If the reward_on_poke is off then:
+    # 2. a. If the rat i snot in the poke then as above and send the experiment_state to PokeOut
+    # 2. b. If the rat is in the poke then:
+    # 2. b. i. If the trial has finished successfully then turn off the screens and deliver number_of_pellets (if the
+    # reward poke is in availability mode it will ignore any further commands to deliver reward)
+    # 2. b. ii. If the trial has finished unsuccessfully then turn off the screens and do not send anything to the poke
+    # 2. b. iii. If the trial just started then put the state to running, initialise the visuals and update the screens.
     # 2. b. iv. If the trial was running then update the visuals
     # In cases iii. and iv. send the visuals
-    print(experiment_state.name, message)
     if reward_on_poke:
         if poke_on:
-            #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
-            #print('2a')
-            return [np.array([True]), np.array([number_of_pellets])]
+            result = [np.array([True]), np.array([number_of_pellets])]
         else:
-            return [np.array([False]), np.array([ct.IGNORE])]
+            result = [np.array([False]), np.array([ct.IGNORE])]
     else:
         if not poke_on:
             experiment_state = ExperimentState.PokeOut
-            return [np.array([False]), np.array([ct.IGNORE])]
+            result = [np.array([False]), np.array([ct.IGNORE])]
         else:
             if experiment_state == ExperimentState.PokeIn_Finished_Sucess:
-                #print('2b i')
-                #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
-                return [np.array([False]), np.array([number_of_pellets])]
+                result = [np.array([False]), np.array([number_of_pellets])]
 
-            if experiment_state == ExperimentState.PokeIn_Finished_Failure:
-                #print('2b ii')
-                #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
-                return [np.array([False]), np.array([ct.IGNORE])]
+            elif experiment_state == ExperimentState.PokeIn_Finished_Failure:
+                result = [np.array([False]), np.array([ct.IGNORE])]
 
-            if experiment_state == ExperimentState.PokeOut:
-                #print('2b iii')
-                #print('---- {} ----'.format(experiment_state.name))
+            elif experiment_state == ExperimentState.PokeOut:
                 initialise_trial()
-                #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
                 experiment_state = ExperimentState.PokeIn_Running
-                return [angles_of_visuals, np.array([ct.IGNORE])]
-            if experiment_state == ExperimentState.PokeIn_Running:
-                #print('2b iv')
-                #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
+                result = [angles_of_visuals, np.array([ct.IGNORE])]
+            elif experiment_state == ExperimentState.PokeIn_Running:
                 experiment_state = ExperimentState.PokeIn_Running
                 update_of_visuals(lever_press_time)
-                return [angles_of_visuals, np.array([ct.IGNORE])]
+                result = [angles_of_visuals, np.array([ct.IGNORE])]
 
-        #end_trial_in_the_next_ms = millis_to_wait_from_poke_empty_to_end_trial
-
+    return result
 
 
 def on_end_of_life():
