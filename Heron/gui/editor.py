@@ -20,6 +20,7 @@ import dearpygui.dearpygui as dpg
 
 operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
+
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6000
 nodes_list = []
@@ -120,15 +121,17 @@ def on_link(sender, link):
     """
     global links_dict
 
-    link_id = dpg.add_node_link(link[0], link[1], parent=sender, user_data={})
     link0_name = dpg.get_item_label(link[0])
     link1_name = dpg.get_item_label(link[1])
 
     if link0_name in links_dict:
         inputs = links_dict[link0_name]
-        inputs.append(link1_name)
+        if link1_name not in links_dict[link0_name]:
+            inputs.append(link1_name)
     else:
         inputs = [link1_name]
+
+    link_id = dpg.add_node_link(link[0], link[1], parent=sender, user_data={})
 
     links_dict[link0_name] = inputs
 
@@ -312,6 +315,11 @@ def save_graph():
     def on_file_select(sender, app_data, user_data):
         global links_dict
 
+        def removekey(d, key):
+            r = copy.deepcopy(d)
+            del r[key]
+            return r
+
         save_to = app_data['file_path_name']
         node_dict = {}
         for n in nodes_list:
@@ -323,10 +331,12 @@ def save_graph():
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
 
         try:
-            del node_dict['links']
+            node_dict = removekey(node_dict, 'links')
         except:
             pass
+
         node_dict['links'] = links_dict
+
         with open(save_to, 'w+') as file:
             json.dump(node_dict, file, indent=4)
 
