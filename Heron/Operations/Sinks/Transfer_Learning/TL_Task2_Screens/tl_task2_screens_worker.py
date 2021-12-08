@@ -15,22 +15,22 @@ from Heron.communication.socket_for_serialization import Socket
 
 pg_thread_running = False
 resources_path = path.join(current_dir, 'Operations', 'Sinks', 'Transfer_Learning', 'TL_Task2_Screens')
-screens: str
+monitors: str
 sprites: dict
 rotation: bool
-show_sprites = False
+screen_colour: int
 main_screen_x_size = 2561
 sprite_screens_x_size = 1980
 
 
 def initialise(_worker_object):
-    global screens
+    global monitors
     global rotation
     global pg_thread_running
 
     try:
         parameters = _worker_object.parameters
-        screens = parameters[0]
+        monitors = parameters[0]
         rotation = parameters[1]
     except Exception as e:
         print(e)
@@ -71,42 +71,51 @@ class Sprite(pygame.sprite.Sprite):
 
 def pygame_thread():
     global pg_thread_running
-    global screens
+    global monitors
     global sprites
     global rotation
+    global screen_colour
 
     #Init and background
     pygame.init()
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((2 * sprite_screens_x_size, 1080))
 
-    background = pygame.image.load(path.join(resources_path, 'Background_3820_1080.png'))
+    #background = pygame.image.load(path.join(resources_path, 'Black_Background_3820_1080.png'))
 
     #Sprites
     sprite_y_pos = 600
     sprite_x_pos = 600
-    sprites = {'left manipulandum': Sprite(sprite_x_pos, sprite_y_pos, 'Manipulandum.png'),
-               'top manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, 'Manipulandum.png'),
-               'left target': Sprite(sprite_x_pos, sprite_y_pos, 'Target.png'),
-               'top target': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, 'Target.png'),
-               'left trap': Sprite(sprite_x_pos, sprite_y_pos, 'Trap.png'),
-               'top trap': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, 'Trap.png')}
+    manipulandum_file_name = 'Manipulandum_S.png'
+    if rotation:
+        target_file_name = 'Target_S.png'
+        trap_file_name = 'Trap_S.png'
+    else:
+        target_file_name = 'Target_Dot.png'
+        trap_file_name = 'Trap_Dot.png'
+
+    sprites = {'left manipulandum': Sprite(sprite_x_pos, sprite_y_pos, manipulandum_file_name),
+               'top manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, manipulandum_file_name),
+               'left target': Sprite(sprite_x_pos, sprite_y_pos, target_file_name),
+               'top target': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, target_file_name),
+               'left trap': Sprite(sprite_x_pos, sprite_y_pos, trap_file_name),
+               'top trap': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, trap_file_name)}
 
     sprites_group = pygame.sprite.Group()
     if rotation:
-        if screens == 'Top':
+        if monitors == 'Top':
             sprites_group.add(sprites['top target'])
             sprites_group.add(sprites['top trap'])
             sprites['top trap'].rotate(-90)
             sprites_group.add(sprites['top manipulandum'])
             sprites['top manipulandum'].rotate(-45)
-        if screens == 'Left':
+        if monitors == 'Left':
             sprites_group.add(sprites['left target'])
             sprites_group.add(sprites['left trap'])
             sprites['left trap'].rotate(-90)
             sprites_group.add(sprites['left manipulandum'])
             sprites['left manipulandum'].rotate(-45)
-        if screens == 'Both':
+        if monitors == 'Both':
             sprites_group.add(sprites['top target'])
             sprites_group.add(sprites['top trap'])
             sprites['top trap'].rotate(-90)
@@ -118,19 +127,19 @@ def pygame_thread():
             sprites_group.add(sprites['left manipulandum'])
             sprites['left manipulandum'].rotate(-45)
     else:
-        if screens == 'Top':
+        if monitors == 'Top':
             sprites_group.add(sprites['top target'])
             sprites_group.add(sprites['top trap'])
             sprites['top trap'].translate_x(sprite_screens_x_size + 50)
             sprites_group.add(sprites['top manipulandum'])
             sprites['top manipulandum'].translate_x(sprite_screens_x_size + 300)
-        if screens == 'Left':
+        if monitors == 'Left':
             sprites_group.add(sprites['left target'])
             sprites_group.add(sprites['left trap'])
             sprites['left trap'].translate_x(50)
             sprites_group.add(sprites['left manipulandum'])
             sprites['left manipulandum'].translate_x(300)
-        if screens == 'Both':
+        if monitors == 'Both':
             sprites_group.add(sprites['top target'])
             sprites_group.add(sprites['top trap'])
             sprites['top trap'].translate_x(sprite_screens_x_size + 50)
@@ -147,14 +156,20 @@ def pygame_thread():
     while pg_thread_running:
         pygame.event.pump()  # I am not doing anything with events but a call to the event queue must be done
                              # otherwise pygame freezes
-        screen.fill([255, 0, 0])
-        if show_sprites:
-            sprites_group.draw(screen)
-        else:
-            sprites_group.clear(screen, background)
 
-        pygame.display.update()
-        clock.tick(60)
+        try:
+            screen.fill([screen_colour, 0, 0])
+
+            if show_sprites:
+                sprites_group.draw(screen)
+            else:
+                pass
+                #sprites_group.clear(screen, background)
+
+            pygame.display.update()
+            clock.tick(60)
+        except:
+            pass
 
     pygame.quit()
 
@@ -163,13 +178,20 @@ def update_output(data, parameters):
     global sprites
     global show_sprites
     global sprites_to_hide_in_ms
+    global screen_colour
 
     topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
 
-    if len(message) == 3:
+    if len(message) == 4:
+
+        screen_colour = 255
+
+        #are_levers_pressed = message[0]
+
+        #if are_levers_pressed:
         if rotation:
-            angle_man, angle_target, angle_trap = int(message[0]), int(message[1]), int(message[2])
+            angle_man, angle_target, angle_trap = int(message[1]), int(message[2]), int(message[3])
             try:
                 for man_keys in sprites:
                     if 'manipulandum' in man_keys:
@@ -183,8 +205,9 @@ def update_output(data, parameters):
         else:
             try:
                 for man_keys in sprites:
-                    trans_man, trans_target, trans_trap = int(-1200 / 90 * message[0]), int(-1200 / 90 * message[1]), \
-                                                          int(-1200 / 90 * message[2])
+                    trans_man = int(-1200 / 90 * message[1]) + 50
+                    trans_target = int(-1200 / 90 * message[2]) + 50
+                    trans_trap = int(-1200 / 90 * message[3]) + 50
                     if 'top' in man_keys:
                         trans_man += sprite_screens_x_size
                         trans_target += sprite_screens_x_size
@@ -199,7 +222,11 @@ def update_output(data, parameters):
                 pass
         show_sprites = True
     elif len(message) == 1:
-        show_sprites = message[0]
+        if message[0]:
+            screen_colour = 255
+        else:
+            screen_colour = 0
+        show_sprites = False
 
 
 def on_end_of_life():

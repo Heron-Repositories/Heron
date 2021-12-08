@@ -7,49 +7,62 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
-#import threading
+import copy
 import numpy as np
-#import zmq
 from enum import Enum
 from Heron.communication.socket_for_serialization import Socket
-from Heron.communication.transform_worker import TransformWorker
 from Heron import general_utils as gu
 from Heron import constants as ct
 
 reward_on_poke: bool
+reward_on_poke_delay: float
 movement_type: bool
 trap_on: bool
 max_distance_to_target: int
 speed: float
-angles_of_visuals: np.empty(3)
+angles_of_visuals: np.empty(4)  # 0th number is if any lever is pressed, 1st is the angle of the manipulandum, 3rd and
+# 4th the angles of the target and trap respectively
 initial_angle_of_manipulandum: int
 up_or_down: bool
+
+
 class ExperimentState(Enum):
     PokeOut = 1
     PokeIn_Running = 2
-    PokeIn_Finished_Sucess = 3
-    PokeIn_Finished_Failure = 4
+    PokeIn_OnTarget = 3
+    PokeIn_Finished_Sucess = 4
+    PokeIn_Finished_Failure = 5
+
+
 experiment_state = ExperimentState.PokeOut
 number_of_pellets = 1
-#end_trial_in_the_next_ms = 0
-#millis_to_wait_from_poke_empty_to_end_trial = 500
+_100ms_time_steps_counter = 20  # When an animal takes its snout out of poke then the experiment counts how many time steps
+# of 100 ms the animal is out of poke. If that number crosses a threshold then the trial aborts
+on_target = 0  # When the manipulandum reaches the target then the animal must release the lever. This variable holds
+# how many time steps of 100 ms the manipulandum has remained unmoving on target and reward is provided only if this
+# crosses a threshold
+time_on_target = 5
+error = 3
 
 
 def initialise(_worker_object):
     global reward_on_poke
+    global reward_on_poke_delay
     global movement_type
     global trap_on
     global max_distance_to_target
     global speed
     global number_of_pellets
     global worker_object
+
     try:
         parameters = _worker_object.parameters
         reward_on_poke = parameters[0]
-        trap_on = parameters[1]
-        max_distance_to_target = parameters[2]
-        speed = parameters[3]
-        number_of_pellets = parameters[4]
+        reward_on_poke_delay = parameters[1]
+        trap_on = parameters[2]
+        max_distance_to_target = parameters[3]
+        speed = parameters[4]
+        number_of_pellets = parameters[5]
     except Exception as e:
         print(e)
         return False
@@ -67,117 +80,200 @@ def initialise_trial():
     manipulandum = np.random.randint(-80, -10)
     initial_angle_of_manipulandum = manipulandum
     up_or_down = np.random.binomial(n=1, p=0.5)
-    if up_or_down:
-        target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
-        trap = np.random.randint(-90, manipulandum - 9)
-    else:
-        trap = np.random.randint(manipulandum + 11, 0)
-        target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
-    angles_of_visuals = np.array([manipulandum, target, trap])
+
+    try:
+        if up_or_down:
+            target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
+            trap = np.random.randint(-90, manipulandum - 9)
+        else:
+            trap = np.random.randint(manipulandum + 11, 0)
+            target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
+    except:
+        if up_or_down:
+            target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
+            trap = np.random.randint(-90, manipulandum - 9)
+        else:
+            trap = np.random.randint(manipulandum + 11, 0)
+            target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
+    pass
+
+    angles_of_visuals = np.array([0, manipulandum, target, trap])
+    #angles_of_visuals = angles_of_visuals -(np.max(angles_of_visuals[1:]) + 90)
+    angles_of_visuals = angles_of_visuals - np.max(angles_of_visuals[1:])
+    initial_angle_of_manipulandum = copy.copy(angles_of_visuals[1])
+    angles_of_visuals[0] = 0
 
 
 def update_of_visuals(lever_pressed_time):
     global angles_of_visuals
     global experiment_state
+    global on_target
+    global error
+    global time_on_target
 
     new_position = int(initial_angle_of_manipulandum + speed * lever_pressed_time / 1000)
 
+    # If the rat is not pressing a lever
     if lever_pressed_time == 0:
-        angles_of_visuals[0] = initial_angle_of_manipulandum
 
-    if up_or_down:  # If the target is over (left) of the rotating (translating) manipulandum
-        if new_position in np.arange(angles_of_visuals[2], angles_of_visuals[1]):  # If the manipulandum still hasn't reached either the target or the trap
+        # If the manipulandum has reached the target
+        if experiment_state == ExperimentState.PokeIn_OnTarget:
+            on_target += 1
+
+            # If the manipulandum has stayed on the target long enough
+            if on_target > time_on_target:
+
+                experiment_state = ExperimentState.PokeIn_Finished_Sucess
+
+        # If the manipulandum is not on the target
+        else:
+            angles_of_visuals[1] = initial_angle_of_manipulandum
+            angles_of_visuals[0] = 0
+
+    # If the rat is pressing a lever
+    else:
+        angles_of_visuals[0] = 1
+
+    # If the target is over (left) of the rotating (translating) manipulandum
+    if up_or_down:
+
+        # If the manipulandum still hasn't reached the target
+        if angles_of_visuals[1] <= angles_of_visuals[2] - error or angles_of_visuals[1] >= angles_of_visuals[2] + error:
             experiment_state = ExperimentState.PokeIn_Running
-            if new_position > angles_of_visuals[0]:  # If the correct lever was pressed
-                    angles_of_visuals[0] = new_position
+            on_target = 0
 
-            if new_position < angles_of_visuals[0] and trap_on:  # If the wrong lever was pressed and the trap is on
-                    angles_of_visuals[0] = new_position
+            # If the correct lever was pressed
+            if new_position > angles_of_visuals[1]:
+                angles_of_visuals[1] = new_position
 
-        elif angles_of_visuals[0] > angles_of_visuals[1] - 3:  # If the manipulandum reached the target
-            experiment_state = ExperimentState.PokeIn_Finished_Sucess
-            print(0, new_position, angles_of_visuals)
-        elif angles_of_visuals[0] < angles_of_visuals[2] + 3:  # If the manipulandum reached the trap
+            # If the wrong lever was pressed and the trap is on
+            if new_position < angles_of_visuals[1] and trap_on:
+                angles_of_visuals[1] = new_position
+
+        # If the manipulandum has reached the target but hasn't stayed long enough on it
+        if angles_of_visuals[2] - error <= angles_of_visuals[1] <= angles_of_visuals[2] + error \
+                and on_target < time_on_target + 1:
+            experiment_state = ExperimentState.PokeIn_OnTarget
+
+            # If the rat is till pressing the lever keep moving
+            if lever_pressed_time > 0:
+                angles_of_visuals[1] = new_position
+
+        # If the manipulandum reached the trap
+        if angles_of_visuals[3] + error > angles_of_visuals[1] > angles_of_visuals[3] - error:
             experiment_state = ExperimentState.PokeIn_Finished_Failure
-            print(0, new_position, angles_of_visuals[0])
+            on_target = 0
 
     else:  # If the target is under (right) of the manipulandum do as before with reversed movement
-        if new_position in np.arange(angles_of_visuals[1], angles_of_visuals[2]):  # If the manipulandum still hasn't reached either the target or the trap
+
+        # If the manipulandum still hasn't reached the target
+        if angles_of_visuals[1] >= angles_of_visuals[2] + error or angles_of_visuals[1] <= angles_of_visuals[2] - error:
             experiment_state = ExperimentState.PokeIn_Running
-            if new_position < angles_of_visuals[0]:  # If the correct lever was pressed
-                    angles_of_visuals[0] = new_position
+            on_target = 0
 
-            if new_position > angles_of_visuals[0] and trap_on:  # If the wrong lever was pressed and the trap is on
-                    angles_of_visuals[0] = new_position
+            # If the correct lever was pressed
+            if new_position < angles_of_visuals[1]:
+                angles_of_visuals[1] = new_position
 
-        elif angles_of_visuals[0] < angles_of_visuals[1] + 3:  # If the manipulandum reached the target
-            experiment_state = ExperimentState.PokeIn_Finished_Sucess
-            print(1, new_position, angles_of_visuals)
-        elif angles_of_visuals[0] > angles_of_visuals[2] - 3:  # If the manipulandum reached the trap
+            # If the wrong lever was pressed and the trap is on
+            if new_position > angles_of_visuals[1] and trap_on:
+                angles_of_visuals[1] = new_position
+
+        # If the manipulandum has reached the target but hasn't stayed long enough on it
+        if angles_of_visuals[2] + error >= angles_of_visuals[1] >= angles_of_visuals[2] - error \
+                and on_target < time_on_target + 1:
+            experiment_state = ExperimentState.PokeIn_OnTarget
+
+            # If the rat is till pressing the lever keep moving
+            if lever_pressed_time < 0:
+                angles_of_visuals[1] = new_position
+
+        # If the manipulandum reached the trap
+        if angles_of_visuals[3] + error > angles_of_visuals[1] > angles_of_visuals[3] - error:
             experiment_state = ExperimentState.PokeIn_Finished_Failure
-            print(1, new_position, angles_of_visuals[0])
+            on_target = 0
 
 
 def experiment(data, parameters):
     global reward_on_poke
+    global reward_on_poke_delay
     global movement_type
     global trap_on
     global speed
     global number_of_pellets
     global experiment_state
+    global _100ms_time_steps_counter
 
     try:
-        number_of_pellets = parameters[3]
+        speed = parameters[4]
+        number_of_pellets = parameters[5]
     except:
         pass
 
     message = data[1:]  # data[0] is the topic
     message = Socket.reconstruct_array_from_bytes_message(message)
     # The first element of the array is whether the rat is in the poke. The second is the milliseconds it has been
-    # pressing either the left or the right lever (one is positive the other negative). It is 0 is the rat is not
+    # pressing either the left or the right lever (one is positive the other negative). If it is 0 then the rat is not
     # pressing a lever
     poke_on = message[0]
     lever_press_time = message[1]
 
     result = [np.array([ct.IGNORE]), np.array([ct.IGNORE])]
+    max_100ms_steps_for_poke_out = 10
 
     # 1. If the reward_on_poke is on then
-    # 1. a. If the rat is in the poke then tell the screens to turn on and the poke controller
+    # 1. a. If the rat is in the poke then tell the monitors to turn on and the poke controller
     # to deliver number_of_pellets (assuming the TL Poke Controller Trigger String is set to 'number').
-    # 1. b. If the rat is not in the poke turn the screens off and do not send a message to the poke controller
+    # 1. b. If the rat is not in the poke turn the monitors off and do not send a message to the poke controller
     # 2. If the reward_on_poke is off then:
     # 2. a. If the rat i snot in the poke then as above and send the experiment_state to PokeOut
     # 2. b. If the rat is in the poke then:
-    # 2. b. i. If the trial has finished successfully then turn off the screens and deliver number_of_pellets (if the
+    # 2. b. i. If the trial has finished successfully then turn off the monitors and deliver number_of_pellets (if the
     # reward poke is in availability mode it will ignore any further commands to deliver reward)
-    # 2. b. ii. If the trial has finished unsuccessfully then turn off the screens and do not send anything to the poke
-    # 2. b. iii. If the trial just started then put the state to running, initialise the visuals and update the screens.
+    # 2. b. ii. If the trial has finished unsuccessfully then turn off the monitors and do not send anything to the poke
+    # 2. b. iii. If the trial just started then put the state to running, initialise the visuals and update the monitors.
     # 2. b. iv. If the trial was running then update the visuals
     # In cases iii. and iv. send the visuals
     if reward_on_poke:
         if poke_on:
-            result = [np.array([True]), np.array([number_of_pellets])]
+            _100ms_time_steps_counter += 1
+            result = [np.array([True]), np.array([ct.IGNORE])]
+            if _100ms_time_steps_counter >= reward_on_poke_delay * 10:
+                result = [np.array([True]), np.array([number_of_pellets])]
         else:
+            _100ms_time_steps_counter = 0
             result = [np.array([False]), np.array([ct.IGNORE])]
     else:
         if not poke_on:
             experiment_state = ExperimentState.PokeOut
-            result = [np.array([False]), np.array([ct.IGNORE])]
+            _100ms_time_steps_counter += 1
+
+            if _100ms_time_steps_counter < max_100ms_steps_for_poke_out:
+                result = [angles_of_visuals, np.array([ct.IGNORE])]
+            else:
+                result = [np.array([False]), np.array([ct.IGNORE])]
+
         else:
             if experiment_state == ExperimentState.PokeIn_Finished_Sucess:
                 result = [np.array([False]), np.array([number_of_pellets])]
+                _100ms_time_steps_counter = max_100ms_steps_for_poke_out + 1
 
             elif experiment_state == ExperimentState.PokeIn_Finished_Failure:
                 result = [np.array([False]), np.array([ct.IGNORE])]
+                _100ms_time_steps_counter = max_100ms_steps_for_poke_out + 1
 
-            elif experiment_state == ExperimentState.PokeOut:
+            elif experiment_state == ExperimentState.PokeOut and _100ms_time_steps_counter > max_100ms_steps_for_poke_out:
                 initialise_trial()
                 experiment_state = ExperimentState.PokeIn_Running
                 result = [angles_of_visuals, np.array([ct.IGNORE])]
-            elif experiment_state == ExperimentState.PokeIn_Running:
-                experiment_state = ExperimentState.PokeIn_Running
+                _100ms_time_steps_counter = 0
+
+            elif experiment_state == ExperimentState.PokeIn_Running or \
+                    (experiment_state == ExperimentState.PokeOut and _100ms_time_steps_counter < max_100ms_steps_for_poke_out)\
+                    or experiment_state == ExperimentState.PokeIn_OnTarget:
                 update_of_visuals(lever_press_time)
                 result = [angles_of_visuals, np.array([ct.IGNORE])]
+                _100ms_time_steps_counter = 0
 
     return result
 
