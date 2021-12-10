@@ -143,6 +143,7 @@ def parse_arguments_to_com(args):
     worker_exec = The python script (or executable) of the worker_exec process
     """
     args = args[1:]
+    logging.debug('Com parser = {}'.format(args))
     port = args[0]
     num_of_receiving_topics = int(args[1])
     receiving_topics = []
@@ -275,7 +276,6 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
     and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
     :return: The TransformWorker object
     """
-
     pull_port, parameters_topic, receiving_topics, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
     #verbose = verbose == 'True'

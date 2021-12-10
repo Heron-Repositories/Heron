@@ -22,6 +22,8 @@ class TransformCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
+        if self.verbose == '':
+            self.verbose = 0
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs

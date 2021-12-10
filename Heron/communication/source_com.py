@@ -24,6 +24,8 @@ class SourceCom:
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
         self.verbose = verbose
+        if self.verbose == '':
+            self.verbose = 0
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs

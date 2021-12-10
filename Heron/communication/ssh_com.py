@@ -151,7 +151,6 @@ class SSHCom:
                 new_arguments_list = arguments_list
             return subprocess.Popen(new_arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP).pid
         else:
-            logging.debug(arguments_list)
             self.client.connect(self.remote_server_info['IP'],
                                 int(self.remote_server_info['Port']),
                                 self.remote_server_info['username'],
