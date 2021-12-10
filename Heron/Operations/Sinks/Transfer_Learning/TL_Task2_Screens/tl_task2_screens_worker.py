@@ -46,19 +46,26 @@ def initialise(_worker_object):
 
 
 class Sprite(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, image_file):
+    def __init__(self, pos_x, pos_y, image_file, flipped=False):
         super().__init__()
         self.pos_x = pos_x
         self.pos_y = pos_y
+        self.flipped = flipped
         self.base_image = pygame.image.load(path.join(resources_path, image_file))
         self.base_rect = self.base_image.get_rect()
         self.base_rect.center = [pos_x, pos_y]
         self.image = pygame.image.load(path.join(resources_path, image_file))
+        if flipped:
+            self.base_image = pygame.transform.flip(self.base_image, True, False)
+            self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.rect.center = [pos_x, pos_y]
 
     def rotate(self, angle):
-        self.image = pygame.transform.rotate(self.base_image, angle)
+        if self.flipped:
+            self.image = pygame.transform.rotate(self.base_image, -angle)
+        else:
+            self.image = pygame.transform.rotate(self.base_image, angle)
         self.rect = self.image.get_rect(center=[self.pos_x, self.pos_y])
 
     def translate_x(self, position):
@@ -81,8 +88,6 @@ def pygame_thread():
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((2 * sprite_screens_x_size, 1080))
 
-    #background = pygame.image.load(path.join(resources_path, 'Black_Background_3820_1080.png'))
-
     #Sprites
     sprite_y_pos = 600
     sprite_x_pos = 600
@@ -94,12 +99,12 @@ def pygame_thread():
         target_file_name = 'Target_Dot.png'
         trap_file_name = 'Trap_Dot.png'
 
-    sprites = {'left manipulandum': Sprite(sprite_x_pos, sprite_y_pos, manipulandum_file_name),
-               'top manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, manipulandum_file_name),
-               'left target': Sprite(sprite_x_pos, sprite_y_pos, target_file_name),
-               'top target': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, target_file_name),
-               'left trap': Sprite(sprite_x_pos, sprite_y_pos, trap_file_name),
-               'top trap': Sprite(sprite_screens_x_size + sprite_x_pos, sprite_y_pos, trap_file_name)}
+    sprites = {'top manipulandum': Sprite(sprite_x_pos, sprite_y_pos, manipulandum_file_name, True),
+               'left manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, manipulandum_file_name),
+               'top target': Sprite(sprite_x_pos, sprite_y_pos, target_file_name, True),
+               'left target': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, target_file_name),
+               'top trap': Sprite(sprite_x_pos, sprite_y_pos, trap_file_name, True),
+               'left trap': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, trap_file_name)}
 
     sprites_group = pygame.sprite.Group()
     if rotation:
