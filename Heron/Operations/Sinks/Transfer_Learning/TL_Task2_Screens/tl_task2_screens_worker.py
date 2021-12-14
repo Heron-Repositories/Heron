@@ -19,7 +19,7 @@ monitors: str
 sprites: dict
 rotation: bool
 screen_colour: int
-main_screen_x_size = 2561
+main_screen_x_size = 2561 + 1280
 sprite_screens_x_size = 1980
 
 
