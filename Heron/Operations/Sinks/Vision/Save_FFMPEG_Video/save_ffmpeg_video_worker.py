@@ -24,6 +24,11 @@ time_stamp: bool
 write_proc: Popen
 
 
+def initialise(worker_object):
+    return True
+
+
+
 def add_timestamp_to_filename():
     global file_name
 
@@ -33,16 +38,16 @@ def add_timestamp_to_filename():
 
 
 def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, width, height):
+    print('hello')
     return(
         ffmpeg
         .input('pipe:', format='rawvideo', vcodec='rawvideo', hwaccel='auto', r=fps, pix_fmt=pixel_format_in,
                 s='{}x{}'.format(width, height))
-        .output(out_filename, vcodec='hevc_nvenc', rc='vbr', profile='main10',
-                pix_fmt=pixel_format_out, r=fps, preset='fast', gpu=0, tune='zerolatency',
-                maxrate='50M', delay=0)
+        .output(out_filename, vcodec='h264_nvenc', rc='vbr',
+                pix_fmt=pixel_format_out, r=fps, preset='fast',
+                gpu=0, bitrate='50M', delay=0)
         .overwrite_output()
         .run_async(pipe_stdin=True)
-        #vcodec='h264_nvenc'
     )
 
 
@@ -55,7 +60,6 @@ def save_video(data, parameters):
     global pixel_format_out
     global pixel_format_in
     global fps
-
     start = time.perf_counter()
     # Once the parameters are received at the starting of the graph then they cannot be updated any more.
     if need_parameters:
@@ -65,7 +69,6 @@ def save_video(data, parameters):
             pixel_format_in = parameters[2]
             pixel_format_out = parameters[3]
             fps = parameters[4]
-
             if time_stamp:
                 add_timestamp_to_filename()
             need_parameters = False
@@ -75,7 +78,6 @@ def save_video(data, parameters):
         message = data[1:]  # data[0] is the topic
         image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
         size = image.shape
-
         try:
             write_proc.stdin.write(image.astype(np.uint8).tobytes())
         except Exception as e:
@@ -95,5 +97,6 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_sink_worker_process(save_video, on_end_of_life)
+    worker_object = gu.start_the_sink_worker_process(initialisation_function=initialise,
+                                                     work_function=save_video, end_of_life_function=on_end_of_life)
     worker_object.start_ioloop()
