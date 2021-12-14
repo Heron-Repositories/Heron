@@ -126,7 +126,7 @@ def overlay_image(angles):
     dpg.set_value(screen_texture_id, screen_image)
 
 
-def start_dpg_thread():
+def start_dpg_thread(vis):
     global image_width
     global image_height
     global screen_image
