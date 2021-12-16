@@ -43,7 +43,7 @@ class SinkCom:
 
         # If self.verbose is a string it is the file name to log things in. If it is an int it is the level of the verbosity
         self.logger = None
-        if self.verbose != '':
+        if self.verbose != 0:
             try:
                 self.verbose = int(self.verbose)
             except:

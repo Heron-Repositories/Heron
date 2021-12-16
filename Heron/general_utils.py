@@ -143,7 +143,6 @@ def parse_arguments_to_com(args):
     worker_exec = The python script (or executable) of the worker_exec process
     """
     args = args[1:]
-    logging.debug('Com parser = {}'.format(args))
     port = args[0]
     num_of_receiving_topics = int(args[1])
     receiving_topics = []
