@@ -170,13 +170,11 @@ def setup_camera_and_start_acquisition(camera_index, trigger, pixel_format, fps)
         print('Acquiring images...')
         # ------------------------------
 
-        '''
         device_serial_number = ''
         node_device_serial_number = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
         if PySpin.IsAvailable(node_device_serial_number) and PySpin.IsReadable(node_device_serial_number):
             device_serial_number = node_device_serial_number.GetValue()
             print('Device serial number retrieved as %s...' % device_serial_number)
-        '''
 
     except PySpin.SpinnakerException as ex:
         print('Error capturing frame from Spinnaker camera: {}'.format(ex))
@@ -263,14 +261,17 @@ def run_spinnaker_camera(_worker_object):
 
     # The infinite loop that does the frame capture and push to the output of the node
     while acquiring_on:
-        vis.visualised_data = grab_frame()
-        if vis.visualised_data is not None:
-            worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+        data = grab_frame()
+        if data is not None:
+            worker_object.socket_push_data.send_array(data, copy=False)
+            if vis.visualisation_on:
+                vis.visualised_data = data
 
-            try:
-                vis.visualisation_on = worker_object.parameters[0]
-            except:
-                vis.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
+        try:
+            vis.visualisation_on = worker_object.parameters[0]
+        except:
+            vis.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
+
 
 
 def on_end_of_life():
