@@ -26,6 +26,10 @@ shape_step: list
 hdf5_file: h5py.File
 
 
+def initialise(worker_object):
+    return True
+
+
 def add_timestamp_to_filename():
     global file_name
 
@@ -133,5 +137,7 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_sink_worker_process(save_array, on_end_of_life)
+    worker_object = gu.start_the_sink_worker_process(initialisation_function=initialise,
+                                                     work_function=save_array,
+                                                     end_of_life_function=on_end_of_life)
     worker_object.start_ioloop()

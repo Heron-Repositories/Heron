@@ -18,14 +18,33 @@ need_parameters = True
 motor_controller = None
 
 
-def initialise_near_zero_controller(i2c_address):
-    import pylibi2c
-    motor_controller = pylibi2c.I2CDevice('/dev/i2c-1', i2c_address)
-    motor_controller.delay = 10
-    motor_controller.page_bytes = 16
-    motor_controller.flags = pylibi2c.I2C_M_IGNORE_NAK
+# TODO: THIS DOES NOT WORK> I NEED TO FINISH THE INITIALISATION FUNCTION CORRECTLY !!
+def initialise_near_zero_controller(worker_object):
+    global motor_controller
 
-    return motor_controller
+    use_pylibi2c = worker_object.parameters[0]
+    i2c_address = int(worker_object.parameters[1], base=16)
+    motor = worker_object.parameters[2]
+    pos_or_rot = worker_object.parameters[3]
+    value = worker_object.parameters[4]
+    current = worker_object.parameters[5]
+    trigger = worker_object.parameters[6]
+
+    if use_pylibi2c:
+        import pylibi2c
+
+        try:
+            motor_controller = pylibi2c.I2CDevice('/dev/i2c-1', i2c_address)
+            motor_controller.delay = 10
+            motor_controller.page_bytes = 16
+            motor_controller.flags = pylibi2c.I2C_M_IGNORE_NAK
+
+            return True
+
+        except:
+            return False
+    else:
+        return  True
 
 
 def move_motor(data, parameters):
@@ -50,8 +69,8 @@ def move_motor(data, parameters):
         trigger = near_zero_controller_com.ParametersDefaultValues[6]
     if pos_or_rot == 'r':
         pos_or_rot = 'v'
-    if use_pylibi2c and motor_controller is None:
-        motor_controller = initialise_near_zero_controller(i2c_address)
+    #if use_pylibi2c and motor_controller is None:
+    #    motor_controller = initialise_near_zero_controller(i2c_address)
 
     message = data[1:]  # data[0] is the topic
     message = Socket.reconstruct_array_from_bytes_message(message)[0]
@@ -68,5 +87,7 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_sink_worker_process(move_motor, on_end_of_life)
+    worker_object = gu.start_the_sink_worker_process(initialisation_function=initialise_near_zero_controller,
+                                                     work_function=move_motor,
+                                                     end_of_life_function=on_end_of_life)
     worker_object.start_ioloop()

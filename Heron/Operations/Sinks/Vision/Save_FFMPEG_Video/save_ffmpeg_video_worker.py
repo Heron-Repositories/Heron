@@ -43,8 +43,8 @@ def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, 
         ffmpeg
         .input('pipe:', format='rawvideo', vcodec='rawvideo', hwaccel='auto', r=fps, pix_fmt=pixel_format_in,
                 s='{}x{}'.format(width, height))
-        .output(out_filename, vcodec='h264_nvenc', rc='vbr',
-                pix_fmt=pixel_format_out, r=fps, preset='fast',
+        .output(out_filename, vcodec='h264_nvenc', rc='vbr', preset='llhp',
+                pix_fmt=pixel_format_out, r=fps,
                 gpu=0, bitrate='50M', delay=0)
         .overwrite_output()
         .run_async(pipe_stdin=True)
