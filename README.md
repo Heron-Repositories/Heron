@@ -60,6 +60,10 @@ Finally there are Sink nodes which only have inputs and which are meant as final
 
 In the future there will be Kernel nodes with no inputs or outputs (self sufficient processes that do stuff without requiring input or generating output).
 
+A first showcase of Heron can be found in this video:
+https://www.youtube.com/watch?v=dRXeFBYG50Q
+
+
 ## Heron protocol
 
 The below picture gives the overview of the communication protocol Heron uses.
