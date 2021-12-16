@@ -9,7 +9,6 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
 import scipy.stats as ss
-import scipy.optimize as so
 from Heron import general_utils as gu
 
 running = False
@@ -29,25 +28,15 @@ def exponential(a, b, c):
     return np.random.exponential(scale)
 
 
-def trunc_exp_rv(low, high, scale):
-    rnd_cdf = np.random.uniform(ss.expon.cdf(x=low, scale=scale),
-                                ss.expon.cdf(x=high, scale=scale),
-                                size=1)
-    return ss.expon.ppf(q=rnd_cdf, scale=scale)
-
-
-def solve_for_l(expected_mean, low, high):
-    A = np.array([low, high])
-    return 1/so.fmin(lambda L: ((np.diff(np.exp(-A*L)*(A*L+1)/L)/np.diff(np.exp(-A*L)))-expected_mean)**2,
-                     x0=0.5,
-                     full_output=False, disp=False)
-
-
 def trunc_exp_corrected(a, b, c):
-    expected_mean = a
-    low = b
-    high = c
-    return trunc_exp_rv(low, high, solve_for_l(expected_mean, low, high))
+    low = a
+    high = b
+    expected_mean = c
+
+    scale = 1 / expected_mean
+    X = ss.truncexpon(b=(high - low) / scale, loc=low, scale=scale)
+
+    return X.rvs(1)[0]
 
 
 def gaussian(a, b, c):

@@ -28,7 +28,7 @@ ParameterTypes = ['bool', 'str', 'list', 'float', 'float', 'float']
 ParametersDefaultValues = [False, 'True',
                            ['constant: a=const', 'random uniform: a=min, b=max',
                             'random exponential: a=lambda',
-                            'random truncated exponential: a=lambda, b=min, c=max',
+                            'random truncated exponential: a=min, b=max, c=lambda',
                             'random gaussian: a=mu, b=sigma'],
                            0.0, 0.0, 0.0]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'timer_worker.py')
