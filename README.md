@@ -63,7 +63,7 @@ In the future there will be Kernel nodes with no inputs or outputs (self suffici
 A first showcase of Heron can be found in this video:
 https://www.youtube.com/watch?v=dRXeFBYG50Q
 
-![](https://github.com/georgedimitriadis/large_gifs_for_other_repos/blob/main/Heron_GIF_MidRes_5FPS.gif)
+![Alt - text](https://github.com/georgedimitriadis/large_gifs_for_other_repos/blob/main/Heron_GIF_MidRes_5FPS.gif)
 ## Heron protocol
 
 The below picture gives the overview of the communication protocol Heron uses.
