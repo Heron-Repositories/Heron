@@ -401,6 +401,9 @@ def load_graph():
 
                     nodes_list.append(n)
 
+                    if int(n.starting_port) > last_used_port:
+                        last_used_port = int(n.starting_port)
+
                 elif key == 'links':
                     links_dict = raw_dict[key]
 
@@ -411,7 +414,7 @@ def load_graph():
                             on_link(node_editor, [l1, l2])
                             #dpg.add_node_link(l1, l2, parent=node_editor)
 
-        last_used_port = int(nodes_list[-1].starting_port) + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
+        last_used_port = last_used_port + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
         port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
     file_dialog = dpg.add_file_dialog(callback=on_file_select, directory_selector=False)
