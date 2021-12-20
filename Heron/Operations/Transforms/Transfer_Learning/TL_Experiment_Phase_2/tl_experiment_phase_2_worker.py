@@ -20,6 +20,9 @@ movement_type: bool
 trap_on: bool
 max_distance_to_target: int
 speed: float
+variable_targets: bool
+must_lift_at_target: bool
+
 angles_of_visuals: np.empty(4)  # 0th number is if any lever is pressed, 1st is the angle of the manipulandum, 3rd and
 # 4th the angles of the target and trap respectively
 initial_angle_of_manipulandum: int
@@ -36,11 +39,18 @@ class ExperimentState(Enum):
 
 experiment_state = ExperimentState.PokeOut
 number_of_pellets = 1
-_100ms_time_steps_counter = 20  # When an animal takes its snout out of poke then the experiment counts how many time steps
-# of 100 ms the animal is out of poke. If that number crosses a threshold then the trial aborts
-on_target = 0  # When the manipulandum reaches the target then the animal must release the lever. This variable holds
+
+# When an animal takes its snout out of poke then the experiment counts how many time steps
+# of 100 ms the animal is out of poke. If that number crosses a threshold then the trial aborts.
+# VERY IMPORTANT!! This assumes the TL_Levers is sending commands every 100ms. If this changes (in the arduino .ino)
+# then this number and its comparisons should change to keep times the same!!
+_100ms_time_steps_counter = 20
+
+# When the manipulandum reaches the target then the animal must release the lever. This variable holds
 # how many time steps of 100 ms the manipulandum has remained unmoving on target and reward is provided only if this
 # crosses a threshold
+on_target = 0
+
 time_on_target = 5
 error = 3
 
@@ -52,6 +62,8 @@ def initialise(_worker_object):
     global trap_on
     global max_distance_to_target
     global speed
+    global variable_targets
+    global must_lift_at_target
     global number_of_pellets
     global worker_object
 
@@ -62,7 +74,9 @@ def initialise(_worker_object):
         trap_on = parameters[2]
         max_distance_to_target = parameters[3]
         speed = parameters[4]
-        number_of_pellets = parameters[5]
+        variable_targets = parameters[5]
+        must_lift_at_target = parameters[6]
+        number_of_pellets = parameters[7]
     except Exception as e:
         print(e)
         return False
@@ -71,37 +85,60 @@ def initialise(_worker_object):
 
 
 def initialise_trial():
-    global angles_of_visuals
+    global variable_targets
     global initial_angle_of_manipulandum
+    global angles_of_visuals
+
+    if variable_targets:
+        manipulandum, target, trap = initialise_trial_with_variable_target_trap()
+    else:
+        manipulandum, target, trap = initialise_trial_with_constant_target_trap()
+
+    initial_angle_of_manipulandum = manipulandum
+    angles_of_visuals = np.array([0, manipulandum, target, trap])
+    angles_of_visuals = angles_of_visuals - np.max(angles_of_visuals[1:])
+    initial_angle_of_manipulandum = copy.copy(angles_of_visuals[1])
+    angles_of_visuals[0] = 0
+
+
+def initialise_trial_with_variable_target_trap():
+    global angles_of_visuals
     global max_distance_to_target
     global up_or_down
     global experiment_state
 
-    manipulandum = np.random.randint(-80, -10)
-    initial_angle_of_manipulandum = manipulandum
+    manipulandum = np.random.randint(-80, -9)
     up_or_down = np.random.binomial(n=1, p=0.5)
 
-    try:
-        if up_or_down:
-            target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
-            trap = np.random.randint(-90, manipulandum - 9)
-        else:
-            trap = np.random.randint(manipulandum + 11, 0)
-            target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
-    except:
-        if up_or_down:
-            target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
-            trap = np.random.randint(-90, manipulandum - 9)
-        else:
-            trap = np.random.randint(manipulandum + 11, 0)
-            target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
-    pass
+    if up_or_down:
+        target = np.random.randint(manipulandum + 11, np.min([manipulandum + max_distance_to_target + 12, 0]))
+        trap = np.random.randint(-90, manipulandum - 9)
+    else:
+        trap = np.random.randint(manipulandum + 11, 0)
+        target = np.random.randint(np.max([manipulandum - max_distance_to_target - 10, -90]), manipulandum - 9)
 
-    angles_of_visuals = np.array([0, manipulandum, target, trap])
-    #angles_of_visuals = angles_of_visuals -(np.max(angles_of_visuals[1:]) + 90)
-    angles_of_visuals = angles_of_visuals - np.max(angles_of_visuals[1:])
-    initial_angle_of_manipulandum = copy.copy(angles_of_visuals[1])
-    angles_of_visuals[0] = 0
+    return manipulandum, target, trap
+
+
+def initialise_trial_with_constant_target_trap():
+    global max_distance_to_target
+    global up_or_down
+    global experiment_state
+
+    up_or_down = np.random.binomial(n=1, p=0.5)
+
+    if up_or_down:
+        target = 0
+        trap = -90
+
+        manipulandum = np.random.randint(np.max([target - max_distance_to_target - 10, -90]), target - 9)
+    else:
+        target = -90
+        trap = 0
+
+        manipulandum = np.random.randint(target + 11, np.min([target + max_distance_to_target + 12, 0]))
+
+    return manipulandum, target, trap
 
 
 def update_of_visuals(lever_pressed_time):
@@ -153,11 +190,15 @@ def update_of_visuals(lever_pressed_time):
         # If the manipulandum has reached the target but hasn't stayed long enough on it
         if angles_of_visuals[2] - error <= angles_of_visuals[1] <= angles_of_visuals[2] + error \
                 and on_target < time_on_target + 1:
-            experiment_state = ExperimentState.PokeIn_OnTarget
 
-            # If the rat is till pressing the lever keep moving
-            if lever_pressed_time > 0:
-                angles_of_visuals[1] = new_position
+            if must_lift_at_target:
+                experiment_state = ExperimentState.PokeIn_OnTarget
+
+                # If the rat is till pressing the lever keep moving
+                if lever_pressed_time > 0:
+                    angles_of_visuals[1] = new_position
+            else:
+                experiment_state = ExperimentState.PokeIn_Finished_Sucess
 
         # If the manipulandum reached the trap
         if angles_of_visuals[3] + error > angles_of_visuals[1] > angles_of_visuals[3] - error:
@@ -182,11 +223,15 @@ def update_of_visuals(lever_pressed_time):
         # If the manipulandum has reached the target but hasn't stayed long enough on it
         if angles_of_visuals[2] + error >= angles_of_visuals[1] >= angles_of_visuals[2] - error \
                 and on_target < time_on_target + 1:
-            experiment_state = ExperimentState.PokeIn_OnTarget
 
-            # If the rat is till pressing the lever keep moving
-            if lever_pressed_time < 0:
-                angles_of_visuals[1] = new_position
+            if must_lift_at_target:
+                experiment_state = ExperimentState.PokeIn_OnTarget
+
+                # If the rat is till pressing the lever keep moving
+                if lever_pressed_time < 0:
+                    angles_of_visuals[1] = new_position
+            else:
+                experiment_state = ExperimentState.PokeIn_Finished_Sucess
 
         # If the manipulandum reached the trap
         if angles_of_visuals[3] + error > angles_of_visuals[1] > angles_of_visuals[3] - error:
@@ -200,13 +245,15 @@ def experiment(data, parameters):
     global movement_type
     global trap_on
     global speed
+    global variable_targets
     global number_of_pellets
     global experiment_state
     global _100ms_time_steps_counter
 
     try:
+        reward_on_poke_delay = parameters[1]
         speed = parameters[4]
-        number_of_pellets = parameters[5]
+        number_of_pellets = parameters[7]
     except:
         pass
 
