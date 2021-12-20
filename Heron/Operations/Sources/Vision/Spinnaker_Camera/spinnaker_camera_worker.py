@@ -15,6 +15,8 @@ from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Spinnaker_Camera import spinnaker_camera_com
 from Heron.communication.source_worker import SourceWorker
 from Heron.gui.visualisation import Visualisation
+import datetime
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 worker_object: SourceWorker
@@ -29,6 +31,9 @@ system = None
 cam_list = None
 nodemap_tldevice = None
 sNodemap = None
+
+start_time: datetime.datetime
+frame_counter = 0
 
 
 def setup_camera_and_start_acquisition(camera_index, trigger, pixel_format, fps):
@@ -235,6 +240,8 @@ def run_spinnaker_camera(_worker_object):
     global acquiring_on
     global worker_object
     global vis
+    global start_time
+    global frame_counter
 
     worker_object = _worker_object
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
@@ -263,7 +270,10 @@ def run_spinnaker_camera(_worker_object):
     while acquiring_on:
         data = grab_frame()
         if data is not None:
+            if frame_counter == 1:
+                start_time = datetime.datetime.now()
             worker_object.socket_push_data.send_array(data, copy=False)
+            frame_counter += 1
             if vis.visualisation_on:
                 vis.visualised_data = data
 
@@ -278,6 +288,14 @@ def on_end_of_life():
     global cam
     global acquiring_on
     global vis
+    global frame_counter
+    global start_time
+
+    total_time = (datetime.datetime.now() - start_time).total_seconds()
+
+    print('Spinnaker Captured {} frames in {} seconds at a frame rate of {} fps'.format(frame_counter,
+                                                                                        total_time,
+                                                                                        frame_counter/total_time))
     try:
         vis.kill()
 
