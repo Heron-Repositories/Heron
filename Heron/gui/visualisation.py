@@ -65,7 +65,7 @@ class Visualisation():
         :return: Nothing
         """
         while not self.visualisation_on:
-            gu.accurate_delay(50)
+            cv2.waitKey(1)
 
         if self.visualisation_thread is None:
             self.visualisation_thread = threading.Thread(target=self.visualisation_loop, daemon=True, args=(self,))
@@ -73,7 +73,7 @@ class Visualisation():
             self.visualisation_thread.start()
 
     def visualisation_init(self):
-        self.checking_thread = threading.Thread(target=self.visualisation_loop_update)
+        self.checking_thread = threading.Thread(target=self.visualisation_loop_update, daemon=True)
         self.checking_thread.start()
 
     def kill(self):
