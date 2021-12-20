@@ -1,5 +1,6 @@
 
 #define beambreak_in 4
+#define beambreak_out 8  // This is to push the beambreak value to another board (here a Touch Board)
 #define left_lever 5
 #define right_lever 7
 
@@ -18,11 +19,14 @@ void setup() {
   pinMode(left_lever, INPUT);
   pinMode(right_lever, INPUT);
   pinMode(beambreak_in, INPUT_PULLUP);
+  pinMode(beambreak_out, OUTPUT);
 }
 
 void loop() {
-  
+
   beambreak_value = digitalRead(beambreak_in);
+  digitalWrite(beambreak_out, beambreak_value);
+
   if (beambreak_value == 0)
   {
     left_lever_value = digitalRead(left_lever);
@@ -55,7 +59,7 @@ void loop() {
       }
     }
   }
-  
+
   if (beambreak_value == 1){
     leftLeverStartTime = 0;
     rightLeverStartTime = 0;
@@ -72,5 +76,5 @@ void loop() {
     Serial.println(string_out);
 
   delay(100);
-  
+
 }
