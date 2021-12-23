@@ -163,7 +163,7 @@ def pygame_thread():
                              # otherwise pygame freezes
 
         try:
-            screen.fill([screen_colour, 0, 0])
+            screen.fill([screen_colour, 0, 0, 0.5])
 
             if show_sprites:
                 sprites_group.draw(screen)
