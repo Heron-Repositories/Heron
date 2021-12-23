@@ -160,6 +160,7 @@ def run_camera(worker_object):
     counter = 0
     total_frame_time = 0
     while acquiring_on:
+
         start = datetime.now()
         got_frame, frame = capture.read()
         if got_frame:
@@ -170,6 +171,8 @@ def run_camera(worker_object):
 
             if len(save_file) > 1:
                 output_video.write(frame.astype('uint8'))
+
+            get_subcamera_index = worker_object.parameters[5]
 
             if get_subcamera_index != '0':
                 sub_cam = int(get_subcamera_index)
