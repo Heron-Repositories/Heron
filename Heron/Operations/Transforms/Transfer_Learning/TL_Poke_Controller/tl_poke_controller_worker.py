@@ -18,9 +18,12 @@ arduino_serial: serial.Serial
 avail_time: float
 avail_freq: int
 succ_freq: int
+sleep_dt = 0.18
+abort_at_wrong_poke: bool
 trigger_string: str
 availability_period_is_running = False
 reward_amount = 1
+reward_poke: bool # False is the Old / Right poke, True is the New / Left one
 
 
 def freq_to_signal(freq):
@@ -37,7 +40,9 @@ def initialise(_worker_object):
     global avail_time
     global avail_freq
     global succ_freq
+    global abort_at_wrong_poke
     global trigger_string
+    global reward_poke
 
     try:
         parameters = _worker_object.parameters
@@ -45,7 +50,9 @@ def initialise(_worker_object):
         avail_time = parameters[1]
         avail_freq = parameters[2]
         succ_freq = parameters[3]
-        trigger_string = parameters[4]
+        abort_at_wrong_poke = parameters[4]
+        trigger_string = parameters[5]
+        print(avail_freq, succ_freq)
     except Exception as e:
         print(e)
         return False
@@ -54,7 +61,31 @@ def initialise(_worker_object):
         arduino_serial = serial.Serial(com_port)
     except Exception as e:
         print(e)
+        return False
+
+    reward_poke = True
+    set_poke_tray()
+
     return True
+
+
+def failure_sound():
+    arduino_serial.write(freq_to_signal(1000))
+    gu.accurate_delay(1200 * sleep_dt)
+    arduino_serial.write(freq_to_signal(500))
+
+
+def success_sound():
+    if int(succ_freq) != 0:
+        arduino_serial.write(freq_to_signal(succ_freq))
+        gu.accurate_delay(1500 * sleep_dt)
+        arduino_serial.write(freq_to_signal(succ_freq))
+    gu.accurate_delay(1500 * sleep_dt)
+
+
+def availability_sound():
+    if int(avail_freq) != 0:
+        arduino_serial.write(freq_to_signal(avail_freq))
 
 
 def start_availability_thread():
@@ -63,8 +94,9 @@ def start_availability_thread():
     global avail_time
     global avail_freq
     global succ_freq
+    global reward_poke
+    global abort_at_wrong_poke
 
-    sleep_dt = 0.18
     total_steps = int(avail_time / sleep_dt)
 
     availability_period_is_running = True
@@ -74,47 +106,75 @@ def start_availability_thread():
 
         bytes_in_buffer = arduino_serial.in_waiting
         string_in = arduino_serial.read(bytes_in_buffer).decode('utf-8')
-        if bytes_in_buffer and '555\r\n' in string_in:
-                availability_period_is_running = False
+
+        success_failure_continue = 2  # 0=success, 1=failure, 2=continue
+        # If the string is either 555 or 666 then if it is for the wrong poke and the abort_at_wrong_poke is on then
+        # fail, otherwise succeed
+        if bytes_in_buffer:
+            if '555\r\n' in string_in:
+                if not reward_poke:
+                    success_failure_continue = 0
+                else:
+                    if abort_at_wrong_poke:
+                        success_failure_continue = 1
+                    else:
+                        success_failure_continue = 0
+            if '666\r\n' in string_in:
+                if reward_poke:
+                    success_failure_continue = 0
+                else:
+                    if abort_at_wrong_poke:
+                        success_failure_continue = 1
+                    else:
+                        success_failure_continue = 0
+
+        availability_period_is_running = False
+        if success_failure_continue == 0:
                 try:
-                    arduino_serial.write(freq_to_signal(succ_freq))
-                    gu.accurate_delay(1500 * sleep_dt)
-                    arduino_serial.write(freq_to_signal(succ_freq))
-                    gu.accurate_delay(1500 * sleep_dt)
-                    for i in np.arange(reward_amount):
+                    success_sound()
+                    for _ in np.arange(reward_amount):
                         arduino_serial.write('a'.encode('utf-8'))
                         gu.accurate_delay(500)
                 except Exception as e:
                     print(e)
-        elif step >= total_steps:
+        elif step >= total_steps or success_failure_continue == 1:
             try:
-                availability_period_is_running = False
-                arduino_serial.write(freq_to_signal(1000))
-                gu.accurate_delay(1200 * sleep_dt)
-                arduino_serial.write(freq_to_signal(500))
+                failure_sound()
             except Exception as e:
                 print(e)
         else:
             try:
-                arduino_serial.write(freq_to_signal(avail_freq))
+                availability_sound()
                 arduino_serial.read(arduino_serial.in_waiting)
+                availability_period_is_running = True
             except Exception as e:
                 print(e)
             gu.accurate_delay(1000 * sleep_dt)
         step += 1
 
 
-def start_availability_period(data, parameters):
+def set_poke_tray():
+    global arduino_serial
+    global reward_poke
+
+    if reward_poke:
+        arduino_serial.write('m'.encode('utf-8'))
+    else:
+        arduino_serial.write('n'.encode('utf-8'))
+
+
+def start_availability_or_switch_pokes(data, parameters):
     global availability_period_is_running
     global trigger_string
     global reward_amount
+    global reward_poke
 
-    # topic = data[0].decode('utf-8')
+    topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
 
     if ct.IGNORE == message[0]:
         result = [np.array([ct.IGNORE])]
-    else:
+    elif 'Start' in topic:
         if not availability_period_is_running:
             if trigger_string == message[0] or trigger_string == 'number':
                 if trigger_string == 'number':
@@ -124,6 +184,14 @@ def start_availability_period(data, parameters):
                     avail_thread.start()
                 except Exception as e:
                     print(e)
+        result = [np.array([availability_period_is_running])]
+    elif 'Poke' in topic:
+        reward_poke = message[0]
+        if reward_poke == 'Left' or reward_poke == 'New':
+            reward_poke = True
+        if reward_poke == 'Right' or reward_poke == 'Old':
+            reward_poke = False
+        set_poke_tray()
         result = [np.array([availability_period_is_running])]
 
     return result
@@ -136,7 +204,7 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_transform_worker_process(work_function=start_availability_period,
+    worker_object = gu.start_the_transform_worker_process(work_function=start_availability_or_switch_pokes,
                                                           end_of_life_function=on_end_of_life,
                                                           initialisation_function=initialise)
     worker_object.start_ioloop()

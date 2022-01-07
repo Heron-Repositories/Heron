@@ -23,8 +23,8 @@ speed: float
 variable_targets: bool
 must_lift_at_target: bool
 
-angles_of_visuals: np.empty(4)  # 0th number is if any lever is pressed, 1st is the angle of the manipulandum, 3rd and
-# 4th the angles of the target and trap respectively
+angles_of_visuals: np.empty(4)  # 0th number is if any lever is pressed, 1st is the angle of the manipulandum, 2nd and
+# 3rd the angles of the target and trap respectively
 initial_angle_of_manipulandum: int
 up_or_down: bool
 
