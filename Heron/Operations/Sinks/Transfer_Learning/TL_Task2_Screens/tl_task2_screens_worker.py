@@ -18,6 +18,7 @@ resources_path = path.join(current_dir, 'Operations', 'Sinks', 'Transfer_Learnin
 monitors: str
 sprites: dict
 rotation: bool
+opacity: int
 screen_colour: int
 main_screen_x_size = 2561 + 1280
 sprite_screens_x_size = 1980
@@ -26,12 +27,14 @@ sprite_screens_x_size = 1980
 def initialise(_worker_object):
     global monitors
     global rotation
+    global opacity
     global pg_thread_running
 
     try:
         parameters = _worker_object.parameters
         monitors = parameters[0]
         rotation = parameters[1]
+        opacity = parameters[2]
     except Exception as e:
         print(e)
         return False
@@ -46,10 +49,11 @@ def initialise(_worker_object):
 
 
 class Sprite(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, image_file, flipped=False):
+    def __init__(self, pos_x, pos_y, image_file, flipped=False, opacity=255):
         super().__init__()
         self.pos_x = pos_x
         self.pos_y = pos_y
+        self.opacity = opacity
         self.flipped = flipped
         self.base_image = pygame.image.load(path.join(resources_path, image_file))
         self.base_rect = self.base_image.get_rect()
@@ -60,6 +64,11 @@ class Sprite(pygame.sprite.Sprite):
             self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.rect.center = [pos_x, pos_y]
+
+        self.image = self.image.convert_alpha()
+        self.base_image = self.base_image.convert_alpha()
+        self.image.set_alpha(opacity)
+        self.base_image.set_alpha(opacity)
 
     def rotate(self, angle):
         if self.flipped:
@@ -82,6 +91,7 @@ def pygame_thread():
     global sprites
     global rotation
     global screen_colour
+    global opacity
 
     #Init and background
     pygame.init()
@@ -100,11 +110,15 @@ def pygame_thread():
         trap_file_name = 'Trap_Dot.png'
 
     sprites = {'top manipulandum': Sprite(sprite_x_pos, sprite_y_pos, manipulandum_file_name, True),
-               'left manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, manipulandum_file_name),
-               'top target': Sprite(sprite_x_pos, sprite_y_pos, target_file_name, True),
-               'left target': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, target_file_name),
-               'top trap': Sprite(sprite_x_pos, sprite_y_pos, trap_file_name, True),
-               'left trap': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, trap_file_name)}
+               'left manipulandum': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos,
+                                           manipulandum_file_name),
+               'top target': Sprite(sprite_x_pos, sprite_y_pos, target_file_name, True, opacity),
+               'left target': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, target_file_name, False,
+                                     opacity),
+               'top trap': Sprite(sprite_x_pos, sprite_y_pos, trap_file_name, True, opacity),
+               'left trap': Sprite(sprite_screens_x_size + sprite_x_pos + 200, sprite_y_pos, trap_file_name, False,
+                                   opacity)
+               }
 
     sprites_group = pygame.sprite.Group()
     if rotation:
@@ -192,9 +206,6 @@ def update_output(data, parameters):
 
         screen_colour = 255
 
-        #are_levers_pressed = message[0]
-
-        #if are_levers_pressed:
         if rotation:
             angle_man, angle_target, angle_trap = int(message[1]), int(message[2]), int(message[3])
             try:

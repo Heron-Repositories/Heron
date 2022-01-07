@@ -22,9 +22,9 @@ Properties of the generated Node
 BaseName = 'TL Task2 Screens'
 NodeAttributeNames = ['Parameters', 'Move By']
 NodeAttributeType = ['Static', 'Input']
-ParameterNames = ['Screen', 'T=Rotation (F=Translation)']
-ParameterTypes = ['list', 'bool']
-ParametersDefaultValues = [['Both', 'Left', 'Top'], True]
+ParameterNames = ['Screen', 'T=Rotation (F=Translation)', 'Opacity']
+ParameterTypes = ['list', 'bool', 'int']
+ParametersDefaultValues = [['Both', 'Left', 'Top'], True, 255]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_task2_screens_worker.py')
 # </editor-fold>
 
