@@ -13,31 +13,41 @@ import cv2
 import threading
 import pprint as pp
 from Heron.communication.socket_for_serialization import Socket
+from Heron.communication.transform_worker import TransformWorker
 from Heron import general_utils as gu
 
 visualisation_on: bool
+is_dearpygui_running: bool
 visualisation_type: str
 buffer: int
 window_name: str
 visualiser_showing = False
 data = None
+worker_object: TransformWorker
 dpg_ids = {}
-channels: list
+data_shape = None
 dpg_thread: threading.Thread
+visualisation_checking_thread_is_on = False
+initialised_plots = False
 
 
-def get_vis_type_parameter(worker_object):
+def get_vis_type_parameter(_worker_object):
     global visualisation_type
     global visualisation_on
+    global is_dearpygui_running
     global dpg_thread
     global buffer
+    global worker_object
+
+    worker_object = _worker_object
 
     visualisation_on = worker_object.parameters[0]
     visualisation_type = worker_object.parameters[1]
     buffer = worker_object.parameters[2]
 
-    if visualisation_type == 'Value':
-        dpg_thread = threading.Thread(target=start_plotting_thread, daemon=True)
+    if visualisation_type != 'Image':
+        is_dearpygui_running = False
+        dpg_thread = threading.Thread(target=dpg_visualisation_thread, daemon=True)
         dpg_thread.start()
 
     return True
@@ -51,7 +61,7 @@ def show_image():
 
     if visualisation_on:
         if not visualiser_showing:
-            window_name = 'Vis'
+            window_name = 'Visualiser'
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             try:
                 cv2.imshow(window_name, data)
@@ -72,21 +82,6 @@ def show_image():
         cv2.destroyAllWindows()
         visualiser_showing = False
         cv2.waitKey(1)
-
-
-def plot():
-    global buffer
-    global channels
-    global data
-
-    # updating plot data
-    plot_datax = np.arange(buffer)
-    plot_datay = np.array(data)
-    try:
-        for i, n in enumerate(channels):
-            dpg.set_value(dpg_ids['Series {}'.format(n)], [plot_datax, list(plot_datay[i, :])])
-    except Exception as e:
-        print('Plotting exception: {}'.format(e))
 
 
 def show_text_value():
@@ -117,40 +112,85 @@ def show_text_value():
     dpg.set_value(dpg_ids['Text'], new_txt_data)
 
 
+def show_1d_plot():
+    global data
+    global buffer
+    global dpg_ids
+    global initialised_plots
+
+    if buffer == -1:
+        length_to_show = data.shape[-1]
+    else:
+        length_to_show = buffer
+
+    number_of_lines = 1
+    if len(data.shape) > 1:
+        number_of_lines = data.shape[0]
+
+    if not initialised_plots:
+        for n in np.arange(0, number_of_lines):
+            dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show), data[n:length_to_show],
+                                                                       parent=dpg_ids['y_axis'])
+        initialised_plots = True
+
+    if number_of_lines > 1:
+        for n in np.arange(number_of_lines):
+            dpg.set_value(dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), data[n:length_to_show]])
+    else:
+        dpg.set_value(dpg_ids['Plot line {}'.format(0)], [np.arange(length_to_show), data[:length_to_show]])
+    dpg.fit_axis_data(dpg_ids['x_axis'])
+
+
+def show_2d_plot():
+    global data
+    global buffer
+    global dpg_ids
+    global initialised_plots
+
+    if buffer == -1:
+        length_to_show = data.shape[-1]
+    else:
+        length_to_show = buffer
+
+    assert len(data.shape) > 1, ('The Data provided to a Multi Pane Plot must be 2D')
+    number_of_lines = data.shape[0]
+
+    if not initialised_plots:
+        for n in np.arange(number_of_lines):
+            dpg_ids["Plot {}".format(n)] = \
+                dpg.add_plot(label="Plot {}".format(n), height=int(800 / data.shape[0]), width=1030, show=True,
+                             parent=dpg_ids['Visualisation'])
+            dpg_ids['x_axis {}'.format(n)] = \
+                dpg.add_plot_axis(dpg.mvXAxis, label='Data index', parent=dpg_ids["Plot {}".format(n)])
+            dpg_ids['y_axis {}'.format(n)] = \
+                dpg.add_plot_axis(dpg.mvYAxis, label='Data[{}]'.format(n), parent=dpg_ids["Plot {}".format(n)])
+            dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show),
+                                                                                data[n:length_to_show],
+                                                                                parent=dpg_ids['y_axis {}'.format(n)])
+        initialised_plots = True
+
+    for n in np.arange(number_of_lines):
+        dpg.set_value(dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), data[n, :length_to_show]])
+
+
 def update_dpg_gui():
-    global visualisation_on
     global visualiser_showing
     global visualisation_type
     global dpg_ids
 
-    if visualisation_on:
-        if not visualiser_showing:
-
-            dpg.show_item(dpg_ids['Visualisation'])
-
-            visualiser_showing = True
-            #for n in channels:
-            #    dpg.show_item(dpg_ids["Plot {}".format(n)])
-             #   dpg_ids['Series {}'.format(n)] = dpg.add_line_series(np.arange(buffer_size), np.arange(buffer_size),
-              #                                                      parent=dpg_ids['Voltage of {} / Volts'.format(n)])
-
-        if visualiser_showing:
-            try:
-                if visualisation_type == 'Value':
-                    show_text_value()
-                #if len(channels) == 1:
-                #    plot([worker_object.worker_visualisable_result])
-                #else:
-                #   plot(worker_object.worker_visualisable_result)
-            except Exception as e:
-                print(e)
-
-    if not visualisation_on:
-        visualiser_showing = False
-        dpg.stop_dearpygui()
+    if visualiser_showing:
+        try:
+            if visualisation_type == 'Value':
+                show_text_value()
+            if visualisation_type == 'Single Pane Plot':
+                show_1d_plot()
+            if visualisation_type == 'Multi Pane Plot':
+                show_2d_plot()
+        except Exception as e:
+            print(e)
 
 
-def start_plotting_thread():
+def start_dpg():
     """
     The outside loop runs forever and blocks when the dpg.start_dearpygui() is called.
     When the plot_callback() calls dpg.stop_dearpygui() then it continues running forever until the
@@ -158,61 +198,105 @@ def start_plotting_thread():
     :return: Nothing
     """
     global visualisation_type
-    global dpg_ids
     global visualiser_showing
+    global is_dearpygui_running
+    global dpg_ids
+    global initialised_plots
+
+    is_dearpygui_running = True
+    initialised_plots = False
+
+    dpg.create_context()
+    dpg.create_viewport(title='Visualising', width=330, height=280)
+
+    with dpg.window(label="Visualisation", show=True) as dpg_ids['Visualisation']:
+        if visualisation_type == 'Value':
+            dpg_ids['Text'] = dpg.add_text(default_value='__start__', label='Value')
+            dpg.set_item_width(dpg_ids['Visualisation'], 300)
+            dpg.set_item_height(dpg_ids['Visualisation'], 250)
+        elif visualisation_type == 'Single Pane Plot':
+            dpg.set_viewport_width(1050)
+            dpg.set_viewport_height(770)
+            dpg.set_item_width(dpg_ids['Visualisation'], 1050)
+            dpg.set_item_height(dpg_ids['Visualisation'], 770)
+            with dpg.plot(label="Plot", height=700, width=1000, show=True, pan_button=True,
+                          fit_button=True) as dpg_ids['Plot 0']:
+                dpg_ids['x_axis'] = dpg.add_plot_axis(dpg.mvXAxis, label="Data index")
+                dpg_ids['y_axis'] = dpg.add_plot_axis(dpg.mvYAxis, label="Data")
+
+        elif visualisation_type == 'Multi Pane Plot':
+            dpg.set_viewport_width(1050)
+            dpg.set_viewport_height(850)
+            dpg.set_item_width(dpg_ids['Visualisation'], 1050)
+            dpg.set_item_height(dpg_ids['Visualisation'], 820)
+
+    dpg.set_viewport_resize_callback(on_resize_viewport)
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+
+    visualiser_showing = True
+    if data is not None:
+        update_dpg_gui()
+
+    dpg.start_dearpygui()
+    dpg.destroy_context()
+
+
+def stop_dpg():
+    global visualiser_showing
+    global is_dearpygui_running
+
+    dpg.stop_dearpygui()
+    visualiser_showing = False
+    is_dearpygui_running = False
+
+
+def dpg_visualisation_thread():
+    global visualisation_checking_thread_is_on
     global visualisation_on
+    global is_dearpygui_running
+    global worker_object
 
-    while True:
-        if visualisation_on:
-            if not visualiser_showing:
-                dpg.create_context()
-                dpg.create_viewport(title='Visualising', width=330, height=280)
+    visualisation_checking_thread_is_on = True
 
-                with dpg.window(label="Visualisation", width=300, height=250, show=False) \
-                        as dpg_ids['Visualisation']:
+    while visualisation_checking_thread_is_on:
+        visualisation_on = worker_object.parameters[0]
 
-                    if visualisation_type == 'Value':
-                        dpg_ids['Text'] = dpg.add_text(default_value='__start__', label='Value')
-                    elif visualisation_type == '1D Plot':
-                        dpg.set_viewport_width(750)
-                        dpg.set_viewport_height(850)
-                        dpg.set_item_width(dpg_ids['Visualisation'], 730)
-                        dpg.set_item_height(dpg_ids['Visualisation'], 820)
-                        dpg_ids["Plot"] = \
-                            dpg.add_plot(label="Plot", height=int(700), width=800, show=False)
-                    elif visualisation_type == '2D Plot':
-                        dpg.set_viewport_width(750)
-                        dpg.set_viewport_height(850)
-                        dpg.set_item_width(dpg_ids['Visualisation'], 730)
-                        dpg.set_item_height(dpg_ids['Visualisation'], 820)
-                        for n in channels:
-                            dpg_ids["Plot {}".format(n)] = \
-                                dpg.add_plot(label="Plot {}".format(n), height=int(700/len(channels)), width=800, show=False)
-                            dpg_ids['Time points'] = \
-                                dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
-                            dpg_ids['Voltage of {} / Volts'.format(n)] = \
-                                dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
+        if visualisation_on and not is_dearpygui_running:
 
-                dpg.set_viewport_resize_callback(on_resize_viewport)
-                dpg.setup_dearpygui()
-                dpg.show_viewport()
-                dpg.start_dearpygui()
-                dpg.destroy_context()
+            start_dpg_thread = threading.Thread(group=None, target=start_dpg, daemon=True)
+            start_dpg_thread.start()
+
+        if not visualisation_on and is_dearpygui_running:
+            stop_dpg()
+
+        gu.accurate_delay(10)
+
+    stop_dpg()
 
 
 def on_resize_viewport():
-    #global channels
-    #num_of_channels = len(channels)
 
     width = dpg.get_viewport_width()
     height = dpg.get_viewport_height()
 
     dpg.set_item_width(dpg_ids['Visualisation'], width - 20)
-    dpg.set_item_height(dpg_ids['Visualisation'], height-40)
+    dpg.set_item_height(dpg_ids['Visualisation'], height - 40)
 
-    #for n in channels:
-        #dpg.set_item_width(dpg_ids["Plot {}".format(n)], width - 20)
-        #dpg.set_item_height(dpg_ids["Plot {}".format(n)], int(height/num_of_channels) - int(80/num_of_channels))
+    series = 1
+    if data is not None and len(data.shape) > 1 and visualisation_type == 'Multi Pane Plot':
+        series = data.shape[0]
+
+    height_divisor = 1
+    if visualisation_type == 'Multi Pane Plot':
+        height_divisor = series
+
+    try:
+        for n in np.arange(series):
+            dpg.set_item_width(dpg_ids["Plot {}".format(n)], width - 40)
+            dpg.set_item_height(dpg_ids["Plot {}".format(n)], int(height/height_divisor) - int(80/height_divisor))
+    except:
+        pass
 
 
 def visualise(msg, parameters):
@@ -233,6 +317,15 @@ def visualise(msg, parameters):
             elif visualisation_type == 'Value':
                 update_dpg_gui()
 
+            elif visualisation_type == 'Single Pane Plot':
+                update_dpg_gui()
+
+            elif visualisation_type == 'Multi Pane Plot':
+                update_dpg_gui()
+
+            elif visualisation_type == 'Histogram':
+                pass
+
         except Exception as e:
             print(e)
 
@@ -240,7 +333,9 @@ def visualise(msg, parameters):
 
 
 def on_end_of_life():
-    pass
+    global visualisation_checking_thread_is_on
+
+    visualisation_checking_thread_is_on = False
 
 
 if __name__ == "__main__":

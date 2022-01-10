@@ -24,7 +24,7 @@ NodeAttributeNames = ['Parameters', 'In', 'Out']
 NodeAttributeType = ['Static', 'Input', 'Output']
 ParameterNames = ['Visualisation', 'Type', 'Buffer']
 ParameterTypes = ['bool', 'list', 'int']
-ParametersDefaultValues = [False, ['Image', 'Value', '1D Plot', '2D Plot', 'Histogram'], 100]
+ParametersDefaultValues = [False, ['Image', 'Value', 'Single Pane Plot', 'Multi Pane Plot'], 100]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'visualiser_worker.py')
 
 # </editor-fold>
