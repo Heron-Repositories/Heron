@@ -14,6 +14,7 @@ import numpy as np
 import dearpygui.dearpygui as dpg
 import nidaqmx
 import cv2 as cv2
+import threading
 from Heron import general_utils as gu
 from Heron.Operations.Sources.DAQ.NI_DaqMX_Analog_Input import nidaqmx_analog_volts_in_com
 from Heron.gui.visualisation import Visualisation
@@ -30,9 +31,34 @@ sample_mode: int
 dpg_ids = {}
 visualisation_thread_on = False
 vis: Visualisation
+dpg_is_running = False
+
+
+def on_resize_viewport():
+    """
+    What happens when the user resizes the dpg plot when the visualisation parameter is on
+    :return: Nothing
+    """
+    global channels
+    num_of_channels = len(channels)
+
+    width = dpg.get_viewport_width()
+    height = dpg.get_viewport_height()
+
+    dpg.set_item_width(dpg_ids['Visualisation'], width - 20)
+    dpg.set_item_height(dpg_ids['Visualisation'], height-40)
+
+    for n in channels:
+        dpg.set_item_width(dpg_ids["Plot {}".format(n)], width - 20)
+        dpg.set_item_height(dpg_ids["Plot {}".format(n)], int(height/num_of_channels) - int(80/num_of_channels))
 
 
 def plot(data):
+    """
+    Plotting the new data on the visualisation dpg plot
+    :param data: The data to be plotted
+    :return: Nothing
+    """
     global buffer_size
     global channels
 
@@ -46,7 +72,12 @@ def plot(data):
         print('Plotting exception: {}'.format(e))
 
 
-def plot_callback():
+def check_to_plot():
+    """
+    This is called by the acquire function at every step of the infinite loop and plots the just acquired data
+    if the Visualisation.visualisation_on switch is true
+    :return: Nothing
+    """
     global worker_object
     global vis
     global window_showing
@@ -56,7 +87,7 @@ def plot_callback():
     global visualisation_thread_on
 
     if visualisation_thread_on:
-        if vis.visualisation_on:
+        if vis.visualisation_on and dpg_is_running:
             if not vis.window_showing:
                 dpg.show_item(dpg_ids['Visualisation'])
 
@@ -75,16 +106,25 @@ def plot_callback():
                 except Exception as e:
                     print(e)
 
-        if not vis.visualisation_on and visualisation_thread_on == True:
-            vis.window_showing = False
-            dpg.minimize_viewport()
 
-
-def start_plotting_thread(vis_object):
+def check_to_kill_dpg():
     """
-    The outside loop runs forever and blocks when the dpg.start_dearpygui() is called.
-    When the plot_callback() calls dpg.stop_dearpygui() then it continues running forever until the
-    worker_object.visualisation_on turns on at which point the start_dearpygui is called again and this blocks
+    This is called by the acquire function at every step of the infinite loop and checks is the
+    Visualisation.visualisation_on switch has been turned off and then kills the dpg thread
+    :return: Nothing
+    """
+    global visglobal
+    global dpg_is_running
+
+    if not vis.visualisation_on and dpg_is_running:
+        vis.window_showing = False
+        dpg.stop_dearpygui()
+        dpg_is_running = False
+
+
+def start_plotting_thread():
+    """
+    This is the dearpygui thread that creates the dpg windows.
     :return: Nothing
     """
     global channels
@@ -92,45 +132,60 @@ def start_plotting_thread(vis_object):
     global worker_object
     global window_showing
     global visualisation_thread_on
+    global dpg_is_running
+    global vis
+
+    if vis.visualisation_on:
+        if not vis.window_showing:
+            dpg.create_context()
+            dpg.create_viewport(title='Visualising NIDAQ', width=820, height=780)
+            with dpg.window(label="Visualisation", width=800, height=750, show=False) \
+                    as dpg_ids['Visualisation']:
+                for n in channels:
+                    dpg_ids["Plot {}".format(n)] = \
+                        dpg.add_plot(label="Plot {}".format(n), height=int(700/len(channels)), width=800, show=False)
+                    dpg_ids['Time points'] = \
+                        dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
+                    dpg_ids['Voltage of {} / Volts'.format(n)] = \
+                        dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
+            dpg.set_viewport_resize_callback(on_resize_viewport)
+            dpg.setup_dearpygui()
+            dpg.show_viewport()
+            visualisation_thread_on = True
+            dpg_is_running = True
+            dpg.start_dearpygui()
+            dpg.destroy_context()
+
+
+def start_visualisation_thread(vis_object):
+    """
+    This is the continuous loop that checks if it should start a dpg thread (start_plotting_thread())
+    :param vis_object: The Visualisation object passed from the Visualisation class
+    :return: Nothing
+    """
+    global channels
+    global dpg_ids
+    global worker_object
+    global window_showing
+    global visualisation_thread_on
+    global dpg_is_running
 
     while True:
-        if vis_object.visualisation_on:
-            if not vis_object.window_showing:
-                dpg.create_context()
-                dpg.create_viewport(title='Visualising NIDAQ', width=820, height=780)
-                with dpg.window(label="Visualisation", width=800, height=750, show=False) \
-                        as dpg_ids['Visualisation']:
-                    for n in channels:
-                        dpg_ids["Plot {}".format(n)] = \
-                            dpg.add_plot(label="Plot {}".format(n), height=int(700/len(channels)), width=800, show=False)
-                        dpg_ids['Time points'] = \
-                            dpg.add_plot_axis(dpg.mvXAxis, label='Time points', parent=dpg_ids["Plot {}".format(n)])
-                        dpg_ids['Voltage of {} / Volts'.format(n)] = \
-                            dpg.add_plot_axis(dpg.mvYAxis, label='Voltage {}'.format(n), parent=dpg_ids["Plot {}".format(n)])
-                dpg.set_viewport_resize_callback(on_resize_viewport)
-                dpg.setup_dearpygui()
-                dpg.show_viewport()
-                visualisation_thread_on = True
-                dpg.start_dearpygui()
-                dpg.destroy_context()
-
-
-def on_resize_viewport():
-    global channels
-    num_of_channels = len(channels)
-
-    width = dpg.get_viewport_width()
-    height = dpg.get_viewport_height()
-
-    dpg.set_item_width(dpg_ids['Visualisation'], width - 20)
-    dpg.set_item_height(dpg_ids['Visualisation'], height-40)
-
-    for n in channels:
-        dpg.set_item_width(dpg_ids["Plot {}".format(n)], width - 20)
-        dpg.set_item_height(dpg_ids["Plot {}".format(n)], int(height/num_of_channels) - int(80/num_of_channels))
+        if vis_object.visualisation_on and not dpg_is_running:
+            plotting_thread = threading.Thread(group=None, target=start_plotting_thread)
+            plotting_thread.start()
+            while not dpg_is_running:
+                gu.accurate_delay(10)
+        else:
+            gu.accurate_delay(10)
 
 
 def acquire(_worker_object):
+    """
+    The work function running a setup and its infinite loop acquiring data and checking for plotting
+    :param _worker_object:
+    :return:
+    """
     global acquiring_on
     global task
     global buffer_size
@@ -139,11 +194,12 @@ def acquire(_worker_object):
     global rate
     global sample_mode
     global vis
+    global dpg_is_running
 
     worker_object = _worker_object
 
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
-    vis.set_new_visualisation_loop(start_plotting_thread)
+    vis.set_new_visualisation_loop(start_visualisation_thread)
     vis.visualisation_init()
 
     while not acquiring_on:
@@ -180,7 +236,8 @@ def acquire(_worker_object):
         except:
             vis.visualisation_on = nidaqmx_analog_volts_in_com.ParametersDefaultValues[0]
 
-        plot_callback()
+        check_to_kill_dpg()
+        check_to_plot()
 
 
 def on_end_of_life():
@@ -197,8 +254,6 @@ def on_end_of_life():
         task.close()
         del task
         dpg.stop_dearpygui()
-        dpg.destroy_context()
-        del dpg
     except Exception as e:
         print(e)
 
