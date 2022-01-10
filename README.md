@@ -33,7 +33,7 @@ pyzmq >= 22.x
 
 numpy
 
-dearpygui = 1.1
+dearpygui = 1.2
 
 paramikro (required if the multiple computers fuctionality is utilised)
 
