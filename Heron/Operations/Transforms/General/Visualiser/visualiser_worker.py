@@ -250,6 +250,7 @@ def stop_dpg():
     visualiser_showing = False
     is_dearpygui_running = False
 
+print('hello')
 
 def dpg_visualisation_thread():
     global visualisation_checking_thread_is_on
