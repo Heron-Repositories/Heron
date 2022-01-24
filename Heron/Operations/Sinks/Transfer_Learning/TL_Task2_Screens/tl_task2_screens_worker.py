@@ -29,7 +29,7 @@ def initialise(_worker_object):
     global rotation
     global opacity
     global pg_thread_running
-
+    print('PYGAME')
     try:
         parameters = _worker_object.parameters
         monitors = parameters[0]
@@ -186,7 +186,7 @@ def pygame_thread():
                 #sprites_group.clear(screen, background)
 
             pygame.display.update()
-            clock.tick(60)
+            clock.tick(5)
         except:
             pass
 
