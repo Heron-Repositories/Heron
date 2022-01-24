@@ -51,7 +51,7 @@ def initialise(worker_object):
     global global_var_4
 
     # put the initialisation of the Node's parameter's in a try loop to take care of the time it takes for the GUI to
-    # update the SinkWorker object.
+    # update the TransformWorker object.
     try:
         parameters = worker_object.parameters
         global_var_1 = parameters[1]
