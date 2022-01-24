@@ -100,8 +100,15 @@ def start_availability_thread():
     total_steps = int(avail_time / sleep_dt)
 
     availability_period_is_running = True
-    arduino_serial.reset_input_buffer()
+    bytes_in_buffer = arduino_serial.in_waiting
+    while bytes_in_buffer:
+        bytes_in_buffer = arduino_serial.in_waiting
+        string_in = arduino_serial.read(bytes_in_buffer).decode('utf-8')
+        if '555\r\n' in string_in:
+            gu.accurate_delay(500)
+        arduino_serial.reset_input_buffer()
     step = 0
+
     while availability_period_is_running:
 
         bytes_in_buffer = arduino_serial.in_waiting
@@ -128,18 +135,19 @@ def start_availability_thread():
                     else:
                         success_failure_continue = 0
 
-        availability_period_is_running = False
         if success_failure_continue == 0:
                 try:
                     success_sound()
                     for _ in np.arange(reward_amount):
                         arduino_serial.write('a'.encode('utf-8'))
                         gu.accurate_delay(500)
+                    availability_period_is_running = False
                 except Exception as e:
                     print(e)
         elif step >= total_steps or success_failure_continue == 1:
             try:
                 failure_sound()
+                availability_period_is_running = False
             except Exception as e:
                 print(e)
         else:
@@ -191,7 +199,7 @@ def start_availability_or_switch_pokes(data, parameters):
             reward_poke = True
         if reward_poke == 'Right' or reward_poke == 'Old':
             reward_poke = False
-        set_poke_tray()
+        #set_poke_tray()  # Uncomment if there are two physical pokes and this needs to choose between them
         result = [np.array([availability_period_is_running])]
 
     return result
