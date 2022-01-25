@@ -19,5 +19,12 @@
         "Port": 22,
         "username": "george",
         "password": "1234567890"
+    },
+    "3": {
+        "Name": "Id name",
+        "IP": "IP",
+        "Port": 22,
+        "username": "user name",
+        "password": "password"
     }
 }

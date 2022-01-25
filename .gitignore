@@ -53,3 +53,4 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+/Heron/gui/__pycache__/*.pyc
