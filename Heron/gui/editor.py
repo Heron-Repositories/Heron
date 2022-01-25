@@ -68,12 +68,13 @@ def generate_node_tree():
                         pass
                 i = i - 1
             if len(d[1]) > 1 and '__top__' not in d[1]:
-                for dir in d[1]:
-                    if '__' not in dir:
-                        dir_name = dir + '##' + parent
-                        dir_id += 1
-                        dir_ids[dir_name] = dir_id
-                        node_dirs.append((parent_int, parent, dir_id, dir_name))
+                if '__' not in d[0]:
+                    for dir in d[1]:
+                        if '__' not in dir:
+                            dir_name = dir + '##' + parent
+                            dir_id += 1
+                            dir_ids[dir_name] = dir_id
+                            node_dirs.append((parent_int, parent, dir_id, dir_name))
 
     return node_dirs
 

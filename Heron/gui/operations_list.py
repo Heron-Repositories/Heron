@@ -41,7 +41,7 @@ def load_module(path):
 
 for path, subdirs, files in os.walk(root):
     for name in files:
-        if '_com' in name and 'pycache' not in path:
+        if '_com.py' in name and 'pycache' not in path:
 
             module = load_module(path)
 
