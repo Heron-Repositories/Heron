@@ -7,6 +7,11 @@ namespace PubSub
     {
         public static EventManager Instance;
 
+        public UnityEvent onStartClient;
+        public UnityEvent onClientStarted;
+        public UnityEvent onStopClient;
+        public UnityEvent onClientStopped;
+
         private void Awake()
         {
             if (Instance == null)
@@ -22,9 +27,5 @@ namespace PubSub
                 Destroy(this);
         }
 
-        public UnityEvent onStartClient;
-        public UnityEvent onClientStarted;
-        public UnityEvent onStopClient;
-        public UnityEvent onClientStopped;
     }
 }

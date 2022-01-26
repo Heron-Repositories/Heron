@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -255,6 +255,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
+    m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
@@ -375,6 +376,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
+    m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
@@ -501,6 +503,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &192214422
 Canvas:
   m_ObjectHideFlags: 0
@@ -552,7 +555,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 192214419}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9550b0563f8667b4ab155786c36c3c93, type: 3}
+  m_Script: {fileID: 11500000, guid: 820501a3b17f2e04c9e70e26134e98da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   startClient: {fileID: 184577802}
@@ -654,14 +657,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &963194226
-AudioListener:
+--- !u!114 &963194226
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd49341ccea5d4f4fa43e50c55588d08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fullScreen: 0
+  minDisplaySize: 384
+  windowPositionX: 1000
+  windowPositionY: 0
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
@@ -745,7 +756,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1394824542}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29198da0aa674de496e2b97b51e0c775, type: 3}
+  m_Script: {fileID: 11500000, guid: ccdb7fdf121e2414fb56a3539ecb64ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   host: localhost
@@ -839,7 +850,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3642496919142878524}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2fbb47841bb4320844ee4ec8ad0075d, type: 3}
+  m_Script: {fileID: 11500000, guid: f36a69ed69502934f8a96ea2ac8d121d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   onStartClient:
