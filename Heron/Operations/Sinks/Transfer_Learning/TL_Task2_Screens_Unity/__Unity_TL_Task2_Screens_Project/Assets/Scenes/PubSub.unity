@@ -555,9 +555,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 192214419}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 820501a3b17f2e04c9e70e26134e98da, type: 3}
+  m_Script: {fileID: 11500000, guid: 6250cc60b9c88db48bed5e4ea2832f7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startClient: {fileID: 184577802}
+  stopClient: {fileID: 152770075}
 --- !u!1 &786688510
 GameObject:
   m_ObjectHideFlags: 0
@@ -668,10 +670,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fullScreen: 0
-  windowPositionX: 3841
+  windowPositionX: 3850
   windowPositionY: 0
-  monitorWidth: 3840
-  monitorHeight: 1080
+  monitorWidth: 4800
+  monitorHeight: 1310
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
@@ -755,9 +757,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1394824542}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ccdb7fdf121e2414fb56a3539ecb64ab, type: 3}
+  m_Script: {fileID: 11500000, guid: 2a9f978396dc26c4eb42d79a919c0e99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  host: 
+  port: 
 --- !u!4 &1394824544
 Transform:
   m_ObjectHideFlags: 0
@@ -847,9 +851,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 3642496919142878524}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f36a69ed69502934f8a96ea2ac8d121d, type: 3}
+  m_Script: {fileID: 11500000, guid: b42e90159adfb3c4fadd44b7e0b02245, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  onStartClient:
+    m_PersistentCalls:
+      m_Calls: []
+  onClientStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onStopClient:
+    m_PersistentCalls:
+      m_Calls: []
+  onClientStopped:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &3642496919142878524
 GameObject:
   m_ObjectHideFlags: 0
