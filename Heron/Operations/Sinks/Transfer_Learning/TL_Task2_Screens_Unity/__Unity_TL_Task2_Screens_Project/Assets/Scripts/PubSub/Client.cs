@@ -24,6 +24,8 @@ namespace PubSub
             EventManager.Instance.onClientStarted.AddListener(() => _clientStatus = ClientStatus.Active);
             EventManager.Instance.onStopClient.AddListener(OnStopClient);
             EventManager.Instance.onClientStopped.AddListener(() => _clientStatus = ClientStatus.Inactive);
+
+            OnStartClient();
         }
 
         private void Update()
