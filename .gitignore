@@ -54,3 +54,4 @@ sysinfo.txt
 *.apk
 *.unitypackage
 /Heron/gui/__pycache__/*.pyc
+/Heron/Operations/Sinks/Transfer_Learning/TL_Task2_Screens_Unity/Unity_TL_Task2_Screens_Project

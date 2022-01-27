@@ -14,11 +14,11 @@ public class SettingsManager : MonoBehaviour
 
     public bool fullScreen = false;
     private static string fullScreenKey = "Full Screen";
-    public int minDisplaySize = 384;
-    private static int monitorWidth;
-    private static int monitorHeight;
+
     public int windowPositionX = 1000;
     public int windowPositionY = 0;
+    public int monitorWidth = 1000;
+    public int monitorHeight = 800;
 
 #if UNITY_STANDALONE_WIN
    
@@ -38,8 +38,8 @@ public class SettingsManager : MonoBehaviour
 
     void Start()
     {
-        monitorWidth = Screen.resolutions[Screen.resolutions.Length - 1].width;
-        monitorHeight = Screen.resolutions[Screen.resolutions.Length - 1].height;
+        //monitorWidth = Screen.resolutions[Screen.resolutions.Length - 1].width;
+        //monitorHeight = Screen.resolutions[Screen.resolutions.Length - 1].height;
         CheckAndSet();
     }
 
@@ -66,6 +66,7 @@ public class SettingsManager : MonoBehaviour
     public void SetWindowed()
     {
         SetWindowResolution();
+        
         fullScreen = false;
         PlayerPrefs.SetInt(fullScreenKey, 0);
         PlayerPrefs.Save();
@@ -73,32 +74,10 @@ public class SettingsManager : MonoBehaviour
 
     private void SetWindowResolution()
     {
-        int multiplier = 1;
-        if (monitorWidth >= monitorHeight)
-        {
-            multiplier = monitorHeight / minDisplaySize;
-            if ((monitorHeight % minDisplaySize) == 0)
-            {
-                multiplier--;
-            }
-        }
-        else
-        {
-            multiplier = monitorWidth / minDisplaySize;
-            if ((monitorWidth % minDisplaySize) == 0)
-            {
-                multiplier--;
-            }
-        }
-        int size = minDisplaySize * multiplier;
-        if (size < minDisplaySize)
-        {
-            size = minDisplaySize;
-        }
-        Screen.SetResolution(size, size, false);
+        
 
 #if UNITY_STANDALONE_WIN
-       
+       Screen.SetResolution(monitorWidth, monitorHeight, false);
         //int x = monitorWidth / 2;
         //x -= size / 2;
         //int y = monitorHeight / 2;
