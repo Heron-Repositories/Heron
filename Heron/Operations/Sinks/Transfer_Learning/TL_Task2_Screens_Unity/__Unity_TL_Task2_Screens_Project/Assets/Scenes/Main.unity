@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 463160596}
   - component: {fileID: 463160595}
   - component: {fileID: 463160597}
+  - component: {fileID: 463160598}
   m_Layer: 5
   m_Name: Manipulandum Left
   m_TagString: Untagged
@@ -250,6 +251,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &463160598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463160593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 910de946ce6f340419e68b666d37d675, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &570986456
 GameObject:
   m_ObjectHideFlags: 0
@@ -521,7 +534,7 @@ Camera:
     m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 1
+  m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -779,6 +792,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onClientStopped:
+    m_PersistentCalls:
+      m_Calls: []
+  onUpdatedMotion:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &3642496919142878524
