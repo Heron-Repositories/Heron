@@ -15,6 +15,8 @@ public class EventManager : MonoBehaviour
     public class InteractableObjectEvent : UnityEvent<string> { }
 
     public InteractableObjectEvent onUpdatedMotion;
+    public InteractableObjectEvent onUpdateMovementType;
+    public InteractableObjectEvent onUpdateScreensOn;
 
     private void Awake()
     {
@@ -29,6 +31,8 @@ public class EventManager : MonoBehaviour
 
             
             onUpdatedMotion = new InteractableObjectEvent();
+            onUpdateMovementType = new InteractableObjectEvent();
+            onUpdateScreensOn = new InteractableObjectEvent();
         }
 
         else

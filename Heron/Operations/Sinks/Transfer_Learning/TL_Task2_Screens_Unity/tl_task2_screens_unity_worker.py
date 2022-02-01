@@ -63,7 +63,11 @@ def initialise(_worker_object):
     try:
         unity_exe = path.join(node_dir, '__Unity_TL_Task2_Screens_Project', 'Builds', 'TL_Task2_Screens_Unity.exe')
         unity_process = subprocess.Popen(unity_exe)
-        pass
+
+        screens_message_out = str('Screens:{}'.format(monitors))
+        unity_socket.send_string(screens_message_out)
+        movement_type_message_out = str('MovementType:{}'.format(rotation))
+        unity_socket.send_string(movement_type_message_out)
     except Exception as e:
         print(e)
         return False
@@ -79,12 +83,9 @@ def work_function(data, parameters):
     message_in = data[1:]
     message_in = Socket.reconstruct_array_from_bytes_message(message_in)[0]
     print(message_in)
-    print(type(message_in))
-
 
     # Create message out to send to Unity
-    message_out = str(message_in)
-    print(message_out)
+    message_out = 'Coordinates:{}'.format(message_in)
     unity_socket.send_string(message_out)
 
 

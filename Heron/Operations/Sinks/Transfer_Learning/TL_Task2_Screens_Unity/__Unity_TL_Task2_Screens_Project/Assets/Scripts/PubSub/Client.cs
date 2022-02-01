@@ -43,7 +43,17 @@ public class Client : MonoBehaviour
     private void HandleMessage(string message)
     {
         Debug.Log(message);
-        EventManager.Instance.onUpdatedMotion.Invoke(message);
+        string message_data = message.Substring(message.IndexOf(":"));
+
+        if (message.Contains("Coordinates:"))
+        {
+            EventManager.Instance.onUpdatedMotion.Invoke(message_data);
+        }
+
+        if (message.Contains("Screens:"))
+        {
+            EventManager.Instance.onUpdateScreensOn.Invoke(message_data);
+        }
     }
 
     private void OnStartClient()
