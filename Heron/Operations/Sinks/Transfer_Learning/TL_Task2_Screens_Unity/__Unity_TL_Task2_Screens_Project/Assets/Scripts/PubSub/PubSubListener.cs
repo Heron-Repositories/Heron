@@ -5,7 +5,7 @@ using NetMQ;
 using NetMQ.Sockets;
 using System.Text;
 
-public class Listener
+public class PubSubListener
 {
     private Thread _clientThread;
     private readonly string _host;
@@ -15,7 +15,7 @@ public class Listener
 
     private readonly ConcurrentQueue<string> _messageQueue = new ConcurrentQueue<string>();
 
-    public Listener(string host, string port, Action<string> messageCallback)
+    public PubSubListener(string host, string port, Action<string> messageCallback)
     {
         _host = host;
         _port = port;

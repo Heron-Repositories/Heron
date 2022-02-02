@@ -22,7 +22,8 @@ from Heron import general_utils as gu
 # </editor-fold>
 
 # <editor-fold desc="Global variables.
-unity_socket: zmq.Socket
+unity_socket_pub: zmq.Socket
+unity_socket_rep: zmq.Socket
 unity_process: subprocess.Popen
 monitors: str
 sprites: dict
@@ -35,13 +36,10 @@ sprite_screens_x_size = 1980
 # </editor-fold>
 
 
-def initialise(_worker_object):
+def get_parameters(_worker_object):
     global monitors
     global rotation
     global opacity
-    global pg_thread_running
-    global unity_socket
-    global unity_process
 
     try:
         parameters = _worker_object.parameters
@@ -52,22 +50,19 @@ def initialise(_worker_object):
         print(e)
         return False
 
+    return True
+
+
+def connect_sockets():
+    global unity_socket_pub
+    global unity_socket_rep
+
     try:
         unity_context = zmq.Context()
-        unity_socket = unity_context.socket(zmq.PUB)
-        unity_socket.bind("tcp://*:12346")
-    except Exception as e:
-        print(e)
-        return False
-
-    try:
-        unity_exe = path.join(node_dir, '__Unity_TL_Task2_Screens_Project', 'Builds', 'TL_Task2_Screens_Unity.exe')
-        unity_process = subprocess.Popen(unity_exe)
-
-        screens_message_out = str('Screens:{}'.format(monitors))
-        unity_socket.send_string(screens_message_out)
-        movement_type_message_out = str('MovementType:{}'.format(rotation))
-        unity_socket.send_string(movement_type_message_out)
+        unity_socket_pub = unity_context.socket(zmq.PUB)
+        unity_socket_pub.bind("tcp://*:12346")
+        unity_socket_rep = unity_context.socket(zmq.REP)
+        unity_socket_rep.bind("tcp://*:12345")
     except Exception as e:
         print(e)
         return False
@@ -75,8 +70,55 @@ def initialise(_worker_object):
     return True
 
 
+def start_unity_exe():
+    global unity_process
+    try:
+        unity_exe = path.join(node_dir, '__Unity_TL_Task2_Screens_Project', 'Builds', 'TL_Task2_Screens_Unity.exe')
+        unity_process = subprocess.Popen(unity_exe)
+    except Exception as e:
+        print(e)
+        return False
+
+    return True
+
+
+def first_communication_with_Unity():
+    try:
+        # That will lock until Unity has send a request but that means the process will be killed in 5 secs of inactivity
+        print(unity_socket_rep.recv_string())
+        unity_socket_rep.send_string('Python script knows Unity exe has started')
+
+        # Once the req rep handshake has happened then we can send commands to the Unity exe
+        screens_message_out = str('Screens:{}'.format(monitors))
+        unity_socket_pub.send_string(screens_message_out)
+        movement_type_message_out = str('MovementType:{}'.format(rotation))
+        unity_socket_pub.send_string(movement_type_message_out)
+    except Exception as e:
+        print(e)
+        return False
+
+    return True
+
+
+def initialise(_worker_object):
+
+    if not get_parameters(_worker_object):
+        return False
+
+    if not connect_sockets():
+        return False
+
+    if not start_unity_exe():
+        return False
+
+    if not first_communication_with_Unity():
+        return False
+
+    return True
+
+
 def work_function(data, parameters):
-    global unity_socket
+    global unity_socket_pub
 
     topic = data[0]
 
@@ -86,15 +128,16 @@ def work_function(data, parameters):
 
     # Create message out to send to Unity
     message_out = 'Coordinates:{}'.format(message_in)
-    unity_socket.send_string(message_out)
+    print(message_out)
+    unity_socket_pub.send_string(message_out)
 
 
 def on_end_of_life():
     global unity_process
-    global unity_socket
+    global unity_socket_pub
 
     unity_process.kill()
-    unity_socket.close(linger=1)
+    unity_socket_pub.close(linger=1)
 
 
 if __name__ == "__main__":

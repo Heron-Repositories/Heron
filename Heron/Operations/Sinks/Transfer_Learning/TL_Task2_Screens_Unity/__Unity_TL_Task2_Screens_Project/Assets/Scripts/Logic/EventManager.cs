@@ -18,6 +18,7 @@ public class EventManager : MonoBehaviour
     public InteractableObjectEvent onUpdateMovementType;
     public InteractableObjectEvent onUpdateScreensOn;
 
+
     private void Awake()
     {
         if (Instance == null)
@@ -33,6 +34,7 @@ public class EventManager : MonoBehaviour
             onUpdatedMotion = new InteractableObjectEvent();
             onUpdateMovementType = new InteractableObjectEvent();
             onUpdateScreensOn = new InteractableObjectEvent();
+
         }
 
         else

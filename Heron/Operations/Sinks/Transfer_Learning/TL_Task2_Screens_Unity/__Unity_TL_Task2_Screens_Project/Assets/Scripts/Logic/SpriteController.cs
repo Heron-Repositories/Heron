@@ -20,7 +20,7 @@ public class SpriteController: MonoBehaviour
 
     void DoMotionTypeSelection(string _movementType)
     {
-        if (_movementType == "0")
+        if (_movementType == "True")
         {
             movementType = true;
         }
@@ -36,7 +36,7 @@ public class SpriteController: MonoBehaviour
         {
             this.gameObject.SetActive(true);
         }
-        if (transform.name.Contains("Right") && (screens == "Both" || screens == "Right"))
+        if (transform.name.Contains("Top") && (screens == "Both" || screens == "Top"))
         {
             this.gameObject.SetActive(true);
         }

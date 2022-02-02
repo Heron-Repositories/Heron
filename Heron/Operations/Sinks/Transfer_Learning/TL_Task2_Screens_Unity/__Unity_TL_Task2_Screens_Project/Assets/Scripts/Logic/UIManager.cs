@@ -10,7 +10,8 @@ public class UIManager : MonoBehaviour
     {
         EventManager.Instance.onClientStarted.AddListener(() => stopClient.interactable = true);
         EventManager.Instance.onClientStopped.AddListener(() => startClient.interactable = true);
-            
+
+
         stopClient.interactable = false;
         startClient.onClick.AddListener(() =>
         {
