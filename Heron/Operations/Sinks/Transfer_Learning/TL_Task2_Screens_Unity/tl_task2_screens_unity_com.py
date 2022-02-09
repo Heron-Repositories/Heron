@@ -27,7 +27,7 @@ NodeAttributeNames = ['Parameters', 'Move By']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['Screen', 'T=Rotation (F=Translation)', 'Opacity']
 ParameterTypes = ['list', 'bool', 'int']
-ParametersDefaultValues = [['Both', 'Left', 'Top'], True, 255]
+ParametersDefaultValues = [['Both', 'Left', 'Front'], True, 255]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_task2_screens_unity_worker.py')
 # </editor-fold>
 

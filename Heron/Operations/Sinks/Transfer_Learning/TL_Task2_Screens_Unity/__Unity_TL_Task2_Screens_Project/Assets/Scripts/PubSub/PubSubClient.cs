@@ -42,9 +42,9 @@ public class PubSubClient : MonoBehaviour
 
     private void HandleMessage(string message)
     {
-        Debug.Log(message);
+        //Debug.Log(message);
         string message_data = message.Substring(message.IndexOf(":")).Substring(1);
-        Debug.Log(message_data);
+        //Debug.Log(message_data);
 
         if (message.Contains("Screens:"))
         {
@@ -66,17 +66,17 @@ public class PubSubClient : MonoBehaviour
 
     private void OnStartClient()
     {
-        Debug.Log("Starting PubSub client...");
+        //Debug.Log("Starting PubSub client...");
         _clientStatus = ClientStatus.Activating;
         _listener.Start();
-        Debug.Log("PubSub Client started!");
+        //Debug.Log("PubSub Client started!");
     }
 
     private void OnStopClient()
     {
-        Debug.Log("Stopping PubSub client...");
+        //Debug.Log("Stopping PubSub client...");
         _clientStatus = ClientStatus.Deactivating;
         _listener.Stop();
-        Debug.Log("PubSub Client stopped!");
+        //Debug.Log("PubSub Client stopped!");
     }
 }

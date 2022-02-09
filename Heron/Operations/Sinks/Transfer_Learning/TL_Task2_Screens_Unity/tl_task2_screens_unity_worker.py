@@ -86,7 +86,7 @@ def first_communication_with_Unity():
     try:
         # That will lock until Unity has send a request but that means the process will be killed in 5 secs of inactivity
         print(unity_socket_rep.recv_string())
-        unity_socket_rep.send_string('Python script knows Unity exe has started')
+        unity_socket_rep.send_string('Python knows Unity is up.')
 
         # Once the req rep handshake has happened then we can send commands to the Unity exe
         screens_message_out = str('Screens:{}'.format(monitors))

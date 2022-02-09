@@ -33,7 +33,7 @@ public class ReqRepListener
         }
 
         if (!messageReceived)
-            message = "Nope";
+            message = "No message from Heron";
         _messageCallback(message);
     }
 }

@@ -10,6 +10,7 @@ public class EventManager : MonoBehaviour
     public UnityEvent onClientStarted;
     public UnityEvent onStopClient;
     public UnityEvent onClientStopped;
+    public UnityEvent onCueAnimate;
 
     [System.Serializable]
     public class InteractableObjectEvent : UnityEvent<string> { }
@@ -29,6 +30,7 @@ public class EventManager : MonoBehaviour
             onClientStarted = new UnityEvent();
             onStopClient = new UnityEvent();
             onClientStopped = new UnityEvent();
+            onCueAnimate = new UnityEvent();
 
             
             onUpdatedMotion = new InteractableObjectEvent();
