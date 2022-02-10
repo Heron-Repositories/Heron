@@ -22,6 +22,8 @@ public class SettingsManager : MonoBehaviour
     public int monitorWidth = 1000;
     public int monitorHeight = 800;
 
+    
+
 #if UNITY_STANDALONE_WIN
    
     [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
@@ -40,8 +42,9 @@ public class SettingsManager : MonoBehaviour
 
     void Start()
     {
-        //monitorWidth = Screen.resolutions[Screen.resolutions.Length - 1].width;
-        //monitorHeight = Screen.resolutions[Screen.resolutions.Length - 1].height;
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 15;
+
         CheckAndSet();
     }
 

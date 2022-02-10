@@ -7,7 +7,7 @@ using System.Linq;
 public class SpriteController: MonoBehaviour
 {
     private bool movementType;
-    private bool screenOn;
+    private bool shownOnScreen;
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +19,7 @@ public class SpriteController: MonoBehaviour
         EventManager.Instance.onUpdateScreensOn.AddListener(DoScreensSelection);
 
         movementType = true; // That means rotation
-        screenOn = false;
+        shownOnScreen = false;
     }
 
     void DoMotionTypeSelection(string _movementType)
@@ -36,15 +36,13 @@ public class SpriteController: MonoBehaviour
     
     void DoScreensSelection(string screens)
     {
-        if(transform.name.Contains("Left") && (screens=="Both" || screens== "Left"))
+        if(transform.name.Contains("Right") && (screens=="Both" || screens== "Right"))
         {
-            this.gameObject.SetActive(true);
-            screenOn = true;
+            shownOnScreen = true;
         }
         if (transform.name.Contains("Front") && (screens == "Both" || screens == "Front"))
         {
-            this.gameObject.SetActive(true);
-            screenOn = true;
+            shownOnScreen = true;
         }
     }
 
@@ -77,15 +75,17 @@ public class SpriteController: MonoBehaviour
     void HideOrShow(int state)
     {
         this.gameObject.SetActive(false);
-        if (state != 0 && screenOn)
+        Debug.Log(string.Format("{0} is {1} and screen is {2}", transform.name, state, shownOnScreen));
+        if (state != 0 && shownOnScreen)
         {
             this.gameObject.SetActive(true);
+            Debug.Log(string.Format("{0} is made Active", transform.name));
         }
     }
 
     void DoAnimationIfCue()
     {
-        if (transform.name.Contains("Cue") && screenOn)
+        if (transform.name.Contains("Cue") && shownOnScreen)
         {
             EventManager.Instance.onCueAnimate.Invoke();
         }
@@ -99,7 +99,7 @@ public class SpriteController: MonoBehaviour
 
         HideOrShow(motion);
 
-
+        DoAnimationIfCue();
 
         if (movementType)
             transform.rotation = Quaternion.Euler(Vector3.forward * motion);
