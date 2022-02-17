@@ -180,16 +180,15 @@ def start_availability_or_switch_pokes(data, parameters):
     topic = data[0].decode('utf-8')
     message = Socket.reconstruct_array_from_bytes_message(data[1:])
 
-    if ct.IGNORE == message[0]:
-        result = [np.array([ct.IGNORE])]
-    elif 'Start' in topic:
+    if 'Start' in topic:
         if not availability_period_is_running:
             if trigger_string == message[0] or trigger_string == 'number':
                 if trigger_string == 'number':
                     reward_amount = int(message[0])
                 try:
-                    avail_thread = threading.Thread(target=start_availability_thread)
-                    avail_thread.start()
+                    if message[0] != -1:  # That allows the result to update without starting another thread
+                        avail_thread = threading.Thread(target=start_availability_thread)
+                        avail_thread.start()
                 except Exception as e:
                     print(e)
         result = [np.array([availability_period_is_running])]
