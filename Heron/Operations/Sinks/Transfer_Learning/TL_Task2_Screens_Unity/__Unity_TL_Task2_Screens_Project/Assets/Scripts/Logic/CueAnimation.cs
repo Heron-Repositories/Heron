@@ -9,12 +9,13 @@ public class CueAnimation : MonoBehaviour
 
     void Start()
     {
-        state = "still";
         EventManager.Instance.onCueAnimate.AddListener(Loom);
     }
 
     void Loom()
     {
-        animation.Play("Entry");
+        animation.Play("CueLooming");
     }
+
+ 
 }

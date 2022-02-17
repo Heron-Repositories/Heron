@@ -75,18 +75,21 @@ public class SpriteController: MonoBehaviour
     void HideOrShow(int state)
     {
         this.gameObject.SetActive(false);
-        Debug.Log(string.Format("{0} is {1} and screen is {2}", transform.name, state, shownOnScreen));
+        //Debug.Log(string.Format("{0} is {1} and screen is {2}", transform.name, state, shownOnScreen));
         if (state != 0 && shownOnScreen)
         {
             this.gameObject.SetActive(true);
-            Debug.Log(string.Format("{0} is made Active", transform.name));
+            //Debug.Log(string.Format("{0} is made Active", transform.name));
         }
     }
 
-    void DoAnimationIfCue()
+    void DoAnimationIfCue(int state)
     {
-        if (transform.name.Contains("Cue") && shownOnScreen)
+        //If the sprite is the Cue and it is shown on screen and the state sent by the Heron node is 1 then animate it (that means that states != 1 will not do anything except 0 which will hide it)
+        //Debug.Log(state);
+        if (transform.name.Contains("Cue") && shownOnScreen && state == 1)
         {
+            Debug.Log("Anim invoked");
             EventManager.Instance.onCueAnimate.Invoke();
         }
     }
@@ -99,7 +102,7 @@ public class SpriteController: MonoBehaviour
 
         HideOrShow(motion);
 
-        DoAnimationIfCue();
+        DoAnimationIfCue(motion);
 
         if (movementType)
             transform.rotation = Quaternion.Euler(Vector3.forward * motion);

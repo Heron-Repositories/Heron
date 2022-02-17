@@ -32,7 +32,7 @@ opacity: int
 screen_colour: int
 main_screen_x_size = 2561 + 1280
 sprite_screens_x_size = 1980
-
+previous_message = 'Hi'
 # </editor-fold>
 
 
@@ -75,6 +75,7 @@ def start_unity_exe():
     try:
         unity_exe = path.join(node_dir, '__Unity_TL_Task2_Screens_Project', 'Builds', 'TL_Task2_Screens_Unity.exe')
         unity_process = subprocess.Popen(unity_exe)
+        print(unity_process)
     except Exception as e:
         print(e)
         return False
@@ -85,7 +86,7 @@ def start_unity_exe():
 def first_communication_with_Unity():
     try:
         # That will lock until Unity has send a request but that means the process will be killed in 5 secs of inactivity
-        print(unity_socket_rep.recv_string())
+        unity_socket_rep.recv_string()
         unity_socket_rep.send_string('Python knows Unity is up.')
 
         # Once the req rep handshake has happened then we can send commands to the Unity exe
@@ -119,16 +120,18 @@ def initialise(_worker_object):
 
 def work_function(data, parameters):
     global unity_socket_pub
+    global previous_message
 
     topic = data[0]
 
     message_in = data[1:]
     message_in = Socket.reconstruct_array_from_bytes_message(message_in)[0]
-    print(message_in)
 
     # Create message out to send to Unity
     message_out = 'Coordinates:{}'.format(message_in)
-    print(message_out)
+    #if message_out != previous_message:
+    print('------------ SCREENS = {}'.format(message_out))
+    previous_message = message_out
     unity_socket_pub.send_string(message_out)
 
 
