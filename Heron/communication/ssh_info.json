@@ -21,10 +21,10 @@
         "password": "1234567890"
     },
     "3": {
-        "Name": "Id name",
-        "IP": "IP",
+        "Name": "screens",
+        "IP": "192.168.1.100",
         "Port": 22,
-        "username": "user name",
-        "password": "password"
+        "username": "screens",
+        "password": "1234567890"
     }
 }
