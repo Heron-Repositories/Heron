@@ -106,17 +106,17 @@ def experiment(data, parameters):
         return result
 
     if availability_on != prev_avail:
-        print(' ================ Availability = {}'.format(availability_on))
+        #print(' ================ Availability = {}'.format(availability_on))
         prev_avail = availability_on
 
     if poke_on != prev_poke:
-        print(' ================ Poke = {}'.format(poke_on))
+        #print(' ================ Poke = {}'.format(poke_on))
         prev_poke = poke_on
 
     if reward_on_poke:
 
         if not poke_on and not availability_on:
-            print('A')
+            #print('A')
             if state_machine.current_state == state_machine.no_poke_no_avail:
                 state_machine.running_around_no_availability_0()
             elif state_machine.current_state == state_machine.poke_no_avail:
@@ -134,14 +134,14 @@ def experiment(data, parameters):
                 state_machine.initialise_after_success_14()
 
         elif poke_on and not availability_on:
-            print('B')
+            #print('B')
             if state_machine.current_state == state_machine.no_poke_no_avail:
                 state_machine.just_poked_1()
             elif state_machine.current_state == state_machine.poke_no_avail:
                 state_machine.waiting_in_poke_before_availability_3()
                 if state_machine.poke_timer > reward_on_poke_delay:
                     state_machine.availability_started_4()
-                    print('!!!!!!!!!!! {}'.format([state_machine.command_to_screens, state_machine.command_to_food_poke]))
+                    #print('!!!!!!!!!!! {}'.format([state_machine.command_to_screens, state_machine.command_to_food_poke]))
                     availability_on = True
             elif state_machine.current_state == state_machine.poke_avail:
                 state_machine.too_long_in_poke_9()
@@ -151,21 +151,21 @@ def experiment(data, parameters):
                 state_machine.poking_at_fail_12()
 
         elif not poke_on and availability_on:
-            print('C')
+            #print('C')
             if state_machine.current_state == state_machine.poke_avail:
                 state_machine.leaving_poke_while_availability_6()
             elif state_machine.current_state == state_machine.no_poke_avail:
                 state_machine.running_around_while_availability_8()
 
         elif poke_on and availability_on:
-            print('D')
+            #print('D')
             if state_machine.current_state == state_machine.poke_avail:
                 state_machine.waiting_in_poke_while_availability_5()
             elif state_machine.current_state == state_machine.no_poke_avail:
                 state_machine.poking_again_while_availability_7()
 
     result = [state_machine.command_to_screens, state_machine.command_to_food_poke]
-    print(result, state_machine.current_state)
+    #print(result, state_machine.current_state)
     return result
 
 
