@@ -5,17 +5,17 @@ from statemachine import StateMachine, State
 from Heron import constants as ct
 
 
-class RewardOnPokeStateMachine(StateMachine):
+class StateMachine(StateMachine):
     number_of_pellets = cfg.number_of_pellets
     reward_on_poke_delay = cfg.reward_on_poke_delay
-
-    print(number_of_pellets, reward_on_poke_delay)
 
     command_to_screens = np.array(['Cue=0, Manipulandum=0, Target=0, Trap=0'])
     command_to_food_poke = np.array([ct.IGNORE])
     poke_timer = 0
 
     constant_to_update_poke_without_starting_trial = -1
+
+    man_targ_trap = [0, 0, 0]
     
     # States
     no_poke_no_avail = State("NP_NA", initial=True)
@@ -42,6 +42,10 @@ class RewardOnPokeStateMachine(StateMachine):
     initialise_after_fail_13 = failed.to(no_poke_no_avail)
     initialise_after_success_14 = succeeded.to(no_poke_no_avail)
 
+    def __init__(self, _reward_on_poke):
+        self.reward_on_poke = _reward_on_poke
+        super().__init__(StateMachine)
+
     def on_running_around_no_availability_0(self):
         self.command_to_screens = np.array([ct.IGNORE])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
@@ -60,7 +64,12 @@ class RewardOnPokeStateMachine(StateMachine):
         #print('ooo Left too early')
 
     def on_waiting_in_poke_before_availability_3(self):
-        self.command_to_screens = np.array([ct.IGNORE])
+        if self.reward_on_poke:
+            self.command_to_screens = np.array([ct.IGNORE])
+        else:
+            self.command_to_screens = np.array(
+                ['Cue=0, Manipulandum={}, Target={}, Trap={}'.
+                     format(self.man_targ_trap[0], self.man_targ_trap[1], self.man_targ_trap[2])])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
         self.poke_timer += 0.1
 
