@@ -186,7 +186,7 @@ def start_availability_or_switch_pokes(data, parameters):
                 if trigger_string == 'number':
                     reward_amount = int(message[0])
                 try:
-                    if message[0] != -1:  # That allows the result to update without starting another thread
+                    if message[0] != -1 and message[0] != '-1':  # That allows the result to update without starting another thread
                         avail_thread = threading.Thread(target=start_availability_thread)
                         avail_thread.start()
                 except Exception as e:
@@ -198,7 +198,7 @@ def start_availability_or_switch_pokes(data, parameters):
             reward_poke = True
         if reward_poke == 'Right' or reward_poke == 'Old':
             reward_poke = False
-        #set_poke_tray()  # Uncomment if there are two physical pokes and this needs to choose between them
+        set_poke_tray()
         result = [np.array([availability_period_is_running])]
 
     return result
