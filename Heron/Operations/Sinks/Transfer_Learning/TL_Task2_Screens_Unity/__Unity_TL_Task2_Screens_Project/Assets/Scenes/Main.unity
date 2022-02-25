@@ -580,7 +580,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fullScreen: 0
-  windowPositionX: 2560
+  windowPositionX: 1920
   windowPositionY: 0
   monitorWidth: 3840
   monitorHeight: 1310
