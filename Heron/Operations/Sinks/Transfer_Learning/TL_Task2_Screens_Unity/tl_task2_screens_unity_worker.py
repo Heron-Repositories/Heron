@@ -139,8 +139,11 @@ def on_end_of_life():
     global unity_process
     global unity_socket_pub
 
-    unity_process.kill()
-    unity_socket_pub.close(linger=1)
+    try:
+        unity_process.kill()
+        unity_socket_pub.close(linger=1)
+    except:
+        pass
 
 
 if __name__ == "__main__":
