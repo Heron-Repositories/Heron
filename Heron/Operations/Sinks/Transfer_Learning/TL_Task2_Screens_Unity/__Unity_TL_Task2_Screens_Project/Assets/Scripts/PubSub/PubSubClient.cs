@@ -56,6 +56,11 @@ public class PubSubClient : MonoBehaviour
             EventManager.Instance.onUpdateMovementType.Invoke(message_data);
         }
 
+        if (message.Contains("Opacity:"))
+        {
+            EventManager.Instance.onUpdateOpacity.Invoke(message_data);
+        }
+
         if (message.Contains("Coordinates:"))
         {
             EventManager.Instance.onUpdatedMotion.Invoke(message_data);

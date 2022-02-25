@@ -18,6 +18,7 @@ public class EventManager : MonoBehaviour
     public InteractableObjectEvent onUpdatedMotion;
     public InteractableObjectEvent onUpdateMovementType;
     public InteractableObjectEvent onUpdateScreensOn;
+    public InteractableObjectEvent onUpdateOpacity;
 
 
     private void Awake()
@@ -36,6 +37,7 @@ public class EventManager : MonoBehaviour
             onUpdatedMotion = new InteractableObjectEvent();
             onUpdateMovementType = new InteractableObjectEvent();
             onUpdateScreensOn = new InteractableObjectEvent();
+            onUpdateOpacity = new InteractableObjectEvent();
 
         }
 

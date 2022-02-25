@@ -1,7 +1,7 @@
-using System.Collections;
+using UnityEngine.UI;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
+using System;
 
 
 public class SpriteController: MonoBehaviour
@@ -17,6 +17,7 @@ public class SpriteController: MonoBehaviour
         EventManager.Instance.onUpdatedMotion.AddListener(DoMotion);
         EventManager.Instance.onUpdateMovementType.AddListener(DoMotionTypeSelection);
         EventManager.Instance.onUpdateScreensOn.AddListener(DoScreensSelection);
+        EventManager.Instance.onUpdateOpacity.AddListener(DoOpacitySelection);
 
         movementType = true; // That means rotation
         shownOnScreen = false;
@@ -43,6 +44,16 @@ public class SpriteController: MonoBehaviour
         if (transform.name.Contains("Front") && (screens == "Both" || screens == "Front"))
         {
             shownOnScreen = true;
+        }
+    }
+
+    void DoOpacitySelection(string _opacity)
+    {
+        float opacity = float.Parse(_opacity);
+        if (transform.name.Contains("Target") || transform.name.Contains("Trap"))
+        {
+            Color current_color = transform.GetComponent<Image>().color;
+            transform.GetComponent<Image>().color = new Color(current_color.r, current_color.g, current_color.b, opacity);
         }
     }
 
@@ -89,8 +100,32 @@ public class SpriteController: MonoBehaviour
         //Debug.Log(state);
         if (transform.name.Contains("Cue") && shownOnScreen && state == 1)
         {
-            Debug.Log("Anim invoked");
+            //Debug.Log("Anim invoked");
             EventManager.Instance.onCueAnimate.Invoke();
+        }
+    }
+
+    void ChangeTransformIfNotCue(int state)
+    {
+        if (!transform.name.Contains("Cue") && shownOnScreen)
+        {
+            int starting_position = 100;
+            if (transform.name.Contains("Right"))
+            {
+                state += 90;
+                starting_position =  1600;
+            }
+
+            if (movementType)
+            {
+                transform.rotation = Quaternion.Euler(Vector3.forward * state);
+            }
+            else
+            {
+                transform.position = new Vector3(starting_position + (int)(4.5 * state), transform.position.y, transform.position.z);
+            }
+                
+
         }
     }
 
@@ -98,16 +133,13 @@ public class SpriteController: MonoBehaviour
     {
         List<int> sprites_states = GetAllSpritesStates(sprites_message);
 
-        int motion = GetStateForThisSprite(sprites_states);
+        int state = GetStateForThisSprite(sprites_states);
 
-        HideOrShow(motion);
+        HideOrShow(state);
 
-        DoAnimationIfCue(motion);
+        DoAnimationIfCue(state);
 
-        if (movementType)
-            transform.rotation = Quaternion.Euler(Vector3.forward * motion);
-        else
-            transform.Translate(new Vector3((-1200 / 90 * motion) + 50, transform.position.y, transform.position.z));
+        ChangeTransformIfNotCue(state);
 
     }
 }

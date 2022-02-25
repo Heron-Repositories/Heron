@@ -26,8 +26,8 @@ BaseName = 'TL Task2 Screens Unity '  # The base name can have spaces.
 NodeAttributeNames = ['Parameters', 'Move By']
 NodeAttributeType = ['Static', 'Input']
 ParameterNames = ['Screen', 'T=Rotation (F=Translation)', 'Opacity']
-ParameterTypes = ['list', 'bool', 'int']
-ParametersDefaultValues = [['Both', 'Right', 'Front'], True, 255]
+ParameterTypes = ['list', 'bool', 'float']
+ParametersDefaultValues = [['Both', 'Right', 'Front'], True, 1.0]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_task2_screens_unity_worker.py')
 # </editor-fold>
 

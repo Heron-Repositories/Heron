@@ -94,6 +94,8 @@ def first_communication_with_Unity():
         unity_socket_pub.send_string(screens_message_out)
         movement_type_message_out = str('MovementType:{}'.format(rotation))
         unity_socket_pub.send_string(movement_type_message_out)
+        opacity_message_out = str('Opacity:{}'.format(opacity))
+        unity_socket_pub.send_string(opacity_message_out)
     except Exception as e:
         print(e)
         return False
