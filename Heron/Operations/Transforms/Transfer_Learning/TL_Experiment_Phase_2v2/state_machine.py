@@ -58,7 +58,7 @@ class StateMachine(StateMachine):
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
         self.poke_timer += self.dt
         self.command_to_screens = np.array([ct.IGNORE])
-        print('ooo Just poked')
+        #print('ooo Just poked')
 
     def on_leaving_poke_early_2(self):
         self.command_to_screens = np.array(['Cue=0, Manipulandum=0, Target=0, Trap=0'])

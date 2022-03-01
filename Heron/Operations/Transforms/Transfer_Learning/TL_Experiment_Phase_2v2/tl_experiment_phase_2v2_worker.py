@@ -132,8 +132,6 @@ def experiment(data, parameters):
 
         elif state_machine.current_state == state_machine.poke_no_avail:
             state_machine.leaving_poke_early_2()
-            if not no_mtt:
-                man_targ_trap.back_to_initial_positions()
 
         elif state_machine.current_state == state_machine.poke_avail:
             state_machine.too_long_in_poke_9()
@@ -153,6 +151,9 @@ def experiment(data, parameters):
     elif poke_on and not availability_on:
         #print('B')
         if state_machine.current_state == state_machine.no_poke_no_avail:
+            if not no_mtt:
+                man_targ_trap.back_to_initial_positions()
+                state_machine.man_targ_trap = man_targ_trap.positions_of_visuals
             state_machine.just_poked_1()
 
         elif state_machine.current_state == state_machine.poke_no_avail:
@@ -163,12 +164,12 @@ def experiment(data, parameters):
                     state_machine.man_targ_trap = \
                         man_targ_trap.calculate_positions_for_auto_movement(state_machine.poke_timer,
                                                                             reward_on_poke_delay)
-                if state_machine.poke_timer > reward_on_poke_delay:
-                    state_machine.availability_started_4()
-                    #print('!!!!!!!!!!! {}'.format([state_machine.command_to_screens, state_machine.command_to_food_poke]))
-                    availability_on = True
-                    if not no_mtt:
-                        man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, dt)
+            if levers_state == 0 and state_machine.poke_timer > reward_on_poke_delay:
+                #print('!!!!!!!!!!! {}'.format([state_machine.command_to_screens, state_machine.command_to_food_poke]))
+                availability_on = True
+                #if not no_mtt:
+                #    man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, dt)
+                state_machine.availability_started_4()
 
         elif state_machine.current_state == state_machine.poke_avail:
             state_machine.too_long_in_poke_9()

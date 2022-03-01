@@ -63,3 +63,4 @@ class MTT:
     def back_to_initial_positions(self):
         self.positions_of_visuals = copy.copy(self.initial_positions_of_visuals)
 
+
