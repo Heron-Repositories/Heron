@@ -13,9 +13,9 @@ class StateMachine(StateMachine):
     command_to_food_poke = np.array([ct.IGNORE])
     poke_timer = 0
 
+    # This is the value that must be send to the Poke Controller Node in order to trigger its feeding back of its state
+    # without also starting a new trial
     constant_to_update_poke_without_starting_trial = -1
-
-    man_targ_trap = [0, 0, 0]
     
     # States
     no_poke_no_avail = State("NP_NA", initial=True)
@@ -42,9 +42,12 @@ class StateMachine(StateMachine):
     initialise_after_fail_13 = failed.to(no_poke_no_avail)
     initialise_after_success_14 = succeeded.to(no_poke_no_avail)
 
-    def __init__(self, _reward_on_poke):
+    def __init__(self, _reward_on_poke, _dt):
         self.reward_on_poke = _reward_on_poke
+        self.dt = _dt
         super().__init__(StateMachine)
+
+        self.man_targ_trap = [0, 0, 0]
 
     def on_running_around_no_availability_0(self):
         self.command_to_screens = np.array([ct.IGNORE])
@@ -52,13 +55,13 @@ class StateMachine(StateMachine):
         self.poke_timer = 0
 
     def on_just_poked_1(self):
-        self.command_to_screens = np.array([ct.IGNORE])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
-        self.poke_timer += 0.1
-        #print('ooo Just poked')
+        self.poke_timer += self.dt
+        self.command_to_screens = np.array([ct.IGNORE])
+        print('ooo Just poked')
 
     def on_leaving_poke_early_2(self):
-        self.command_to_screens = np.array([ct.IGNORE])
+        self.command_to_screens = np.array(['Cue=0, Manipulandum=0, Target=0, Trap=0'])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
         self.poke_timer = 0
         #print('ooo Left too early')
@@ -71,7 +74,8 @@ class StateMachine(StateMachine):
                 ['Cue=0, Manipulandum={}, Target={}, Trap={}'.
                      format(self.man_targ_trap[0], self.man_targ_trap[1], self.man_targ_trap[2])])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
-        self.poke_timer += 0.1
+        self.poke_timer += self.dt
+        #print('ooo Command to Screen while waiting {}'.format(self.command_to_screens))
 
     def on_availability_started_4(self):
         self.command_to_screens = np.array(['Cue=1, Manipulandum=0, Target=0, Trap=0'])
@@ -83,6 +87,7 @@ class StateMachine(StateMachine):
         self.command_to_screens = np.array([ct.IGNORE])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
         self.poke_timer = 0
+        #print('ooo Waiting in Poke with Availabiity On')
 
     def on_leaving_poke_while_availability_6(self):
         self.command_to_screens = np.array([ct.IGNORE])
@@ -122,7 +127,7 @@ class StateMachine(StateMachine):
     def on_poking_at_fail_12(self):
         self.command_to_screens = np.array([ct.IGNORE])
         self.command_to_food_poke = np.array([self.constant_to_update_poke_without_starting_trial])
-        self.poke_timer += 0.1
+        self.poke_timer += self.dt
         #print('ooo Back in poke from Fail')
 
     def on_initialise_after_fail_13(self):

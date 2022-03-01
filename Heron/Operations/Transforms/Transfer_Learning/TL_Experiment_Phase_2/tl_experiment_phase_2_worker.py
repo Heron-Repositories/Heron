@@ -14,9 +14,9 @@ from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 from Heron import constants as ct
 
-reward_on_poke: bool
+no_mtt: bool
 reward_on_poke_delay: float
-movement_type: bool
+levers_state: bool
 trap_on: bool
 max_distance_to_target: int
 speed: float
@@ -56,9 +56,9 @@ error = 3
 
 
 def initialise(_worker_object):
-    global reward_on_poke
+    global no_mtt
     global reward_on_poke_delay
-    global movement_type
+    global levers_state
     global trap_on
     global max_distance_to_target
     global speed
@@ -240,9 +240,9 @@ def update_of_visuals(lever_pressed_time):
 
 
 def experiment(data, parameters):
-    global reward_on_poke
+    global no_mtt
     global reward_on_poke_delay
-    global movement_type
+    global levers_state
     global trap_on
     global speed
     global variable_targets
@@ -268,11 +268,11 @@ def experiment(data, parameters):
     result = [np.array([ct.IGNORE]), np.array([ct.IGNORE])]
     max_100ms_steps_for_poke_out = 10
 
-    # 1. If the reward_on_poke is on then
+    # 1. If the no_mtt is on then
     # 1. a. If the rat is in the poke then tell the monitors to turn on and the poke controller
     # to deliver number_of_pellets (assuming the TL Poke Controller Trigger String is set to 'number').
     # 1. b. If the rat is not in the poke turn the monitors off and do not send a message to the poke controller
-    # 2. If the reward_on_poke is off then:
+    # 2. If the no_mtt is off then:
     # 2. a. If the rat i snot in the poke then as above and send the experiment_state to PokeOut
     # 2. b. If the rat is in the poke then:
     # 2. b. i. If the trial has finished successfully then turn off the monitors and deliver number_of_pellets (if the

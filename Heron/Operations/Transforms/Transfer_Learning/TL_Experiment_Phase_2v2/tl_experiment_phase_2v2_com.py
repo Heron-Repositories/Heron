@@ -22,10 +22,10 @@ Properties of the generated Node
 BaseName = 'TL Experiment Phase 2v2'
 NodeAttributeNames = ['Parameters', 'Levers Box In', 'Food Poke Update', 'Command to Screens', 'Command to Reward Poke']
 NodeAttributeType = ['Static', 'Input', 'Input', 'Output', 'Output']
-ParameterNames = ['Reward On Poke', 'Reward On Poke Delay / sec', 'movement Type', 'Max Dist to Target', 'Speed deg/sec',
+ParameterNames = ['Hidden Man/Target/Trap', 'Reward Delay / sec', 'Levers State', 'Max Dist to Target', 'Speed deg/sec',
                   'Variable Targets', 'Must Lift at Target', '# Pellets']
-ParameterTypes = ['bool', 'float', 'bool', 'int', 'float', 'bool', 'bool', 'int']
-ParametersDefaultValues = [False, 0.0, True, 90, 25, False, False, 1]
+ParameterTypes = ['bool', 'float', 'list', 'int', 'float', 'bool', 'bool', 'int']
+ParametersDefaultValues = [False, 0.0, ['Off', 'On-Vibrating', 'On-Silent'], 90, 25, False, False, 1]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'tl_experiment_phase_2v2_worker.py')
 
 # </editor-fold>
