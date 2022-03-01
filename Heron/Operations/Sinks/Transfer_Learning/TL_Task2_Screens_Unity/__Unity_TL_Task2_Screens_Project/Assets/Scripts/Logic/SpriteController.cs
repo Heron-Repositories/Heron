@@ -135,11 +135,11 @@ public class SpriteController: MonoBehaviour
 
         int state = GetStateForThisSprite(sprites_states);
 
-        HideOrShow(state);
-
         DoAnimationIfCue(state);
 
         ChangeTransformIfNotCue(state);
+
+        HideOrShow(state);
 
     }
 }
