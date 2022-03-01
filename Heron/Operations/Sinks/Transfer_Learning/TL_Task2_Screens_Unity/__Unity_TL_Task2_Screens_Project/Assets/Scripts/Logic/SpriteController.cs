@@ -4,7 +4,7 @@ using UnityEngine;
 using System;
 
 
-public class SpriteController: MonoBehaviour
+public class SpriteController : MonoBehaviour
 {
     private bool movementType;
     private bool shownOnScreen;
@@ -34,10 +34,10 @@ public class SpriteController: MonoBehaviour
             movementType = false;
         }
     }
-    
+
     void DoScreensSelection(string screens)
     {
-        if(transform.name.Contains("Right") && (screens=="Both" || screens== "Right"))
+        if (transform.name.Contains("Right") && (screens == "Both" || screens == "Right"))
         {
             shownOnScreen = true;
         }
@@ -109,22 +109,32 @@ public class SpriteController: MonoBehaviour
     {
         if (!transform.name.Contains("Cue") && shownOnScreen)
         {
-            int starting_position = 100;
-            if (transform.name.Contains("Right"))
-            {
-                state += 90;
-                starting_position =  1600;
-            }
-
             if (movementType)
             {
+                if (transform.name.Contains("Right"))
+                {
+                    state += 90;
+                }
                 transform.rotation = Quaternion.Euler(Vector3.forward * state);
             }
             else
             {
-                transform.position = new Vector3(starting_position + (int)(4.5 * state), transform.position.y, transform.position.z);
+                float step = 2.3f;
+                int starting_position = 0;
+                if (transform.name.Contains("Right"))
+                {
+                    transform.rotation = Quaternion.Euler(Vector3.forward * 90);
+                    starting_position = 120;
+                    transform.position = new Vector3(transform.position.x, starting_position + (int)(step * state), transform.position.z);
+                }
+                else
+                {
+                    starting_position = 600;
+                    transform.position = new Vector3(starting_position + (int)(step * state), transform.position.y, transform.position.z);
+                }
+
             }
-                
+
 
         }
     }
