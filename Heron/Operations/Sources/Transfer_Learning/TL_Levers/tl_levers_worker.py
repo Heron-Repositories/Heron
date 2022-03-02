@@ -81,6 +81,7 @@ def arduino_data_capture(_worker_object):
                     poke_and_time = get_lever_pressing_time(final_string)
                     worker_object.worker_visualisable_result = np.array(poke_and_time)
                     worker_object.socket_push_data.send_array(worker_object.worker_visualisable_result, copy=False)
+                    #print('LEVERS SAY = {}'.format(poke_and_time))
         except:
             pass
 

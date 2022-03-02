@@ -8,7 +8,8 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
-import copy
+import queue
+import time
 from statemachine import StateMachine
 from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
@@ -30,9 +31,9 @@ poke_on = False
 prev_avail = True
 prev_poke = True
 lever_press_time = 0.0
-dt = 0.1  # This comes from the TL Levers Node where the arduino code that controls the arduino that reads the levers
-          # updates every 0.1s and thus the TL Levers Node drives the system at that speed
-
+mean_dt = 0.1
+dt_history = queue.Queue(10)
+current_time: float
 state_machine: StateMachine
 man_targ_trap: mtt.MTT
 
@@ -50,6 +51,7 @@ def initialise(_worker_object):
     global availability_on
     global state_machine
     global man_targ_trap
+    global current_time
 
     levers_states_dict = {'Off': 0, 'On-Vibrating': 1, 'On-Silent': 2}
     try:
@@ -69,12 +71,27 @@ def initialise(_worker_object):
     cfg.reward_on_poke_delay = reward_on_poke_delay
     cfg.number_of_pellets = number_of_pellets
 
-    state_machine = sm.StateMachine(no_mtt, dt)
+    state_machine = sm.StateMachine(no_mtt, mean_dt)
 
     if not no_mtt:
-        man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, dt)
+        man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, mean_dt, speed, must_lift_at_target)
 
+    current_time = time.perf_counter()
     return True
+
+
+def create_average_speed_of_levers_updating():
+    global mean_dt
+    global dt_history
+    global current_time
+
+    if dt_history.full():
+        dt_history.get()
+    dt_history.put(time.perf_counter() - current_time)
+
+    mean_dt = np.mean(dt_history.queue)
+
+    current_time = time.perf_counter()
 
 
 def experiment(data, parameters):
@@ -98,6 +115,13 @@ def experiment(data, parameters):
         number_of_pellets = parameters[7]
     except:
         pass
+
+    # Calculate the (running average) time it takes for the levers to push new data to this Node and update it for the
+    # state_machine and the man_targ_trap objects that need it
+    create_average_speed_of_levers_updating()
+    state_machine.dt = mean_dt
+    if not no_mtt:
+        man_targ_trap.dt = mean_dt
 
     topic = data[0].decode('utf-8')
     message = data[1:]
@@ -126,7 +150,6 @@ def experiment(data, parameters):
     #print(state_machine.current_state, availability_on)
 
     if not poke_on and not availability_on:
-        #print('A')
         if state_machine.current_state == state_machine.no_poke_no_avail:
             state_machine.running_around_no_availability_0()
 
@@ -149,27 +172,58 @@ def experiment(data, parameters):
             state_machine.initialise_after_success_14()
 
     elif poke_on and not availability_on:
-        #print('B')
         if state_machine.current_state == state_machine.no_poke_no_avail:
             if not no_mtt:
                 man_targ_trap.back_to_initial_positions()
                 state_machine.man_targ_trap = man_targ_trap.positions_of_visuals
             state_machine.just_poked_1()
 
+        # The state "Poke No Availability" (P_NA) is where most of the logic happens. Here is where the animal has to
+        # either wait long enough or manipulate the levers to reach the target
         elif state_machine.current_state == state_machine.poke_no_avail:
             state_machine.waiting_in_poke_before_availability_3()
-            if levers_state == 0:  # If the Levers are Off ...
+            '''
+            if levers_state == 0:  # If the Levers are off ...
                 if not no_mtt:  # and the man., target and trap are visible (so they move automatically)
                     #  Update the position of the manipulandum
                     state_machine.man_targ_trap = \
                         man_targ_trap.calculate_positions_for_auto_movement(state_machine.poke_timer,
                                                                             reward_on_poke_delay)
-            if levers_state == 0 and state_machine.poke_timer > reward_on_poke_delay:
-                #print('!!!!!!!!!!! {}'.format([state_machine.command_to_screens, state_machine.command_to_food_poke]))
-                availability_on = True
-                #if not no_mtt:
-                #    man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, dt)
-                state_machine.availability_started_4()
+                if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
+                    # Reward the animal
+                    availability_on = True
+                    state_machine.availability_started_4()
+            else:  # If the Levers are on (being either on vibrate or on silent)
+                # If the Levers are on then the state of the no_mtt is ignored
+                state_machine.man_targ_trap = \
+                    man_targ_trap.calculate_positions_for_levers_movement(lever_press_time)
+                if man_targ_trap.has_man_reached_target():
+                    state_machine.availability_started_4()
+                elif man_targ_trap.has_man_reached_trap():
+                    state_machine.fail_to_trap_15()
+            '''
+            if no_mtt:  # If the man., target, trap are invisible (Stages 1 and 2)
+                if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
+                    # Reward the animal
+                    availability_on = True
+                    state_machine.availability_started_4()
+            else:  # (Stages 3 to 5)
+                if levers_state == 0:  # If the Levers are off ... (Stage 3)
+                    #  Update the position of the manipulandum
+                    state_machine.man_targ_trap = \
+                        man_targ_trap.calculate_positions_for_auto_movement(state_machine.poke_timer,
+                                                                            reward_on_poke_delay)
+                    if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
+                        # Reward the animal
+                        availability_on = True
+                        state_machine.availability_started_4()
+                else:  # If the Levers are on (being either on vibrate or on silent) (Stages 4 and 5)
+                    state_machine.man_targ_trap = \
+                        man_targ_trap.calculate_positions_for_levers_movement(lever_press_time)
+                    if man_targ_trap.has_man_reached_target():
+                        state_machine.availability_started_4()
+                    elif man_targ_trap.has_man_reached_trap():
+                        state_machine.fail_to_trap_15()
 
         elif state_machine.current_state == state_machine.poke_avail:
             state_machine.too_long_in_poke_9()
@@ -181,7 +235,7 @@ def experiment(data, parameters):
             state_machine.poking_at_fail_12()
 
     elif not poke_on and availability_on:
-        #print('C')
+        print('C')
         if state_machine.current_state == state_machine.poke_avail:
             state_machine.leaving_poke_while_availability_6()
 
@@ -189,7 +243,7 @@ def experiment(data, parameters):
             state_machine.running_around_while_availability_8()
 
     elif poke_on and availability_on:
-        #print('D')
+        print('D')
         if state_machine.current_state == state_machine.poke_avail:
             state_machine.waiting_in_poke_while_availability_5()
 
@@ -197,7 +251,7 @@ def experiment(data, parameters):
             state_machine.poking_again_while_availability_7()
 
     result = [state_machine.command_to_screens, state_machine.command_to_food_poke]
-    #print(result, state_machine.current_state)
+    print(' ooo Command to screens = {}'.format(state_machine.command_to_screens))
     return result
 
 
