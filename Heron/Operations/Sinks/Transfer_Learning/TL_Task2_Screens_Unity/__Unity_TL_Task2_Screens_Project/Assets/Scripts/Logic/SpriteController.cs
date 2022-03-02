@@ -25,6 +25,7 @@ public class SpriteController : MonoBehaviour
 
     void DoMotionTypeSelection(string _movementType)
     {
+        Debug.Log("Motion Type Selection has happened");
         if (_movementType == "True")
         {
             movementType = true;
@@ -37,6 +38,7 @@ public class SpriteController : MonoBehaviour
 
     void DoScreensSelection(string screens)
     {
+        Debug.Log(string.Format("Screens for {0} are set to {1}", transform.name, screens));
         if (transform.name.Contains("Right") && (screens == "Both" || screens == "Right"))
         {
             shownOnScreen = true;
@@ -45,6 +47,11 @@ public class SpriteController : MonoBehaviour
         {
             shownOnScreen = true;
         }
+
+        //if (transform.name.Contains("Cue"))
+        //{
+        //    EventManager.Instance.onCueAnimate.Invoke();
+        //}
     }
 
     void DoOpacitySelection(string _opacity)
@@ -86,11 +93,11 @@ public class SpriteController : MonoBehaviour
     void HideOrShow(int state)
     {
         this.gameObject.SetActive(false);
-        //Debug.Log(string.Format("{0} is {1} and screen is {2}", transform.name, state, shownOnScreen));
+        Debug.Log(string.Format("{0} is {1} and screen is {2}", transform.name, state, shownOnScreen));
         if (state != 0 && shownOnScreen)
         {
             this.gameObject.SetActive(true);
-            //Debug.Log(string.Format("{0} is made Active", transform.name));
+            Debug.Log(string.Format("{0} is made Active", transform.name));
         }
     }
 
@@ -100,8 +107,11 @@ public class SpriteController : MonoBehaviour
         //Debug.Log(state);
         if (transform.name.Contains("Cue") && shownOnScreen && state == 1)
         {
-            //Debug.Log("Anim invoked");
-            EventManager.Instance.onCueAnimate.Invoke();
+            Debug.Log("Anim invoked");
+            if (transform.name.Contains("Right"))
+                EventManager.Instance.onCueAnimate.Invoke("Right");
+            if (transform.name.Contains("Front"))
+                EventManager.Instance.onCueAnimate.Invoke("Front");
         }
     }
 
@@ -145,11 +155,11 @@ public class SpriteController : MonoBehaviour
 
         int state = GetStateForThisSprite(sprites_states);
 
-        DoAnimationIfCue(state);
-
         ChangeTransformIfNotCue(state);
 
         HideOrShow(state);
+
+        DoAnimationIfCue(state);
 
     }
 }

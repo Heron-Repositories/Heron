@@ -4,17 +4,16 @@ using UnityEngine;
 
 public class CueAnimation : MonoBehaviour
 {
-    private string state;
-    [SerializeField] public Animator animation;
+    [SerializeField] public Animator anim;
 
     void Start()
     {
         EventManager.Instance.onCueAnimate.AddListener(Loom);
     }
 
-    void Loom()
+    void Loom(string side)
     {
-        animation.Play("CueLooming");
+        anim.Play("CueLooming" + side);
     }
 
  

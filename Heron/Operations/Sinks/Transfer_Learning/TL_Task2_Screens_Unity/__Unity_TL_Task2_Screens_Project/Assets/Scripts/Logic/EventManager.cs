@@ -10,7 +10,6 @@ public class EventManager : MonoBehaviour
     public UnityEvent onClientStarted;
     public UnityEvent onStopClient;
     public UnityEvent onClientStopped;
-    public UnityEvent onCueAnimate;
 
     [System.Serializable]
     public class InteractableObjectEvent : UnityEvent<string> { }
@@ -19,6 +18,7 @@ public class EventManager : MonoBehaviour
     public InteractableObjectEvent onUpdateMovementType;
     public InteractableObjectEvent onUpdateScreensOn;
     public InteractableObjectEvent onUpdateOpacity;
+    public InteractableObjectEvent onCueAnimate;
 
 
     private void Awake()
@@ -31,13 +31,13 @@ public class EventManager : MonoBehaviour
             onClientStarted = new UnityEvent();
             onStopClient = new UnityEvent();
             onClientStopped = new UnityEvent();
-            onCueAnimate = new UnityEvent();
 
             
             onUpdatedMotion = new InteractableObjectEvent();
             onUpdateMovementType = new InteractableObjectEvent();
             onUpdateScreensOn = new InteractableObjectEvent();
             onUpdateOpacity = new InteractableObjectEvent();
+            onCueAnimate = new InteractableObjectEvent();
 
         }
 

@@ -225,7 +225,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c11e5ba409784b5419189f9f7cba8e41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animation: {fileID: 302791280}
+  anim: {fileID: 302791280}
 --- !u!95 &302791280
 Animator:
   serializedVersion: 3
@@ -560,6 +560,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -654,6 +655,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   consoleText: {fileID: 1273135366}
+--- !u!114 &963194230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddf240963ee765b49a3155c6211b34c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  On: 1
 --- !u!1 &1025317872
 GameObject:
   m_ObjectHideFlags: 0
@@ -1180,7 +1194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c11e5ba409784b5419189f9f7cba8e41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animation: {fileID: 1966250502}
+  anim: {fileID: 1966250502}
 --- !u!95 &1966250502
 Animator:
   serializedVersion: 3

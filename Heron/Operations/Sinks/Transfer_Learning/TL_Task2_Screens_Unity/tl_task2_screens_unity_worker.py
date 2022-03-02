@@ -88,12 +88,15 @@ def first_communication_with_Unity():
         # That will lock until Unity has send a request but that means the process will be killed in 5 secs of inactivity
         unity_socket_rep.recv_string()
         unity_socket_rep.send_string('Python knows Unity is up.')
+        gu.accurate_delay(100)
 
         # Once the req rep handshake has happened then we can send commands to the Unity exe
         screens_message_out = str('Screens:{}'.format(monitors))
         unity_socket_pub.send_string(screens_message_out)
+        gu.accurate_delay(100)
         movement_type_message_out = str('MovementType:{}'.format(rotation))
         unity_socket_pub.send_string(movement_type_message_out)
+        gu.accurate_delay(100)
         opacity_message_out = str('Opacity:{}'.format(opacity))
         unity_socket_pub.send_string(opacity_message_out)
     except Exception as e:
@@ -132,7 +135,7 @@ def work_function(data, parameters):
     # Create message out to send to Unity
     message_out = 'Coordinates:{}'.format(message_in)
     #if message_out != previous_message:
-    print('------------ SCREENS = {}'.format(message_out))
+    #print('------------ SCREENS = {}'.format(message_out))
     previous_message = message_out
     unity_socket_pub.send_string(message_out)
 
