@@ -136,18 +136,18 @@ def experiment(data, parameters):
     if 'Food_Poke_Update' in topic:
         availability_on = message[0]
         #print('GOT NEW AVAILABILITY = {}'.format(availability_on))
-        result = [np.array([ct.IGNORE]), np.array([ct.IGNORE])]
+        result = [np.array([ct.IGNORE]), np.array([ct.IGNORE]), np.array([ct.IGNORE])]
         return result
 
     if availability_on != prev_avail:
-        #print(' ================ Availability = {}'.format(availability_on))
+        print(' ================ Availability = {}'.format(availability_on))
         prev_avail = availability_on
 
     if poke_on != prev_poke:
-        #print(' ================ Poke = {}'.format(poke_on))
+        print(' ================ Poke = {}'.format(poke_on))
         prev_poke = poke_on
 
-    #print(state_machine.current_state, availability_on)
+    command_to_vibration_arduino_controller = np.array(['d'])  # That means turn vibration off
 
     if not poke_on and not availability_on:
         if state_machine.current_state == state_machine.no_poke_no_avail:
@@ -179,51 +179,39 @@ def experiment(data, parameters):
             state_machine.just_poked_1()
 
         # The state "Poke No Availability" (P_NA) is where most of the logic happens. Here is where the animal has to
-        # either wait long enough or manipulate the levers to reach the target
+        # either wait long enough (either looking at the manipulandum moving by itself (Stage 3) or not (Stage 2))
+        # or manipulate the levers to reach the target (Stages 4 and 5)
         elif state_machine.current_state == state_machine.poke_no_avail:
             state_machine.waiting_in_poke_before_availability_3()
-            '''
-            if levers_state == 0:  # If the Levers are off ...
-                if not no_mtt:  # and the man., target and trap are visible (so they move automatically)
-                    #  Update the position of the manipulandum
-                    state_machine.man_targ_trap = \
-                        man_targ_trap.calculate_positions_for_auto_movement(state_machine.poke_timer,
-                                                                            reward_on_poke_delay)
-                if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
-                    # Reward the animal
+
+            if no_mtt:  # If the man., target, trap are invisible (Stage 2) ...
+                if state_machine.poke_timer > reward_on_poke_delay:  # ... and the poke waiting time is up ...
                     availability_on = True
-                    state_machine.availability_started_4()
-            else:  # If the Levers are on (being either on vibrate or on silent)
-                # If the Levers are on then the state of the no_mtt is ignored
-                state_machine.man_targ_trap = \
-                    man_targ_trap.calculate_positions_for_levers_movement(lever_press_time)
-                if man_targ_trap.has_man_reached_target():
-                    state_machine.availability_started_4()
-                elif man_targ_trap.has_man_reached_trap():
-                    state_machine.fail_to_trap_15()
-            '''
-            if no_mtt:  # If the man., target, trap are invisible (Stages 1 and 2)
-                if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
-                    # Reward the animal
-                    availability_on = True
-                    state_machine.availability_started_4()
+                    state_machine.availability_started_4()  # ... reward the animal.
+
             else:  # (Stages 3 to 5)
-                if levers_state == 0:  # If the Levers are off ... (Stage 3)
-                    #  Update the position of the manipulandum
+                if levers_state == 0:  # If the Levers are off (Stage 3) ...
+                    #  ... update the position of the manipulandum.
                     state_machine.man_targ_trap = \
                         man_targ_trap.calculate_positions_for_auto_movement(state_machine.poke_timer,
                                                                             reward_on_poke_delay)
-                    if state_machine.poke_timer > reward_on_poke_delay:  # and the poke waiting time is up
-                        # Reward the animal
+                    if state_machine.poke_timer > reward_on_poke_delay:  # If the poke waiting time is up ...
                         availability_on = True
-                        state_machine.availability_started_4()
+                        state_machine.availability_started_4()  # ... reward the animal.
+
                 else:  # If the Levers are on (being either on vibrate or on silent) (Stages 4 and 5)
                     state_machine.man_targ_trap = \
                         man_targ_trap.calculate_positions_for_levers_movement(lever_press_time)
-                    if man_targ_trap.has_man_reached_target():
-                        state_machine.availability_started_4()
-                    elif man_targ_trap.has_man_reached_trap():
-                        state_machine.fail_to_trap_15()
+                    if levers_state == 1:  # If the levers state is On-Vibrating ...
+                        # ... turn vibration on.
+                        if man_targ_trap.up_or_down:
+                            command_to_vibration_arduino_controller = np.array(['a'])
+                        else:
+                            command_to_vibration_arduino_controller = np.array(['s'])
+                    if man_targ_trap.has_man_reached_target():  # If the man. reached the target ...
+                        state_machine.availability_started_4()  # ... reward the animal.
+                    elif man_targ_trap.has_man_reached_trap():  # If the man. reached the trap ...
+                        state_machine.fail_to_trap_15()  # ... start again.
 
         elif state_machine.current_state == state_machine.poke_avail:
             state_machine.too_long_in_poke_9()
@@ -235,7 +223,6 @@ def experiment(data, parameters):
             state_machine.poking_at_fail_12()
 
     elif not poke_on and availability_on:
-        print('C')
         if state_machine.current_state == state_machine.poke_avail:
             state_machine.leaving_poke_while_availability_6()
 
@@ -243,15 +230,16 @@ def experiment(data, parameters):
             state_machine.running_around_while_availability_8()
 
     elif poke_on and availability_on:
-        print('D')
         if state_machine.current_state == state_machine.poke_avail:
             state_machine.waiting_in_poke_while_availability_5()
 
         elif state_machine.current_state == state_machine.no_poke_avail:
             state_machine.poking_again_while_availability_7()
 
-    result = [state_machine.command_to_screens, state_machine.command_to_food_poke]
-    print(' ooo Command to screens = {}'.format(state_machine.command_to_screens))
+    result = [state_machine.command_to_screens,
+              state_machine.command_to_food_poke,
+              command_to_vibration_arduino_controller]
+    print(' ooo Result = {}'.format(result))
     return result
 
 

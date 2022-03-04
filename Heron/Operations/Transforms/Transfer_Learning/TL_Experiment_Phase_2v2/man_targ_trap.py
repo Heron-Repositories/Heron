@@ -64,7 +64,6 @@ class MTT:
         return self.positions_of_visuals
 
     def calculate_positions_for_levers_movement(self, levers_pressed_time):
-        print(levers_pressed_time)
         if np.abs(levers_pressed_time) > 0:
             self.positions_of_visuals[0] = self.initial_positions_of_visuals[0] + \
                                            self.man_speed * levers_pressed_time/1000

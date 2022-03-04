@@ -20,8 +20,9 @@ Exec = os.path.realpath(__file__)
 Properties of the generated Node
 """
 BaseName = 'TL Experiment Phase 2v2'
-NodeAttributeNames = ['Parameters', 'Levers Box In', 'Food Poke Update', 'Command to Screens', 'Command to Reward Poke']
-NodeAttributeType = ['Static', 'Input', 'Input', 'Output', 'Output']
+NodeAttributeNames = ['Parameters', 'Levers Box In', 'Food Poke Update',
+                      'Command to Screens', 'Command to Reward Poke', 'Command to Vibrate Arduino']
+NodeAttributeType = ['Static', 'Input', 'Input', 'Output', 'Output', 'Output']
 ParameterNames = ['Hidden Man/Target/Trap', 'Reward Delay / sec', 'Levers State', 'Max Dist to Target', 'Speed deg/sec',
                   'Variable Targets', 'Must Lift at Target', '# Pellets']
 ParameterTypes = ['bool', 'float', 'list', 'int', 'float', 'bool', 'bool', 'int']
