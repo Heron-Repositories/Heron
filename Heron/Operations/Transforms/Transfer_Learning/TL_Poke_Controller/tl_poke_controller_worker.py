@@ -20,10 +20,13 @@ avail_freq: int
 succ_freq: int
 sleep_dt = 0.18
 abort_at_wrong_poke: bool
+air_puff_at_wrong_poke: bool
 trigger_string: str
 availability_period_is_running = False
 reward_amount = 1
 reward_poke: bool # False is the Old / Right poke, True is the New / Left one
+air_puff_thread_is_running: bool
+air_puff_timer = 0
 
 
 def freq_to_signal(freq):
@@ -41,8 +44,10 @@ def initialise(_worker_object):
     global avail_freq
     global succ_freq
     global abort_at_wrong_poke
+    global air_puff_at_wrong_poke
     global trigger_string
     global reward_poke
+    global air_puff_thread_is_running
 
     try:
         parameters = _worker_object.parameters
@@ -51,7 +56,8 @@ def initialise(_worker_object):
         avail_freq = parameters[2]
         succ_freq = parameters[3]
         abort_at_wrong_poke = parameters[4]
-        trigger_string = parameters[5]
+        air_puff_at_wrong_poke = parameters[5]
+        trigger_string = parameters[6]
         print(avail_freq, succ_freq)
     except Exception as e:
         print(e)
@@ -65,6 +71,11 @@ def initialise(_worker_object):
 
     reward_poke = True
     set_poke_tray()
+
+    if air_puff_at_wrong_poke:
+        air_puff_thread_is_running = True
+        air_puff_thread = threading.Thread(group=None, target=start_air_puff_thread)
+        air_puff_thread.start()
 
     return True
 
@@ -171,6 +182,36 @@ def set_poke_tray():
         arduino_serial.write('n'.encode('utf-8'))
 
 
+def start_air_puff_thread():
+    global availability_period_is_running
+    global air_puff_thread_is_running
+    global previous_availability_for_air_puff
+    global air_puff_timer
+
+    while air_puff_thread_is_running:
+        if availability_period_is_running:
+            air_puff_timer = 0
+        if not availability_period_is_running:
+            air_puff_timer += 1
+            if air_puff_timer > 50:  # 5 seconds delay
+                air_puff_if_poking_outside_availability()
+
+        gu.accurate_delay(100)
+
+
+def air_puff_if_poking_outside_availability():
+
+    if not availability_period_is_running:
+        bytes_in_buffer = arduino_serial.in_waiting
+        string_in = arduino_serial.read(bytes_in_buffer).decode('utf-8')
+
+        if bytes_in_buffer:
+            if '555\r\n' in string_in or '666\r\n' in string_in:
+                arduino_serial.write('y'.encode('utf-8'))
+                gu.accurate_delay(200)
+                arduino_serial.write('z'.encode('utf-8'))
+
+
 def start_availability_or_switch_pokes(data, parameters):
     global availability_period_is_running
     global trigger_string
@@ -206,6 +247,11 @@ def start_availability_or_switch_pokes(data, parameters):
 
 def on_end_of_life():
     global arduino_serial
+    global air_puff_thread_is_running
+
+    air_puff_thread_is_running = False
+    gu.accurate_delay(100)
+
     arduino_serial.reset_input_buffer()
     arduino_serial.close()
 
