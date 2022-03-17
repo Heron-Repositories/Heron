@@ -12,7 +12,7 @@ class MTT:
         self.man_speed = _man_speed
         self.must_lift_at_target = _must_lift_at_target
         self.positions_of_visuals = np.empty(3)
-        self.up_or_down: bool
+        self.up_or_down = True
 
         if self.variable_targets:
             manipulandum, target, trap = self.initialise_trial_with_variable_target_trap()
@@ -51,6 +51,7 @@ class MTT:
 
             manipulandum = np.random.randint(target + 11, np.min([target + self.max_distance_to_target + 12, 360]))
 
+        print('!!! Initialising Man, Target, Trap, Up_or_Down to {}, {}, {}, {} !!!'.format(manipulandum, target, trap, self.up_or_down))
         return manipulandum, target, trap
 
     def calculate_positions_for_auto_movement(self, current_time, total_time):
@@ -85,7 +86,7 @@ class MTT:
     def has_man_reached_target(self):
         man_pos = self.positions_of_visuals[0]
         target_pos = self.positions_of_visuals[1]
-        if np.abs(target_pos - man_pos) < 2:
+        if np.abs(target_pos - man_pos) < 3 or np.abs(target_pos - man_pos) > 357:
             return True
         else:
             return False
@@ -93,7 +94,7 @@ class MTT:
     def has_man_reached_trap(self):
         man_pos = self.positions_of_visuals[0]
         trap_pos = self.positions_of_visuals[2]
-        if np.abs(trap_pos - man_pos) < 2:
+        if np.abs(trap_pos - man_pos) < 3 or np.abs(trap_pos - man_pos) > 357:
             return True
         else:
             return False

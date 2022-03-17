@@ -31,6 +31,7 @@ poke_on = False
 prev_avail = True
 prev_poke = True
 lever_press_time = 0.0
+start_trial_lever_press_time = 0.0
 mean_dt = 0.1
 dt_history = queue.Queue(10)
 current_time: float
@@ -50,7 +51,6 @@ def initialise(_worker_object):
     global worker_object
     global availability_on
     global state_machine
-    global man_targ_trap
     global current_time
 
     levers_states_dict = {'Off': 0, 'On-Vibrating': 1, 'On-Silent': 2}
@@ -73,11 +73,17 @@ def initialise(_worker_object):
 
     state_machine = sm.StateMachine(no_mtt, mean_dt)
 
-    if not no_mtt:
-        man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, mean_dt, speed, must_lift_at_target)
+    initialise_man_target_trap_object()
 
     current_time = time.perf_counter()
     return True
+
+
+def initialise_man_target_trap_object():
+    global man_targ_trap
+
+    if not no_mtt:
+        man_targ_trap = mtt.MTT(variable_targets, max_distance_to_target, mean_dt, speed, must_lift_at_target)
 
 
 def create_average_speed_of_levers_updating():
@@ -94,6 +100,21 @@ def create_average_speed_of_levers_updating():
     current_time = time.perf_counter()
 
 
+def recalibrate_lever_press_time():
+    global lever_press_time
+    global start_trial_lever_press_time
+
+    if lever_press_time == 0:
+        start_trial_lever_press_time = 0
+    if np.sign(lever_press_time) == np.sign(start_trial_lever_press_time) and \
+            np.abs(lever_press_time) > np.abs(start_trial_lever_press_time):
+        lever_press_time_from_end_of_last_trial = lever_press_time - start_trial_lever_press_time
+    else:
+        lever_press_time_from_end_of_last_trial = lever_press_time
+
+    return lever_press_time_from_end_of_last_trial
+
+
 def experiment(data, parameters):
     global no_mtt
     global reward_on_poke_delay
@@ -104,6 +125,7 @@ def experiment(data, parameters):
     global availability_on
     global poke_on
     global lever_press_time
+    global start_trial_lever_press_time
     global state_machine
     global prev_avail
     global prev_poke
@@ -140,11 +162,11 @@ def experiment(data, parameters):
         return result
 
     if availability_on != prev_avail:
-        print(' ================ Availability = {}'.format(availability_on))
+        #print(' ================ Availability = {}'.format(availability_on))
         prev_avail = availability_on
 
     if poke_on != prev_poke:
-        print(' ================ Poke = {}'.format(poke_on))
+        #print(' ================ Poke = {}'.format(poke_on))
         prev_poke = poke_on
 
     command_to_vibration_arduino_controller = np.array(['d'])  # That means turn vibration off
@@ -167,9 +189,11 @@ def experiment(data, parameters):
 
         elif state_machine.current_state == state_machine.failed:
             state_machine.initialise_after_fail_13()
+            initialise_man_target_trap_object()
 
         elif state_machine.current_state == state_machine.succeeded:
             state_machine.initialise_after_success_14()
+            initialise_man_target_trap_object()
 
     elif poke_on and not availability_on:
         if state_machine.current_state == state_machine.no_poke_no_avail:
@@ -200,17 +224,23 @@ def experiment(data, parameters):
                         state_machine.availability_started_4()  # ... reward the animal.
 
                 else:  # If the Levers are on (being either on vibrate or on silent) (Stages 4 and 5)
+                    lever_press_time_from_end_of_last_trial = recalibrate_lever_press_time()
+
                     state_machine.man_targ_trap = \
-                        man_targ_trap.calculate_positions_for_levers_movement(lever_press_time)
+                        man_targ_trap.calculate_positions_for_levers_movement(lever_press_time_from_end_of_last_trial)
                     if levers_state == 1:  # If the levers state is On-Vibrating ...
                         # ... turn vibration on.
                         if man_targ_trap.up_or_down:
                             command_to_vibration_arduino_controller = np.array(['a'])
                         else:
                             command_to_vibration_arduino_controller = np.array(['s'])
+
                     if man_targ_trap.has_man_reached_target():  # If the man. reached the target ...
+                        availability_on = True
                         state_machine.availability_started_4()  # ... reward the animal.
                     elif man_targ_trap.has_man_reached_trap():  # If the man. reached the trap ...
+                        availability_on = False
+                        start_trial_lever_press_time = lever_press_time
                         state_machine.fail_to_trap_15()  # ... start again.
 
         elif state_machine.current_state == state_machine.poke_avail:
@@ -221,6 +251,7 @@ def experiment(data, parameters):
 
         elif state_machine.current_state == state_machine.failed:
             state_machine.poking_at_fail_12()
+            initialise_man_target_trap_object()
 
     elif not poke_on and availability_on:
         if state_machine.current_state == state_machine.poke_avail:
@@ -239,7 +270,7 @@ def experiment(data, parameters):
     result = [state_machine.command_to_screens,
               state_machine.command_to_food_poke,
               command_to_vibration_arduino_controller]
-    print(' ooo Result = {}'.format(result))
+    #print(' ooo Result = {}'.format(result))
     return result
 
 
