@@ -130,6 +130,7 @@ class Table:
 ssh_table: Table
 parent_id: int
 
+
 def set_parent_id(_parent_id):
     global parent_id
     parent_id = _parent_id

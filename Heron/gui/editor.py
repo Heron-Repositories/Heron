@@ -435,6 +435,14 @@ def clear_editor():
     nodes_list = []
 
 
+def add_new_symbolik_link_node_folder():
+
+    def on_folder_select():
+        pass
+
+    file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True)
+
+
 def on_drag(sender, data, user_data):
     """
     When mouse is dragged and a node is selected then update that node's coordinates
@@ -507,6 +515,8 @@ with dpg.window(width=1700, height=1000, pos=[0, 0]) as main_window:
         with dpg.menu(label='SSH') as menu:
             ssh_info_editor.set_parent_id(menu)
             dpg.add_menu_item(label='Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
+        with dpg.menu(label='Operations'):
+            dpg.add_menu_item(label='Add new Symbolic Link Node Folder', callback=add_new_symbolik_link_node_folder)
 
 with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
     # Create the window of the Node selector
