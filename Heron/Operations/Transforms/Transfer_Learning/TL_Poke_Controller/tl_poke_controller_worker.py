@@ -193,7 +193,9 @@ def start_air_puff_thread():
             air_puff_timer = 0
         if not availability_period_is_running:
             air_puff_timer += 1
-            if air_puff_timer > 50:  # 5 seconds delay
+            if air_puff_timer < 50:
+                arduino_serial.reset_input_buffer()
+            else:  # 5 seconds delay
                 air_puff_if_poking_outside_availability()
 
         gu.accurate_delay(100)
