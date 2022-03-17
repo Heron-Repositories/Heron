@@ -153,10 +153,26 @@ class TransformCom:
         The messagedata, the array of link
         :return: Nothing
         """
-        topic = self.socket_sub_data.recv()
-        data_index = self.socket_sub_data.recv()
-        data_time = self.socket_sub_data.recv()
-        messagedata = self.socket_sub_data.recv_array()
+        prev_topic = self.socket_sub_data.recv()
+        prev_data_index = self.socket_sub_data.recv()
+        prev_data_time = self.socket_sub_data.recv()
+        prev_messagedata = self.socket_sub_data.recv_array()
+        # The following while ensures that the transform works only on the the latest available
+        # message from the previous node. If the transform is too slow compared to the input node
+        # this while throws all past messages away.
+        while prev_topic:
+            topic = prev_topic
+            data_index = prev_data_index
+            data_time = prev_data_time
+            messagedata = prev_messagedata
+            try:
+                prev_topic = self.socket_sub_data.recv(zmq.NOBLOCK)
+                prev_data_index = self.socket_sub_data.recv(zmq.NOBLOCK)
+                prev_data_time = self.socket_sub_data.recv(zmq.NOBLOCK)
+                prev_messagedata = self.socket_sub_data.recv_array(zmq.NOBLOCK)
+            except:
+                prev_topic = None
+                pass
 
         return topic, data_index, data_time, messagedata
 
@@ -183,12 +199,8 @@ class TransformCom:
                     sockets_in = dict(self.poller.poll(timeout=1))
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
-                    # The following while ensures that the transform works only on the the latest available
-                    # message from the previous node. If the transform is too slow compared to the input node
-                    # this while throws all past messages away.
-                    while self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
-                        topic, data_index, data_time, messagedata = self.get_sub_data()
-                        sockets_in = dict(self.poller.poll(timeout=1))
+                    topic, data_index, data_time, messagedata = self.get_sub_data()
+                    sockets_in = dict(self.poller.poll(timeout=1))
 
                     if self.verbose == 1:
                         print("--- Transform from {} to {}, data index {} at time {} s"

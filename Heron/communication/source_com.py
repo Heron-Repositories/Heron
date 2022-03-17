@@ -127,16 +127,17 @@ class SourceCom:
                 # This delay is critical to get single output to multiple inputs to work!
                 gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
 
-        if self.verbose:
-            dt = self.time - self.previous_time
-            if self.index > 3:
-                self.average_sending_time = self.average_sending_time * (self.index - 1) / self.index + dt / self.index
-            print('----------')
-            print("Source with topic {} sending packet with data_index {} at time {}".format(self.sending_topic, self.index, self.time))
-            print('Time Diff between packages = {}. Average package sending time = {} ms'.format(dt/1000, self.average_sending_time / 1000))
-        if self.logger:
-            self.logger.info('{} : {}'.format(self.index, datetime.now()))
-        self.previous_time = self.time
+            if self.verbose:
+                dt = self.time - self.previous_time
+                if self.index > 3:
+                    self.average_sending_time = self.average_sending_time * (self.index - 1) / self.index + dt / self.index
+                print('----------')
+                print("Source with topic {} sending packet with data_index {} at time {}".format(self.sending_topics[i],
+                                                                                                 self.index, self.time))
+                print('Time Diff between packages = {}. Average package sending time = {} ms'.format(dt/1000, self.average_sending_time / 1000))
+            if self.logger:
+                self.logger.info('{} : {}'.format(self.index, datetime.now()))
+            self.previous_time = self.time
 
     def heartbeat_loop(self):
         """
@@ -202,7 +203,7 @@ class SourceCom:
             self.socket_pub_data.close()
             self.socket_push_heartbeat.close()
         except Exception as e:
-            print('Trying to kill Source com {} failed with error: {}'.format(self.sending_topic, e))
+            print('Trying to kill Source com {} failed with error: {}'.format(self.sending_topics[0], e))
         finally:
             self.context.term()
 
