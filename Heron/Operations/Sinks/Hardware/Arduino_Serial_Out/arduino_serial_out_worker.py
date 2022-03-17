@@ -42,7 +42,7 @@ def initialise(_worker_object):
         return False
 
     try:
-        arduino_serial = serial.Serial(port=com_port, baudrate=baud_rate)
+        arduino_serial = serial.Serial(port=com_port, baudrate=baud_rate, write_timeout=1)
     except Exception as e:
         print(e)
 
@@ -66,7 +66,10 @@ def work_function(data, parameters):
     if vis:
         print(message)
 
-    arduino_serial.write(message.encode('utf-8'))
+    try:
+        arduino_serial.write(message.encode('utf-8'))
+    except Exception as e:
+        print(e)
 
 
 def on_end_of_life():
