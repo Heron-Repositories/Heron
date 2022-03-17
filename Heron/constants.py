@@ -34,7 +34,7 @@ IGNORE = 'Ignore'
 
 # Use this delay in order to allow multiple output, multiple links per output Nodes to function. 0.2ms is the smallest
 # delay to allow any number of outputs and links to the next Node to function.
-# For saving time and if there are no Nodes that output multiple times the set it to 0
-DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS = 0.2
+# For saving time and if there are no Nodes that output multiple times then set it to 0
+DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS = 0.3
 
 
