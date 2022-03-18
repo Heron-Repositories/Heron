@@ -599,7 +599,8 @@ with dpg.window(width=1700, height=1000, pos=[0, 0]) as main_window:
         with dpg.menu(label='Operations'):
             dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
                               callback=add_new_symbolic_link_node_folder)
-            dpg.add_menu_item(label='Operations Repos', callback=view_operations_repos)
+            dpg.add_menu_item(label='Download Operations from the Heron-Repositories page',
+                              callback=view_operations_repos)
 
 
 node_selector = create_node_selector_window()
