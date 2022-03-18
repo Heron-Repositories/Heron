@@ -24,7 +24,7 @@ class Operation:
 operations_list = []
 
 
-def load_module(path):
+def load_module(path, name):
     package = 'Heron.Operations'
     extra_package = []
     p = os.path.split(path)
@@ -39,34 +39,41 @@ def load_module(path):
     return module
 
 
-for path, subdirs, files in os.walk(root):
-    for name in files:
-        if '_com.py' in name and 'pycache' not in path:
+def generate_operations_list():
+    global operations_list
+    operations_list = []
 
-            module = load_module(path)
+    for path, subdirs, files in os.walk(root, followlinks=True):
+        for name in files:
 
-            temp = full_split_path(path)
-            i = -1
-            parent = ''
-            while temp[i] != 'Heron':
-                parent = parent + temp[i] + '##'
-                i = i - 1
-            temp = ''
-            for piece in parent.split('##')[1:]:
-                temp = temp + piece + '##'
-            parent = temp[:-2]
+            if '_com.py' in name and 'pycache' not in path:
 
-            operation = Operation(full_filename=os.path.join(path, name),
-                                  name=module.BaseName,
-                                  attributes=module.NodeAttributeNames,
-                                  attribute_types=module.NodeAttributeType,
-                                  parameters=module.ParameterNames,
-                                  parameter_types=module.ParameterTypes,
-                                  parameters_def_values=module.ParametersDefaultValues,
-                                  executable=module.Exec,
-                                  parent_dir=parent,
-                                  worker_exec=module.WorkerDefaultExecutable)
-            operations_list.append(operation)
+                module = load_module(path, name)
+
+                temp = full_split_path(path)
+                i = -1
+                parent = ''
+                while temp[i] != 'Heron':
+                    parent = parent + temp[i] + '##'
+                    i = i - 1
+                temp = ''
+                for piece in parent.split('##')[1:]:
+                    temp = temp + piece + '##'
+                parent = temp[:-2]
+
+                operation = Operation(full_filename=os.path.join(path, name),
+                                      name=module.BaseName,
+                                      attributes=module.NodeAttributeNames,
+                                      attribute_types=module.NodeAttributeType,
+                                      parameters=module.ParameterNames,
+                                      parameter_types=module.ParameterTypes,
+                                      parameters_def_values=module.ParametersDefaultValues,
+                                      executable=module.Exec,
+                                      parent_dir=parent,
+                                      worker_exec=module.WorkerDefaultExecutable)
+                operations_list.append(operation)
+
+    return operations_list
 
 
 def create_operation_from_dictionary(op_dict):

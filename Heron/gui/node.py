@@ -9,16 +9,12 @@ from pathlib import Path
 import json
 import subprocess
 import zmq
-import numpy as np
 import copy
 import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
-
-operations_list = op.operations_list  # This generates all of the Operation dataclass instances currently
-# in the Heron/Operations directory
 
 
 class Node:
@@ -45,6 +41,7 @@ class Node:
         self.socket_sub_proof_of_life = None
         self.theme_id = None
         self.extra_window_id = None
+        self.operations_list = op.operations_list
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -104,7 +101,7 @@ class Node:
 
     def get_corresponding_operation(self):
         name = self.name.split('##')[0]
-        for op in operations_list:
+        for op in self.operations_list:
             if op.name == name:
                 self.operation = copy.deepcopy(op)
                 break
@@ -119,16 +116,6 @@ class Node:
 
     def get_node_index(self):
         self.node_index = self.name.split('##')[-1]
-
-    # TODO: Currently the generate_default_topics is not used. Check if this causes any bugs and if not delete.
-    '''
-    def generate_default_topics(self):
-        for at in self.operation.attribute_types:
-            if 'Input' in at:
-                self.topics_in.append('NothingIn')
-            #if 'Output' in at:
-            #    self.topics_out.append('NothingOut')
-    '''
 
     def add_topic_in(self, topic):
         topic = topic.replace(' ', '_')
@@ -175,7 +162,6 @@ class Node:
         topic = topic.replace(' ', '_')
         self.socket_pub_parameters.send_string(topic, flags=zmq.SNDMORE)
         self.socket_pub_parameters.send_pyobj(self.node_parameters)
-        #print('Node {} updating parameters {}'.format(self.name, self.node_parameters))
 
     def spawn_node_on_editor(self):
         self.context = zmq.Context()
@@ -215,7 +201,6 @@ class Node:
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type):
                     if attribute_type == 1:
                         dpg.add_spacer()
-                        #same_line_widget_ids.append(dpg.add_same_line())
                     dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                  default_value=attr)
 
@@ -254,9 +239,6 @@ class Node:
 
                     dpg.add_spacer(label='##Spacing##'+attribute_name, indent =3)
 
-            #for same_line_id in same_line_widget_ids:
-            #    dpg.configure_item(same_line_id, xoffset=0)
-
             # Add the extra input button with its popup window for extra inputs like ssh and verbosity
             self.extra_input_window()
 
@@ -266,7 +248,7 @@ class Node:
         with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=dpg.mvNode_Attr_Static) as attr_id:
 
             image_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'resources',
-                                                                        'Blue_glass_button_square_34x34.png')
+                                      'Blue_glass_button_square_34x34.png')
             
             width, height, channels, data = dpg.load_image(image_file)
 
@@ -406,7 +388,6 @@ class Node:
     def wait_for_proof_of_life(self):
         self.socket_sub_proof_of_life.recv()
         self.socket_sub_proof_of_life.recv_string()
-        #print('ooo Received POL from {} {}'.format(self.name, self.node_index))
 
     def stop_com_process(self):
         try:

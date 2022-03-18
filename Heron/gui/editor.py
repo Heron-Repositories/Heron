@@ -18,7 +18,7 @@ from Heron import constants as ct
 from Heron.gui import ssh_info_editor
 import dearpygui.dearpygui as dpg
 
-operations_list = op_list.operations_list  # This generates all of the Operation dataclass instances currently
+operations_list = op_list.generate_operations_list() #operations_list  # This generates all of the Operation dataclass instances currently
 # in the Heron/Operations directory
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
@@ -28,7 +28,7 @@ links_dict = {}
 panel_coordinates = [0, 0]
 mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
-
+node_selector: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
 
@@ -75,7 +75,6 @@ def generate_node_tree():
                             dir_id += 1
                             dir_ids[dir_name] = dir_id
                             node_dirs.append((parent_int, parent, dir_id, dir_name))
-
     return node_dirs
 
 
@@ -87,11 +86,11 @@ def on_add_node(sender, data):
     :param data: Not used
     :return: Nothing
     """
-    sneder_name = dpg.get_item_label(sender)
+    sender_name = dpg.get_item_label(sender)
     # Get corresponding operation
     operation = None
     for op in operations_list:
-        if op.name == sneder_name:
+        if op.name == sender_name:
             operation = op
             break
 
@@ -341,7 +340,7 @@ def save_graph():
         with open(save_to, 'w+') as file:
             json.dump(node_dict, file, indent=4)
 
-    file_dialog = dpg.add_file_dialog(callback=on_file_select)
+    file_dialog = dpg.add_file_dialog(callback=on_file_select, height=500)
     dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
 
 
@@ -418,7 +417,7 @@ def load_graph():
         last_used_port = last_used_port + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
         port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
-    file_dialog = dpg.add_file_dialog(callback=on_file_select, directory_selector=False)
+    file_dialog = dpg.add_file_dialog(callback=on_file_select, directory_selector=False, height=500)
     dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
 
 
@@ -435,12 +434,68 @@ def clear_editor():
     nodes_list = []
 
 
-def add_new_symbolik_link_node_folder():
+def add_new_symbolic_link_node_folder():
 
-    def on_folder_select():
-        pass
+    def on_folder_select(sender, app_data, user_data):
+        global node_selector
+        global operations_list
 
-    file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True)
+        main_folders = ['Sources', 'Transforms', 'Sinks']
+        operations_directory = app_data['file_path_name']
+
+        def delete_aliases():
+            if dpg.does_alias_exist("modal_id_credentials"):
+                dpg.delete_item("modal_id_credentials")
+            if dpg.does_alias_exist("modal_id_folders_not_found"):
+                dpg.delete_item("modal_id_folders_not_found")
+
+        with dpg.window(label="Correct folders not found", modal=True, show=False, id="modal_id_folders_not_found",
+                        no_title_bar=True, popup=True):
+            dpg.add_text("The selected Directory {} \n"
+                         "doesn't have at least one of the\n"
+                         "Sources, Transforms or Sinks folders in it, so it cannot\n"
+                         "be a Heron Node code. Please select another directory.".format(operations_directory))
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=120)
+                dpg.add_button(label="OK", width=75, callback=delete_aliases)
+
+        with dpg.window(label="Not enough credentials", modal=True, show=False,
+                        id="modal_id_credentials", no_title_bar=True, popup=True):
+            dpg.add_text("If you are running Windows you need to run the python that runs Heron\n"
+                         "with elevated credentials in order to create a symbolic link.\n"
+                         "Restart Heron with a python that has started with 'Run as Administrator'.")
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=160)
+                dpg.add_button(label="OK", width=75,
+                               callback=delete_aliases)
+
+        folders_exist = False
+        for f in main_folders:
+            if os.path.isdir(os.path.join(operations_directory, f)):
+                folders_exist = True
+                for d in os.listdir(os.path.join(operations_directory, f)):
+                    target = os.path.join(operations_directory, f, d)
+                    link = os.path.join(heron_path, 'Operations', f, d)
+                    try:
+                        os.symlink(target, link)
+                    except:
+                        dpg.configure_item("modal_id_credentials", show=True)
+                        return
+        if not folders_exist:
+            dpg.configure_item("modal_id_folders_not_found", show=True)
+        else:
+            dpg.delete_item(node_selector)
+            operations_list = op_list.generate_operations_list()
+            Node.operations_list = operations_list
+            node_selector = create_node_selector_window()
+
+    file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True, height=500)
+
+
+def view_operations_repos():
+    pass
 
 
 def on_drag(sender, data, user_data):
@@ -490,6 +545,32 @@ def on_mouse_release(sender, app_data, user_data):
     mouse_dragging_deltas = [0, 0]
 
 
+def create_node_selector_window():
+    with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
+        # Create the window of the Node selector
+
+        node_tree = generate_node_tree()
+        base_id = node_tree[0][0]
+        base_name = node_tree[0][1]
+        with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id, open_on_arrow=True):
+
+            # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
+            # tree_node widget
+            for parent_id, parent, node_id, node in node_tree:
+                with dpg.tree_node(label=node, parent=parent_id, default_open=True, id=node_id):
+                    for op in operations_list:
+                        if node == op.parent_dir:
+                            colour = gu.choose_color_according_to_operations_type(node)
+                            button = dpg.add_button(label=op.name, width=200, height=30, callback=on_add_node)
+                            with dpg.theme() as theme_id:
+                                with dpg.theme_component(0):
+                                    dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
+                                    dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
+
+                            dpg.bind_item_theme(button, theme_id)
+        return node_selector
+
+
 dpg.create_context()
 dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
 
@@ -512,35 +593,17 @@ with dpg.window(width=1700, height=1000, pos=[0, 0]) as main_window:
             dpg.add_menu_item(label='New', callback=clear_editor)
             dpg.add_menu_item(label='Save', callback=save_graph)
             dpg.add_menu_item(label='Load', callback=load_graph)
-        with dpg.menu(label='SSH') as menu:
+        with dpg.menu(label='Local Network') as menu:
             ssh_info_editor.set_parent_id(menu)
-            dpg.add_menu_item(label='Edit ssh info', callback=ssh_info_editor.edit_ssh_info)
+            dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
         with dpg.menu(label='Operations'):
-            dpg.add_menu_item(label='Add new Symbolic Link Node Folder', callback=add_new_symbolik_link_node_folder)
+            dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
+                              callback=add_new_symbolic_link_node_folder)
+            dpg.add_menu_item(label='Operations Repos', callback=view_operations_repos)
 
-with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
-    # Create the window of the Node selector
 
-    node_tree = generate_node_tree()
-    base_id = node_tree[0][0]
-    base_name = node_tree[0][1]
+node_selector = create_node_selector_window()
 
-    with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id, open_on_arrow=True):
-
-        # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
-        # tree_node widget
-        for parent_id, parent, node_id, node in node_tree:
-            with dpg.tree_node(label=node, parent=parent_id, default_open=True, id=node_id):
-                for op in operations_list:
-                    if node == op.parent_dir:
-                        colour = gu.choose_color_according_to_operations_type(node)
-                        button = dpg.add_button(label=op.name, width=200, height=30, callback=on_add_node)
-                        with dpg.theme() as theme_id:
-                            with dpg.theme_component(0):
-                                dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
-                                dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
-
-                        dpg.bind_item_theme(button, theme_id)
 
 with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
     # The node editor
