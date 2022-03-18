@@ -449,6 +449,14 @@ def add_new_symbolic_link_node_folder():
             if dpg.does_alias_exist("modal_id_folders_not_found"):
                 dpg.delete_item("modal_id_folders_not_found")
 
+        def add_symlink(target, link):
+            try:
+                os.symlink(target, link)
+            except:
+                dpg.configure_item("modal_id_credentials", show=True)
+                delete_aliases()
+                return
+
         with dpg.window(label="Correct folders not found", modal=True, show=False, id="modal_id_folders_not_found",
                         no_title_bar=True, popup=True):
             dpg.add_text("The selected Directory {} \n"
@@ -478,11 +486,15 @@ def add_new_symbolic_link_node_folder():
                 for d in os.listdir(os.path.join(operations_directory, f)):
                     target = os.path.join(operations_directory, f, d)
                     link = os.path.join(heron_path, 'Operations', f, d)
-                    try:
-                        os.symlink(target, link)
-                    except:
-                        dpg.configure_item("modal_id_credentials", show=True)
-                        return
+                    if not os.path.isdir(link):
+                        add_symlink(target, link)
+                    else:
+                        for inner_dir in os.listdir(target):
+                            link_inner = os.path.join(link, inner_dir)
+                            inner_target = os.path.join(target, inner_dir)
+                            print(inner_target, link_inner)
+                            add_symlink(inner_target, link_inner)
+
         if not folders_exist:
             dpg.configure_item("modal_id_folders_not_found", show=True)
         else:
@@ -490,6 +502,7 @@ def add_new_symbolic_link_node_folder():
             operations_list = op_list.generate_operations_list()
             Node.operations_list = operations_list
             node_selector = create_node_selector_window()
+        delete_aliases()
 
     file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True, height=500)
 
