@@ -436,6 +436,18 @@ def clear_editor():
 
 def add_new_symbolic_link_node_folder():
 
+    def delete_error_popup_aliases():
+        if dpg.does_alias_exist('modal_error_id'):
+            dpg.delete_item('modal_error_id')
+        if dpg.does_alias_exist("modal_id_credentials"):
+            dpg.delete_item("modal_id_credentials")
+            print('killed creds window')
+        if dpg.does_alias_exist("modal_id_folders_not_found"):
+            dpg.delete_item("modal_id_folders_not_found")
+            print('killed wrong folder window')
+
+    delete_error_popup_aliases()
+
     def on_folder_select(sender, app_data, user_data):
         global node_selector
         global operations_list
@@ -443,41 +455,35 @@ def add_new_symbolic_link_node_folder():
         main_folders = ['Sources', 'Transforms', 'Sinks']
         operations_directory = app_data['file_path_name']
 
-        def delete_aliases():
-            if dpg.does_alias_exist("modal_id_credentials"):
-                dpg.delete_item("modal_id_credentials")
-            if dpg.does_alias_exist("modal_id_folders_not_found"):
-                dpg.delete_item("modal_id_folders_not_found")
+        def create_error_window(error_text, spacer):
+            with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
+                            no_title_bar=True, popup=True):
+                dpg.add_text(error_text)
+                dpg.add_separator()
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=spacer)
+                    dpg.add_button(label="OK", width=75, callback=delete_error_popup_aliases)
 
         def add_symlink(target, link):
+            result = True
             try:
                 os.symlink(target, link)
-            except:
-                dpg.configure_item("modal_id_credentials", show=True)
-                delete_aliases()
-                return
+            except Exception as e:
+                if 'privilege' in str(e):
+                    error_text = 'If you are running Windows you need to run the python that runs Heron\n' \
+                                 'with elevated credentials in order to create a symbolic link.\n' \
+                                 'Restart Heron with a python that has started with "Run as Administrator".'
+                    spacer = 160
+                elif 'Cannot create a file when that file already exists' in str(e):
+                    error_text = 'You are trying to add a set of Nodes that already exist.'
+                    spacer = 130
+                else:
+                    error_text = str(e)
+                    spacer = 300
+                create_error_window(error_text, spacer)
+                result = False
 
-        with dpg.window(label="Correct folders not found", modal=True, show=False, id="modal_id_folders_not_found",
-                        no_title_bar=True, popup=True):
-            dpg.add_text("The selected Directory {} \n"
-                         "doesn't have at least one of the\n"
-                         "Sources, Transforms or Sinks folders in it, so it cannot\n"
-                         "be a Heron Node code. Please select another directory.".format(operations_directory))
-            dpg.add_separator()
-            with dpg.group(horizontal=True):
-                dpg.add_spacer(width=120)
-                dpg.add_button(label="OK", width=75, callback=delete_aliases)
-
-        with dpg.window(label="Not enough credentials", modal=True, show=False,
-                        id="modal_id_credentials", no_title_bar=True, popup=True):
-            dpg.add_text("If you are running Windows you need to run the python that runs Heron\n"
-                         "with elevated credentials in order to create a symbolic link.\n"
-                         "Restart Heron with a python that has started with 'Run as Administrator'.")
-            dpg.add_separator()
-            with dpg.group(horizontal=True):
-                dpg.add_spacer(width=160)
-                dpg.add_button(label="OK", width=75,
-                               callback=delete_aliases)
+            return result
 
         folders_exist = False
         for f in main_folders:
@@ -487,22 +493,26 @@ def add_new_symbolic_link_node_folder():
                     target = os.path.join(operations_directory, f, d)
                     link = os.path.join(heron_path, 'Operations', f, d)
                     if not os.path.isdir(link):
-                        add_symlink(target, link)
+                        if not add_symlink(target, link):
+                            return
                     else:
                         for inner_dir in os.listdir(target):
                             link_inner = os.path.join(link, inner_dir)
                             inner_target = os.path.join(target, inner_dir)
-                            print(inner_target, link_inner)
-                            add_symlink(inner_target, link_inner)
+                            if not add_symlink(inner_target, link_inner):
+                                return
 
         if not folders_exist:
-            dpg.configure_item("modal_id_folders_not_found", show=True)
+            error_text = "The selected Directory {} \n" \
+                         "doesn't have at least one of the\n" \
+                         "Sources, Transforms or Sinks folders in it, so it cannot\n" \
+                         "be a Heron Node code. Please select another directory.".format(operations_directory)
+            create_error_window(error_text, 120)
         else:
             dpg.delete_item(node_selector)
             operations_list = op_list.generate_operations_list()
             Node.operations_list = operations_list
             node_selector = create_node_selector_window()
-        delete_aliases()
 
     file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True, height=500)
 
