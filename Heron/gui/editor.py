@@ -326,6 +326,10 @@ def save_graph():
             n.socket_pub_parameters = None
             n.socket_sub_proof_of_life = None
             n.context = None
+            try:
+                n.operations_list = None  # This line is in a try to make saves before Heron 0.5.5 work
+            except:
+                pass
             n = copy.deepcopy(n)
             node_dict[n.name] = n.__dict__
             node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
