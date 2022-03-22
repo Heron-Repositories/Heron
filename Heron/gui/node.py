@@ -347,7 +347,7 @@ class Node:
     def start_com_process(self):
         self.initialise_proof_of_life_socket()
         arguments_list = ['python', self.operation.executable, self.starting_port]
-        print(arguments_list)
+
         num_of_inputs = len(self.topics_in)  #num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
         num_of_outputs = len(self.topics_out) #len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
         arguments_list.append(str(num_of_inputs))
@@ -364,7 +364,6 @@ class Node:
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)
-        print(arguments_list)
         self.process = subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         print('Started COM {}_{} process with PID = {}'.format(self.name, self.node_index, self.process.pid))
         # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).

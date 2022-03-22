@@ -9,7 +9,7 @@ while path.split(current_dir)[-1] != r'Heron':
 sys.path.insert(0, path.dirname(current_dir))
 
 from Heron import general_utils as gu
-Exec = os.path.realpath(__file__)
+Exec = os.path.abspath(__file__)
 
 
 # <editor-fold desc="The following code is called from the GUI process as part of the generation of the node.

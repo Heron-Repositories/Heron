@@ -296,18 +296,17 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
 
 def start_the_sink_communications_process():
     """
-    Creates a TransformCom object for a transformation process
+    Creates a Sink object for a sink process
     (i.e. initialises the worker_exec process and keeps the zmq communication between the worker_exec
     and the forwarder)
-    :return: The TransformCom object
+    :return: The SinkCom object
     """
     push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec = \
         parse_arguments_to_com(sys.argv)
     #verbose = verbose == 'True'
-
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
                          push_port=push_port, worker_exec=worker_exec, verbose=verbose,
-                         ssh_local_server_id = ssh_local_server_id, ssh_remote_server_id = ssh_remote_server_id)
+                         ssh_local_server_id=ssh_local_server_id, ssh_remote_server_id=ssh_remote_server_id)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -317,9 +316,9 @@ def start_the_sink_communications_process():
 
 def start_the_sink_worker_process(work_function, end_of_life_function, initialisation_function=None):
     """
-    Starts the _worker process of the Transform that grabs link from the _com process, does something with them
+    Starts the _worker process of the Sink that grabs link from the _com process, does something with them
     and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
-    :return: The TransformWorker object
+    :return: The SinkWorker object
     """
 
     pull_port, parameters_topic, receiving_topics, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, \

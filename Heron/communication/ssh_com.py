@@ -85,10 +85,11 @@ class SSHCom:
         forwarder).
         :return: Nothing
         """
+
         if self.ssh_local_ip == 'None':
             socket.connect("{}:{}".format(socket_ip, socket_port))
         else:
-            #logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_port))
+            logging.debug('== Connecting back to local (computer running editor) with port : {}'.format(socket_port))
             try:
                 if self.ssh_local_password == 'None' or skip_ssh:
                     logging.debug('=== Using normal sockets (not SSH) connecting to tcp://{}:{}'
@@ -110,6 +111,8 @@ class SSHCom:
                 logging.debug('=== Connected')
 
     def connect_socket_to_remote(self, socket, socket_ip):
+        #print(socket_ip)
+        #print(self.remote_server_id)
         if self.remote_server_id != 'None':
             logging.debug('ssh remote with port : {}'.format(socket_ip))
             tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".
