@@ -24,9 +24,9 @@ Properties of the generated Node
 BaseName = 'User Input'
 NodeAttributeNames = ['Parameters', 'Text Out']
 NodeAttributeType = ['Static', 'Output']
-ParameterNames = ['Visualisation', 'User Input']
-ParameterTypes = ['bool', 'str']
-ParametersDefaultValues = [False, '']
+ParameterNames = ['Visualisation', 'Output Type', 'User Input']
+ParameterTypes = ['bool', 'list', 'str']
+ParametersDefaultValues = [False, ['string', 'int', 'float'], '']
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'user_input_worker.py')
 # </editor-fold>
 
