@@ -111,8 +111,6 @@ class SSHCom:
                 logging.debug('=== Connected')
 
     def connect_socket_to_remote(self, socket, socket_ip):
-        #print(socket_ip)
-        #print(self.remote_server_id)
         if self.remote_server_id != 'None':
             logging.debug('ssh remote with port : {}'.format(socket_ip))
             tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".
