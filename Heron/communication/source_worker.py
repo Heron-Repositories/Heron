@@ -9,23 +9,24 @@ import cv2
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
 from Heron.communication.ssh_com import SSHCom
+from Heron.gui.relic import HeronRelic
 
 
 class SourceWorker:
     def __init__(self, port, parameters_topic, initialisation_function, end_of_life_function, num_sending_topics,
-                 verbose, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
+                 relic_path, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
         self.parameters_topic = parameters_topic
         self.data_port = port
         self.pull_heartbeat_port = str(int(self.data_port) + 1)
         self.initialisation_function = initialisation_function
         self.end_of_life_function = end_of_life_function
         self.num_sending_topics = int(num_sending_topics)
-        self.verbose = verbose
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = parameters_topic.split('##')[-1]
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
+        self.relic_path = relic_path
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
@@ -45,6 +46,7 @@ class SourceWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
+        self.index = 0
 
     def connect_socket(self):
         """
@@ -79,6 +81,15 @@ class SourceWorker:
         self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
                                              self.port_pub_proof_of_life, skip_ssh=True)
 
+    def send_data_to_com(self, data):
+        self.socket_push_data.send_array(data, copy=False)
+        self.index += 1
+
+    def create_parameters_pandasdf_in_relic(self, **parameters):
+        self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
+        if self.heron_relic.operational:
+            self.heron_relic.create_the_parameters_pandasdf(**parameters)
+
     def update_parameters(self):
         """
         This updates the self.parameters from the parameters send form the node (through the gui_com)
@@ -91,6 +102,9 @@ class SourceWorker:
             self.parameters = args
             if not self.initialised and self.initialisation_function is not None:
                 self.initialised = self.initialisation_function(self)
+
+            if self.initialised and self.heron_relic.operational:
+                self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
         except zmq.Again as e:
             pass
 

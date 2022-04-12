@@ -81,7 +81,8 @@ def start_key_press_capture(_worker_object):
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
             vis.visualised_data = np.array([waiting_for_key])
-            worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+            #worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+            worker_object.send_data_to_com(vis.visualised_data)
             key_pressed_and_released = [None, None]
         try:
             vis.visualisation_on = worker_object.parameters[0]

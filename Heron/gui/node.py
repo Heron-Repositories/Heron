@@ -10,6 +10,7 @@ import json
 import subprocess
 import zmq
 import copy
+import importlib
 import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
@@ -307,16 +308,27 @@ class Node:
                                                      default_value=attr)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
-                    #dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
-                    #                  callback=self.update_verbosity, width=100)
                     dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
                                        callback=self.update_verbosity, width=400,
-                                       hint='Log file name or verbosity level integer.')
+                                       hint='Log file name or verbosity level integer.',
+                                       tag='verb#{}#{}'.format(self.operation.name, self.node_index))
+
+                if importlib.util.find_spec('reliquery') is not None:
+                    # Create the relic input only if reliquery is present
+                    with dpg.group(horizontal=True):
+                        dpg.add_spacer(width=10)
+                        dpg.add_text(default_value='Save Relic to directory:')
+
+                    with dpg.group(horizontal=True):
+                        dpg.add_spacer(width=10)
+                        dpg.add_input_text(default_value='', callback=self.update_verbosity,
+                                           hint='The path where the Relic for this worker process will be saved',
+                                           tag='relic#{}#{}'.format(self.operation.name, self.node_index))
 
     def update_verbosity(self, sender, data):
-        self.verbose = dpg.get_value(sender)
-        if type(self.verbose) is int:
-            self.verbose = str(self.verbose)
+        relic_value = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
+        verbosity_value = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
+        self.verbose = '{}||{}'.format(verbosity_value, relic_value)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',

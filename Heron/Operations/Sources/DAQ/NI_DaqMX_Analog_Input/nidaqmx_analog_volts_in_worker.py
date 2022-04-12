@@ -229,7 +229,8 @@ def acquire(_worker_object):
 
     while acquiring_on:
         vis.visualised_data = np.array(task.read(number_of_samples_per_channel=buffer_size))
-        worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+        #worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+        worker_object.send_data_to_com(vis.visualised_data)
 
         try:
             vis.visualisation_on = worker_object.parameters[0]

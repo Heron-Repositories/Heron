@@ -186,12 +186,12 @@ def parse_arguments_to_worker(args):
     for i in range(num_of_receiving_topics):
         receiving_topics.append(args[i+3])
     num_sending_topics = args[-5]
-    verbose = args[-4]
+    relic = args[-4]
     ssh_local_ip = args[-3]
     ssh_local_username = args[-2]
     ssh_local_password = args[-1]
 
-    return port, parameters_topic, receiving_topics, num_sending_topics, verbose,\
+    return port, parameters_topic, receiving_topics, num_sending_topics, relic,\
            ssh_local_ip, ssh_local_username, ssh_local_password
 
 
@@ -227,14 +227,14 @@ def start_the_source_worker_process(work_function, end_of_life_function, initial
     :param work_function:
     :return:
     """
-    port, parameters_topic, _, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, ssh_local_password =\
+    port, parameters_topic, _, num_sending_topics, relic, ssh_local_ip, ssh_local_username, ssh_local_password =\
         parse_arguments_to_worker(sys.argv)
     #verbose = verbose == 'True'
 
     worker_object = SourceWorker(port=port, parameters_topic=parameters_topic,
                                  initialisation_function=initialisation_function,
                                  end_of_life_function=end_of_life_function,
-                                 num_sending_topics=num_sending_topics, verbose=verbose,
+                                 num_sending_topics=num_sending_topics, relic_path=relic,
                                  ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                  ssh_local_password=ssh_local_password)
     worker_object.connect_socket()
@@ -275,7 +275,7 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
     and sends them back to the _com process. It also grabs any updates of the parameters of the worker_exec function
     :return: The TransformWorker object
     """
-    pull_port, parameters_topic, receiving_topics, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, \
+    pull_port, parameters_topic, receiving_topics, num_sending_topics, relic, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
     #verbose = verbose == 'True'
 
@@ -286,7 +286,7 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
     worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port,
                                     initialisation_function=initialisation_function, work_function=work_function,
                                     end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                                    num_sending_topics=num_sending_topics, verbose=verbose,
+                                    num_sending_topics=num_sending_topics, relic_path=relic,
                                     ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                     ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()
@@ -321,7 +321,7 @@ def start_the_sink_worker_process(work_function, end_of_life_function, initialis
     :return: The SinkWorker object
     """
 
-    pull_port, parameters_topic, receiving_topics, num_sending_topics, verbose, ssh_local_ip, ssh_local_username, \
+    pull_port, parameters_topic, receiving_topics, num_sending_topics, relic, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
     #verbose = verbose == 'True'
 
@@ -332,7 +332,7 @@ def start_the_sink_worker_process(work_function, end_of_life_function, initialis
     worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port,
                                initialisation_function=initialisation_function, work_function=work_function,
                                end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                               num_sending_topics=num_sending_topics, verbose=verbose,
+                               num_sending_topics=num_sending_topics, relic_path=relic,
                                ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()

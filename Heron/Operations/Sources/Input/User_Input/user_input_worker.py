@@ -13,37 +13,41 @@ from Heron import general_utils as gu
 from Heron.communication.source_worker import SourceWorker
 
 worker_object: SourceWorker
+visualisation_on: bool
 latest_user_input: str
-previous_user_input: str
-initial_param_updates_num = 0
 loop_on = True
 
 
-def start_user_input_capture(_worker_object):
-    global worker_object
+def initialise(_worker_object):
+    global visualisation_on
+    global output_type
     global latest_user_input
-    global previous_user_input
-    global initial_param_updates_num
-    global loop_on
+    try:
+        visualisation_on = _worker_object.parameters[0]
+        output_type = _worker_object.parameters[1]
+        latest_user_input = str(_worker_object.parameters[2])
+    except:
+        return False
 
-    worker_object = _worker_object
+    _worker_object.create_parameters_pandasdf_in_relic(visualisation_on=visualisation_on,
+                                                       output_type=output_type,
+                                                       user_input=latest_user_input)
+    return True
+
+
+def start_user_input_capture(_worker_object):
+    global visualisation_on
+    global output_type
+    global latest_user_input
+    global loop_on
 
     while loop_on:
         try:
-            visualisation_on = worker_object.parameters[0]
-            output_type = worker_object.parameters[1]
-            latest_user_input = str(worker_object.parameters[2])
+            visualisation_on = _worker_object.parameters[0]
+            output_type = _worker_object.parameters[1]
+            latest_user_input = str(_worker_object.parameters[2])
 
             if latest_user_input != '':
-                '''
-                try:
-                    latest_user_input = int(latest_user_input)
-                except:
-                    try:
-                        latest_user_input = float(latest_user_input)
-                    except:
-                        pass
-                '''
 
                 if output_type == 'int':
                     latest_user_input = [int(i) for i in latest_user_input.split(' ')]
@@ -55,9 +59,10 @@ def start_user_input_capture(_worker_object):
 
                 result = np.array([latest_user_input])
 
-                worker_object.socket_push_data.send_array(result, copy=False)
+                #worker_object.socket_push_data.send_array(result, copy=False)
+                _worker_object.send_data_to_com(result)
                 latest_user_input = ''
-                worker_object.parameters[1] = latest_user_input
+                _worker_object.parameters[2] = latest_user_input
         except:
             pass
 
@@ -70,4 +75,4 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(start_user_input_capture, on_end_of_life)
+    gu.start_the_source_worker_process(start_user_input_capture, on_end_of_life, initialisation_function=initialise)

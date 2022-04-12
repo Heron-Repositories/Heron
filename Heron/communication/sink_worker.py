@@ -10,11 +10,12 @@ from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
+from Heron.gui.relic import HeronRelic
 
 
 class SinkWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
-                 parameters_topic, num_sending_topics, verbose,
+                 parameters_topic, num_sending_topics, relic_path,
                  ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
@@ -25,10 +26,11 @@ class SinkWorker:
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
         self.num_sending_topics = int(num_sending_topics)
-        self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
         self.loops_on = True
         self.initialised = False
+
+        self.heron_relic = HeronRelic(relic_path, self.node_name, self.node_index)
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -51,6 +53,7 @@ class SinkWorker:
         self.thread_heartbeat = None
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
+        self.index = 0
 
     def connect_sockets(self):
         """
@@ -110,7 +113,12 @@ class SinkWorker:
         if self.initialised:
             data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
             self.work_function(data, self.parameters)
+            self.index += 1
         self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+
+    def create_parameters_pandasdf_in_relic(self, **parameters):
+        if self.heron_relic.operational:
+            self.heron_relic.create_the_parameters_pandasdf(**parameters)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -128,6 +136,9 @@ class SinkWorker:
                 if not self.initialised and self.initialisation_function is not None:
                     self.initialised = self.initialisation_function(self)
                 #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+
+                if self.initialised and self.heron_relic.operational:
+                    self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
 
     def heartbeat_callback(self, pulse):
         """

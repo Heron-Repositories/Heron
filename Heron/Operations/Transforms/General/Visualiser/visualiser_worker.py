@@ -50,6 +50,9 @@ def get_vis_type_parameter(_worker_object):
         dpg_thread = threading.Thread(target=dpg_visualisation_thread, daemon=True)
         dpg_thread.start()
 
+    _worker_object.create_parameters_pandasdf_in_relic(visualisation_on=visualisation_on,
+                                                       visualisation_type=visualisation_type,
+                                                       buffer=buffer)
     return True
 
 

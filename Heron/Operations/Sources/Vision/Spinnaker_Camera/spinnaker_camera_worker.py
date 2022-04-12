@@ -272,7 +272,8 @@ def run_spinnaker_camera(_worker_object):
         if data is not None:
             if frame_counter == 1:
                 start_time = datetime.datetime.now()
-            worker_object.socket_push_data.send_array(data, copy=False)
+            #worker_object.socket_push_data.send_array(data, copy=False)
+            worker_object.send_data_to_com(data)
             frame_counter += 1
             if vis.visualisation_on:
                 vis.visualised_data = data

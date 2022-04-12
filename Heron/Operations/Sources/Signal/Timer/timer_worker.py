@@ -74,7 +74,8 @@ def run_timer(worker_object):
     while running:
         visualise = worker_object.parameters[0]
         result = np.array([signal_out])
-        worker_object.socket_push_data.send_array(result, copy=False)
+        #worker_object.socket_push_data.send_array(result, copy=False)
+        worker_object.send_data_to_com(result)
 
         if visualise:
             print(result)
