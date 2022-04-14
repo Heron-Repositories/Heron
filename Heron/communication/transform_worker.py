@@ -133,7 +133,7 @@ class TransformWorker:
                 send_topics += 1
             self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
-    def create_parameters_pandasdf_in_relic(self, **parameters):
+    def relic_create_parameters_df(self, **parameters):
         if self.heron_relic.operational:
             self.heron_relic.create_the_parameters_pandasdf(**parameters)
 

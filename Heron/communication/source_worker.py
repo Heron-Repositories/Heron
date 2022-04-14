@@ -5,7 +5,6 @@ import zmq
 import os
 import signal
 import pickle
-import cv2
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct
 from Heron.communication.ssh_com import SSHCom
@@ -85,7 +84,7 @@ class SourceWorker:
         self.socket_push_data.send_array(data, copy=False)
         self.index += 1
 
-    def create_parameters_pandasdf_in_relic(self, **parameters):
+    def relic_create_parameters_df(self, **parameters):
         self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
         if self.heron_relic.operational:
             self.heron_relic.create_the_parameters_pandasdf(**parameters)
@@ -105,7 +104,7 @@ class SourceWorker:
 
             if self.initialised and self.heron_relic.operational:
                 self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
-        except zmq.Again as e:
+        except Exception as e:
             pass
 
     def parameters_loop(self):
@@ -163,7 +162,7 @@ class SourceWorker:
         Start the heartbeat thread that run the infinite heartbeat_loop
         :return: Nothing
         """
-        print('Started Worker {}_{} process with PID = {}'.format(self.node_name, self.node_index, os.getpid()))
+        print('Started Worker {}##{} process with PID = {}'.format(self.node_name, self.node_index, os.getpid()))
 
         self.thread_heartbeat = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.thread_heartbeat.start()

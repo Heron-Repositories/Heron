@@ -12,7 +12,12 @@ import scipy.stats as ss
 from Heron import general_utils as gu
 
 running = False
-delay_generator = None
+finish = False
+signal_out: str
+delay_generator: str
+a: float
+b: float
+c: float
 
 
 def constant(a, b, c):
@@ -45,36 +50,58 @@ def gaussian(a, b, c):
     return np.random.normal(mu, std)
 
 
+def initialise(_worker_object):
+    global signal_out
+    global delay_generator
+    global a, b, c
+    global running
+
+    worker_object = _worker_object
+
+    try:
+        worker_object.visualisation_on = worker_object.parameters[0]
+        signal_out = worker_object.parameters[1]
+        delay_generator_str = worker_object.parameters[2].split(':')[0]
+        a, b, c = worker_object.parameters[3], worker_object.parameters[4], worker_object.parameters[5]
+
+        if 'constant' in delay_generator_str:
+            delay_generator = constant
+        elif 'random uniform' in delay_generator_str:
+            delay_generator = uniform
+        elif 'random exponential' in delay_generator_str:
+            delay_generator = exponential
+        elif 'random truncated exponential' in delay_generator_str:
+            delay_generator = trunc_exp_corrected
+        elif 'random gaussian' in delay_generator_str:
+            delay_generator = gaussian
+
+        running = True
+        # The main loop must start (running = True and wait a bit) before the relic is created
+        gu.accurate_delay(0.1)
+        worker_object.relic_create_parameters_df(visualisation_on=worker_object.visualisation_on,
+                                                 signal_out=signal_out,
+                                                 delay_generator=delay_generator.__name__,
+                                                 a=a, b=b, c=c)
+    except:
+        running = False
+
+    return running
+
+
 def run_timer(worker_object):
-    running = False
-    delay_generator = None
+    global signal_out
+    global delay_generator
+    global a, b, c
+    global running
+    global finish
 
-    while not running:
-        try:
-            worker_object.visualisation_on = worker_object.parameters[0]
-            signal_out = worker_object.parameters[1]
-            delay_generator_str = worker_object.parameters[2].split(':')[0]
-            a, b, c = worker_object.parameters[3], worker_object.parameters[4], worker_object.parameters[5]
+    while not running and not finish:
+        gu.accurate_delay(0.1)
 
-            if 'constant' in delay_generator_str:
-                delay_generator = constant
-            elif 'random uniform' in delay_generator_str:
-                delay_generator = uniform
-            elif 'random exponential' in delay_generator_str:
-                delay_generator = exponential
-            elif 'random truncated exponential' in delay_generator_str:
-                delay_generator = trunc_exp_corrected
-            elif 'random gaussian' in delay_generator_str:
-                delay_generator = gaussian
-            print(delay_generator)
-            running = True
-        except:
-            gu.accurate_delay(1)
-
-    while running:
+    while running and not finish:
         visualise = worker_object.parameters[0]
+        print(visualise)
         result = np.array([signal_out])
-        #worker_object.socket_push_data.send_array(result, copy=False)
         worker_object.send_data_to_com(result)
 
         if visualise:
@@ -86,9 +113,11 @@ def run_timer(worker_object):
 
 def on_end_of_life():
     global running
+    global finish
 
+    finish = True
     running = False
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(run_timer, on_end_of_life)
+    gu.start_the_source_worker_process(run_timer, on_end_of_life, initialisation_function=initialise)

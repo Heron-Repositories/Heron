@@ -91,7 +91,11 @@ class Node:
                                                  '{}'.format(self.name.replace(' ', '_')).encode('ascii'))
 
     def remove_from_editor(self):
+        dpg.remove_alias('verb#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('relic#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('relic#{}#{}'.format(self.operation.name, self.node_index))
         dpg.delete_item(self.id)
+
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
@@ -326,7 +330,9 @@ class Node:
                                            tag='relic#{}#{}'.format(self.operation.name, self.node_index))
 
     def update_verbosity(self, sender, data):
-        relic_value = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
+        relic_value = ''
+        if importlib.util.find_spec('reliquery') is not None:
+            relic_value = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
         verbosity_value = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
         self.verbose = '{}||{}'.format(verbosity_value, relic_value)
 
@@ -360,8 +366,8 @@ class Node:
         self.initialise_proof_of_life_socket()
         arguments_list = ['python', self.operation.executable, self.starting_port]
 
-        num_of_inputs = len(self.topics_in)  #num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
-        num_of_outputs = len(self.topics_out) #len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
+        num_of_inputs = len(self.topics_in)
+        num_of_outputs = len(self.topics_out)
         arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
             for topic_in in self.topics_in:
@@ -372,6 +378,8 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name.replace(" ", "_"))
 
+        self.update_verbosity(None, None)   # This is required to make the debugger work because in debug this callback
+                                            # is never called
         arguments_list.append(str(self.verbose))
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])

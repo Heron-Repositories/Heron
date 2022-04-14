@@ -23,8 +23,18 @@ def initialise(_worker_object):
     global vis
 
     worker_object = _worker_object
+
+    try:
+        frame2_minus_frame1 = worker_object.parameters[1]
+    except:
+        return False
+
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
     vis.visualisation_init()
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on,
+                                             frame2_minus_frame1=frame2_minus_frame1)
+
     return True
 
 

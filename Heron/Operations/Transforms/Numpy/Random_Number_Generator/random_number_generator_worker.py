@@ -12,6 +12,15 @@ from Heron import general_utils as gu, constants as ct
 
 
 def initialise(worker_object):
+    try:
+        visualisation_on = worker_object.parameters[0]
+        function_name = worker_object.parameters[1].split(':')[0]
+        a, b, c, d = worker_object.parameters[2:]
+    except:
+        return False
+
+    worker_object.relic_create_parameters_df(visualisation_on=visualisation_on, function_name=function_name,
+                                             a=a, b=b, c=c, d=d)
     return True
 
 

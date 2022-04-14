@@ -266,13 +266,18 @@ def run_spinnaker_camera(_worker_object):
     if not setup_camera_and_start_acquisition(cam_index, trigger, pixel_format, fps):
         acquiring_on = False
 
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on,
+                                             camera_index=cam_index, trigger_mode=trigger,
+                                             pixel_format=pixel_format, fps=fps)
+    worker_object.initialised = True
+
     # The infinite loop that does the frame capture and push to the output of the node
     while acquiring_on:
         data = grab_frame()
         if data is not None:
             if frame_counter == 1:
                 start_time = datetime.datetime.now()
-            #worker_object.socket_push_data.send_array(data, copy=False)
+
             worker_object.send_data_to_com(data)
             frame_counter += 1
             if vis.visualisation_on:
@@ -282,7 +287,6 @@ def run_spinnaker_camera(_worker_object):
             vis.visualisation_on = worker_object.parameters[0]
         except:
             vis.visualisation_on = spinnaker_camera_com.ParametersDefaultValues[0]
-
 
 
 def on_end_of_life():

@@ -20,8 +20,16 @@ vis: Visualisation
 def initialise(worker_object):
     global vis
 
+    try:
+        color_conv_string = worker_object.parameters[1]
+    except:
+        return False
+
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
     vis.visualisation_init()
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, color_conv_string=color_conv_string)
+
     return True
 
 

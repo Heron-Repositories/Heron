@@ -15,24 +15,31 @@ from Heron.communication.source_worker import SourceWorker
 worker_object: SourceWorker
 visualisation_on: bool
 latest_user_input: str
-loop_on = True
+loop_on = False
+finish = False
 
 
 def initialise(_worker_object):
     global visualisation_on
     global output_type
     global latest_user_input
+    global loop_on
+
     try:
         visualisation_on = _worker_object.parameters[0]
         output_type = _worker_object.parameters[1]
         latest_user_input = str(_worker_object.parameters[2])
-    except:
-        return False
 
-    _worker_object.create_parameters_pandasdf_in_relic(visualisation_on=visualisation_on,
-                                                       output_type=output_type,
-                                                       user_input=latest_user_input)
-    return True
+        loop_on = True
+        # The main loop must start (loop_on = True and wait a bit) before the relic is created
+        gu.accurate_delay(0.1)
+        _worker_object.relic_create_parameters_df(visualisation_on=visualisation_on,
+                                                  output_type=output_type,
+                                                  user_input=latest_user_input)
+    except:
+        pass
+
+    return loop_on
 
 
 def start_user_input_capture(_worker_object):
@@ -41,7 +48,10 @@ def start_user_input_capture(_worker_object):
     global latest_user_input
     global loop_on
 
-    while loop_on:
+    while not loop_on and not finish:
+        gu.accurate_delay(0.1)
+
+    while loop_on and not finish:
         try:
             visualisation_on = _worker_object.parameters[0]
             output_type = _worker_object.parameters[1]
@@ -59,7 +69,6 @@ def start_user_input_capture(_worker_object):
 
                 result = np.array([latest_user_input])
 
-                #worker_object.socket_push_data.send_array(result, copy=False)
                 _worker_object.send_data_to_com(result)
                 latest_user_input = ''
                 _worker_object.parameters[2] = latest_user_input
@@ -71,6 +80,9 @@ def start_user_input_capture(_worker_object):
 
 def on_end_of_life():
     global loop_on
+    global finish
+
+    finish = False
     loop_on = False
 
 
