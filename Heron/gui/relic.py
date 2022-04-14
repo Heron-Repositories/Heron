@@ -30,7 +30,7 @@ class HeronRelic():
         except ImportError:
             self.operational = False
 
-        if relic_path == '':
+        if relic_path == '_':
             self.operational = False
 
         if self.operational:

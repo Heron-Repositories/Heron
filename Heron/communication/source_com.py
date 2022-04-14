@@ -24,6 +24,7 @@ class SourceCom:
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
         self.verbose, self.relic = self.define_verbosity_and_relic(verbose)
+
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
@@ -87,6 +88,8 @@ class SourceCom:
         """
         if verbosity_string != '':
             verbosity, relic = verbosity_string.split('||')
+            if relic == '':
+                relic = '_'
             if verbosity == '':
                 return 0, relic
             else:

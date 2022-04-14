@@ -20,6 +20,7 @@ from Heron.gui.visualisation import Visualisation
 from Heron.communication.source_worker import SourceWorker
 
 acquiring_on = False
+finish = False
 buffer_size = 0
 task: nidaqmx.Task
 worker_object: SourceWorker
@@ -186,6 +187,8 @@ def initialise(_worker_object):
     global buffer_size
     global sample_mode
     global worker_object
+    global task
+    global vis
 
     worker_object = _worker_object
 
@@ -216,16 +219,15 @@ def initialise(_worker_object):
                                         samps_per_chan=buffer_size)
         task.start()
 
-        # Define parameters for parameter relic
-        worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, channels=channels,
-                                                 rate=rate, sample_mode=sample_mode, buffer_size=buffer_size)
-
         # Start acquisition
         acquiring_on = True
-    except Exception as e:
-        pass
 
-    return acquiring_on
+    except Exception as e:
+        return False
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, channels=channels,
+                                             rate=rate, sample_mode=sample_mode, buffer_size=buffer_size)
+    return True
 
 
 def acquire(_worker_object):
@@ -235,18 +237,18 @@ def acquire(_worker_object):
     :return:
     """
     global acquiring_on
+    global finish
     global task
     global buffer_size
-    global worker_object
-    global channels
-    global rate
-    global sample_mode
     global vis
-    global dpg_is_running
 
     worker_object = _worker_object
 
-    while acquiring_on:
+    while not acquiring_on and not finish:
+        gu.accurate_delay(1)
+
+    while acquiring_on and not finish:
+
         vis.visualised_data = np.array(task.read(number_of_samples_per_channel=buffer_size))
         worker_object.send_data_to_com(vis.visualised_data)
 
@@ -263,9 +265,11 @@ def on_end_of_life():
     global task
     global figure
     global acquiring_on
+    global finish
     global vis
 
     acquiring_on = False
+    finish = False
     try:
         vis.kill()
 

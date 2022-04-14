@@ -102,6 +102,8 @@ class SinkCom:
         """
         if verbosity_string != '':
             verbosity, relic = verbosity_string.split('||')
+            if relic == '':
+                relic = '_'
             if verbosity == '':
                 return 0, relic
             else:

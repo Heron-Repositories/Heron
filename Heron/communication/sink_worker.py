@@ -29,14 +29,14 @@ class SinkWorker:
         self.recv_topics_buffer = recv_topics_buffer
         self.loops_on = True
         self.initialised = False
+        self.node_name = self.parameters_topic.split('##')[-2]
+        self.node_index = self.parameters_topic.split('##')[-1]
 
         self.heron_relic = HeronRelic(relic_path, self.node_name, self.node_index)
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
 
-        self.node_name = self.parameters_topic.split('##')[-2]
-        self.node_index = self.parameters_topic.split('##')[-1]
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
         self.port_pub_proof_of_life = ct.PROOF_OF_LIFE_FORWARDER_SUBMIT_PORT

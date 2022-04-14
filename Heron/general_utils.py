@@ -303,6 +303,7 @@ def start_the_sink_communications_process():
     """
     push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec = \
         parse_arguments_to_com(sys.argv)
+
     #verbose = verbose == 'True'
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
                          push_port=push_port, worker_exec=worker_exec, verbose=verbose,
