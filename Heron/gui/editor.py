@@ -435,6 +435,8 @@ def clear_editor():
     if dpg.get_item_children(node_editor, slot=1):
         for n in dpg.get_item_children(node_editor, slot=1):
             dpg.delete_item(n)
+        for a in dpg.get_aliases():
+            dpg.remove_alias(a)
     nodes_list = []
 
 

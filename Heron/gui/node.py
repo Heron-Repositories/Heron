@@ -10,6 +10,7 @@ import json
 import subprocess
 import zmq
 import copy
+import importlib
 import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
@@ -90,7 +91,11 @@ class Node:
                                                  '{}'.format(self.name.replace(' ', '_')).encode('ascii'))
 
     def remove_from_editor(self):
+        dpg.remove_alias('verb#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('relic#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('relic#{}#{}'.format(self.operation.name, self.node_index))
         dpg.delete_item(self.id)
+
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
@@ -307,16 +312,29 @@ class Node:
                                                      default_value=attr)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
-                    #dpg.add_input_int(label='##{}'.format(attribute_name), default_value=self.verbose,
-                    #                  callback=self.update_verbosity, width=100)
                     dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
                                        callback=self.update_verbosity, width=400,
-                                       hint='Log file name or verbosity level integer.')
+                                       hint='Log file name or verbosity level integer.',
+                                       tag='verb#{}#{}'.format(self.operation.name, self.node_index))
+
+                if importlib.util.find_spec('reliquery') is not None:
+                    # Create the relic input only if reliquery is present
+                    with dpg.group(horizontal=True):
+                        dpg.add_spacer(width=10)
+                        dpg.add_text(default_value='Save Relic to directory:')
+
+                    with dpg.group(horizontal=True):
+                        dpg.add_spacer(width=10)
+                        dpg.add_input_text(default_value='', callback=self.update_verbosity,
+                                           hint='The path where the Relic for this worker process will be saved',
+                                           tag='relic#{}#{}'.format(self.operation.name, self.node_index))
 
     def update_verbosity(self, sender, data):
-        self.verbose = dpg.get_value(sender)
-        if type(self.verbose) is int:
-            self.verbose = str(self.verbose)
+        relic_value = ''
+        if importlib.util.find_spec('reliquery') is not None:
+            relic_value = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
+        verbosity_value = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
+        self.verbose = '{}||{}'.format(verbosity_value, relic_value)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
@@ -348,8 +366,8 @@ class Node:
         self.initialise_proof_of_life_socket()
         arguments_list = ['python', self.operation.executable, self.starting_port]
 
-        num_of_inputs = len(self.topics_in)  #num_of_inputs = len(np.where(np.array(self.operation.attribute_types) == 'Input')[0])
-        num_of_outputs = len(self.topics_out) #len(np.where(np.array(self.operation.attribute_types) == 'Output')[0])
+        num_of_inputs = len(self.topics_in)
+        num_of_outputs = len(self.topics_out)
         arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
             for topic_in in self.topics_in:
@@ -360,6 +378,8 @@ class Node:
                 arguments_list.append(topic_out)
         arguments_list.append(self.name.replace(" ", "_"))
 
+        self.update_verbosity(None, None)   # This is required to make the debugger work because in debug this callback
+                                            # is never called
         arguments_list.append(str(self.verbose))
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])

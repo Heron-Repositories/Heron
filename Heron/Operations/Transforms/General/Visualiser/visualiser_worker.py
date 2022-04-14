@@ -50,6 +50,9 @@ def get_vis_type_parameter(_worker_object):
         dpg_thread = threading.Thread(target=dpg_visualisation_thread, daemon=True)
         dpg_thread.start()
 
+    worker_object.relic_create_parameters_df(visualisation_on=visualisation_on,
+                                              visualisation_type=visualisation_type,
+                                              buffer=buffer)
     return True
 
 

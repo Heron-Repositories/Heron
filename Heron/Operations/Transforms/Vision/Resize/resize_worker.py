@@ -21,8 +21,17 @@ vis: Visualisation
 def initialise(worker_object):
     global vis
 
+    try:
+        x_shape = worker_object.parameters[1]
+        y_shape = worker_object.parameters[2]
+    except:
+        return False
+
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
     vis.visualisation_init()
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, x_shape=x_shape, y_shape=y_shape)
+
     return True
 
 

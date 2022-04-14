@@ -20,8 +20,16 @@ vis: Visualisation
 def initialise(worker_object):
     global vis
 
+    try:
+        min_val = worker_object.parameters[1]
+        max_val = worker_object.parameters[2]
+    except:
+        return False
+
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
     vis.visualisation_init()
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, min_val=min_val, max_val=max_val)
     return True
 
 

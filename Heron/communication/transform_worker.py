@@ -10,11 +10,12 @@ from Heron import constants as ct
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
+from Heron.gui.relic import HeronRelic
 
 
 class TransformWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
-                 parameters_topic, num_sending_topics, verbose,
+                 parameters_topic, num_sending_topics, relic_path,
                  ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
@@ -25,10 +26,11 @@ class TransformWorker:
         self.end_of_life_function = end_of_life_function
         self.parameters_topic = parameters_topic
         self.num_sending_topics = int(num_sending_topics)
-        self.verbose = verbose
         self.recv_topics_buffer = recv_topics_buffer
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = self.parameters_topic.split('##')[-1]
+
+        self.heron_relic = HeronRelic(relic_path, self.node_name, self.node_index)
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -52,6 +54,7 @@ class TransformWorker:
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
         self.worker_visualisable_result = None
+        self.index = 0
 
     def connect_sockets(self):
         """
@@ -122,12 +125,17 @@ class TransformWorker:
                     self.socket_push_data.send_array(array_in_list, flags=zmq.SNDMORE, copy=False)
                 else:
                     self.socket_push_data.send_array(array_in_list, copy=False)
+            self.index += 1
         else:
             send_topics = 0
             while send_topics < self.num_sending_topics - 1:
                 self.socket_push_data.send_array(np.array([ct.IGNORE]), flags=zmq.SNDMORE, copy=False)
                 send_topics += 1
             self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+
+    def relic_create_parameters_df(self, **parameters):
+        if self.heron_relic.operational:
+            self.heron_relic.create_the_parameters_pandasdf(**parameters)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -145,6 +153,9 @@ class TransformWorker:
                 if not self.initialised and self.initialisation_function is not None:
                     self.initialised = self.initialisation_function(self)
             #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
+
+                if self.initialised and self.heron_relic.operational:
+                    self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
 
     def heartbeat_callback(self, pulse):
         """

@@ -37,9 +37,14 @@ def run_camera(worker_object):
             except:
                 cv2.waitKey(1)
 
+    worker_object.relic_create_parameters_df(visualisation_on=False,
+                                             camera_index=cam_index)
+    worker_object.initialised = True
+
     while acquiring_on:
+
         ret, vis.visualised_data = capture.read()
-        worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+        worker_object.send_data_to_com(vis.visualised_data)
         try:
             vis.visualisation_on = worker_object.parameters[0]
         except:

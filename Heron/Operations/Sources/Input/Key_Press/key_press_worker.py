@@ -72,16 +72,20 @@ def start_key_press_capture(_worker_object):
     listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
     listener.start()
 
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on,
+                                              key='')
+
     while loop_on:
         try:
             waiting_for_key = str(worker_object.parameters[1])
+            worker_object.initialised = True
         except:
             waiting_for_key = key_press_com.ParametersDefaultValues[1]
 
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
             vis.visualised_data = np.array([waiting_for_key])
-            worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+            worker_object.send_data_to_com(vis.visualised_data)
             key_pressed_and_released = [None, None]
         try:
             vis.visualisation_on = worker_object.parameters[0]
@@ -102,4 +106,5 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(start_key_press_capture, on_end_of_life)
+    gu.start_the_source_worker_process(work_function=start_key_press_capture,
+                                       end_of_life_function=on_end_of_life)

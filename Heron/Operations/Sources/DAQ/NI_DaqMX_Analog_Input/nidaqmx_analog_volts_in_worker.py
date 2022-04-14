@@ -13,7 +13,6 @@ sys.path.insert(0, path.dirname(current_dir))
 import numpy as np
 import dearpygui.dearpygui as dpg
 import nidaqmx
-import cv2 as cv2
 import threading
 from Heron import general_utils as gu
 from Heron.Operations.Sources.DAQ.NI_DaqMX_Analog_Input import nidaqmx_analog_volts_in_com
@@ -180,6 +179,55 @@ def start_visualisation_thread(vis_object):
             gu.accurate_delay(10)
 
 
+def initialise(_worker_object):
+    global acquiring_on
+    global channels
+    global rate
+    global buffer_size
+    global sample_mode
+    global worker_object
+
+    worker_object = _worker_object
+
+    try:
+        # Define parameter variables
+        channels = worker_object.parameters[1].split(' ')
+        rate = int(worker_object.parameters[2])
+        sample_mode = worker_object.parameters[3]
+        buffer_size = int(worker_object.parameters[4])
+
+        if sample_mode == 'CONTINUOUS':
+            sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
+        elif sample_mode == 'FINITE':
+            sample_mode = nidaqmx.constants.AcquisitionType.FINITE
+        elif sample_mode == 'HW_TIMED_SINGLE_POINT':
+            sample_mode = nidaqmx.constants.AcquisitionType.HW_TIMED_SINGLE_POINT
+
+        # Setup visualisation
+        vis = Visualisation(worker_object.node_name, worker_object.node_index)
+        vis.set_new_visualisation_loop(start_visualisation_thread)
+        vis.visualisation_init()
+
+        # Start task
+        task = nidaqmx.Task('Task {} {}'.format(worker_object.node_name, worker_object.node_index))
+        for n in channels:
+            task.ai_channels.add_ai_voltage_chan(n)
+        task.timing.cfg_samp_clk_timing(rate=rate, sample_mode=sample_mode,
+                                        samps_per_chan=buffer_size)
+        task.start()
+
+        # Define parameters for parameter relic
+        worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, channels=channels,
+                                                 rate=rate, sample_mode=sample_mode, buffer_size=buffer_size)
+
+        # Start acquisition
+        acquiring_on = True
+    except Exception as e:
+        pass
+
+    return acquiring_on
+
+
 def acquire(_worker_object):
     """
     The work function running a setup and its infinite loop acquiring data and checking for plotting
@@ -198,38 +246,9 @@ def acquire(_worker_object):
 
     worker_object = _worker_object
 
-    vis = Visualisation(worker_object.node_name, worker_object.node_index)
-    vis.set_new_visualisation_loop(start_visualisation_thread)
-    vis.visualisation_init()
-
-    while not acquiring_on:
-        try:
-            channels = worker_object.parameters[1].split(' ')
-            rate = int(worker_object.parameters[2])
-            sample_mode = worker_object.parameters[3]
-            buffer_size = int(worker_object.parameters[4])
-
-            if sample_mode == 'CONTINUOUS':
-                sample_mode = nidaqmx.constants.AcquisitionType.CONTINUOUS
-            elif sample_mode == 'FINITE':
-                sample_mode = nidaqmx.constants.AcquisitionType.FINITE
-            elif sample_mode == 'HW_TIMED_SINGLE_POINT':
-                sample_mode = nidaqmx.constants.AcquisitionType.HW_TIMED_SINGLE_POINT
-
-            acquiring_on = True
-        except Exception as e:
-            cv2.waitKey(10)
-
-    task = nidaqmx.Task('Task {} {}'.format(worker_object.node_name, worker_object.node_index))
-    for n in channels:
-        task.ai_channels.add_ai_voltage_chan(n)
-    task.timing.cfg_samp_clk_timing(rate=rate, sample_mode=sample_mode,
-                                    samps_per_chan=buffer_size)
-    task.start()
-
     while acquiring_on:
         vis.visualised_data = np.array(task.read(number_of_samples_per_channel=buffer_size))
-        worker_object.socket_push_data.send_array(vis.visualised_data, copy=False)
+        worker_object.send_data_to_com(vis.visualised_data)
 
         try:
             vis.visualisation_on = worker_object.parameters[0]
@@ -259,4 +278,6 @@ def on_end_of_life():
 
 
 if __name__ == "__main__":
-    gu.start_the_source_worker_process(acquire, on_end_of_life)
+    gu.start_the_source_worker_process(work_function=acquire,
+                                       end_of_life_function=on_end_of_life,
+                                       initialisation_function=initialise)

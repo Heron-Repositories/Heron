@@ -21,9 +21,9 @@ class TransformCom:
         self.pull_data_port = str(int(self.push_data_port) + 1)
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
-        self.verbose = verbose
-        if self.verbose == '':
-            self.verbose = 0
+
+        self.verbose, self.relic = self.define_verbosity_and_relic(verbose)
+
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
@@ -98,6 +98,23 @@ class TransformCom:
         self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
+    def define_verbosity_and_relic(self, verbosity_string):
+        """
+        Splits the string that comes from the Node as verbosity_string into the string (or int) for the logging/printing
+        (self.verbose) and the string that carries the path where the relic is to be saved. The self.relic is then
+        passed to the worker process
+        :param verbosity_string: The string with syntax verbosity||relic
+        :return: (int)str vebrose, str relic
+        """
+        if verbosity_string != '':
+            verbosity, relic = verbosity_string.split('||')
+            if verbosity == '':
+                return 0, relic
+            else:
+                return verbosity, relic
+        else:
+            return 0, ''
+
     def heartbeat_loop(self):
         """
         The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
@@ -136,7 +153,7 @@ class TransformCom:
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])
         arguments_list.append(str(len(self.sending_topics)))
-        arguments_list.append(str(self.verbose))
+        arguments_list.append(str(self.relic))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
         worker_pid = self.ssh_com.start_process(arguments_list)

@@ -13,7 +13,7 @@ from Heron.communication.ssh_com import SSHCom
 
 
 class SourceCom:
-    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='',
+    def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='||',
                  ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None):
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
@@ -23,9 +23,7 @@ class SourceCom:
         self.index = 0
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
-        self.verbose = verbose
-        if self.verbose == '':
-            self.verbose = 0
+        self.verbose, self.relic = self.define_verbosity_and_relic(verbose)
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
@@ -78,6 +76,23 @@ class SourceCom:
         self.socket_push_heartbeat.setsockopt(zmq.LINGER, 0)
         self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
+
+    def define_verbosity_and_relic(self, verbosity_string):
+        """
+        Splits the string that comes from the Node as verbosity_string into the string (or int) for the logging/printing
+        (self.verbose) and the string that carries the path where the relic is to be saved. The self.relic is then
+        passed to the worker process
+        :param verbosity_string: The string with syntax verbosity||relic
+        :return: (int)str vebrose, str relic
+        """
+        if verbosity_string != '':
+            verbosity, relic = verbosity_string.split('||')
+            if verbosity == '':
+                return 0, relic
+            else:
+                return verbosity, relic
+        else:
+            return 0, ''
 
     def on_receive_data_from_worker(self, msg):
         """
@@ -174,7 +189,7 @@ class SourceCom:
         arguments_list.append(str(self.parameters_topic))
         arguments_list.append(str(0))
         arguments_list.append(str(len(self.sending_topics)))
-        arguments_list.append(str(self.verbose))
+        arguments_list.append(self.relic)
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
         worker_pid = self.ssh_com.start_process(arguments_list)
