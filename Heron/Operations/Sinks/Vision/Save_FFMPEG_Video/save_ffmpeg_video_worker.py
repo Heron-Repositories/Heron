@@ -38,7 +38,6 @@ def add_timestamp_to_filename():
 
 
 def ffmpeg_write_process(out_filename, fps, pixel_format_in,  pixel_format_out, width, height):
-    print('hello')
     return(
         ffmpeg
         .input('pipe:', format='rawvideo', vcodec='rawvideo', hwaccel='auto', r=fps, pix_fmt=pixel_format_in,

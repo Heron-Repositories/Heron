@@ -31,7 +31,7 @@ BaseName = 'Save Pandas DF'  # The base name can have spaces.
 
 NodeAttributeNames = ['Parameters', 'Row In']
 NodeAttributeType = ['Static', 'Input']
-ParameterNames = ['Visualisation', 'Comma Delimited Column Names', 'File Name', 'Overwrite']
+ParameterNames = ['Visualisation', 'Columns', 'File Name', 'Overwrite']
 ParameterTypes = ['bool', 'str', 'str', 'bool']
 ParametersDefaultValues = [False, 'Column 1, Column 2', r'C:\test.df', False]
 WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'save_pandas_df_worker.py')

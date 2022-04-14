@@ -27,6 +27,15 @@ df: pd.DataFrame
 # </editor-fold>
 
 
+def add_timestamp_to_filename(save_file):
+
+    filename = save_file.split('.')
+    date_time = '{}'.format(datetime.now()).replace(':', '-').replace(' ', '_').split('.')[0]
+    save_file = '{}_{}.{}'.format(filename[0], date_time, filename[1])
+
+    return save_file
+
+
 def initialise(_worker_object):
     global vis
     global column_names_str
@@ -88,6 +97,7 @@ def on_end_of_life():
     global df
     global file_name
 
+    file_name = add_timestamp_to_filename(file_name)
     if not os.path.isfile(file_name):
         df.to_pickle(file_name)
 
