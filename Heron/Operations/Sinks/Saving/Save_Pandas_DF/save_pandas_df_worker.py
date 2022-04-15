@@ -67,6 +67,9 @@ def initialise(_worker_object):
     column_names = column_names_str.split(',')
 
     df = pd.DataFrame(columns=column_names)
+
+    worker_object.relic_create_parameters_df(visualisation_on=vis, column_names=column_names, file_name=file_name,
+                                             overwrite_file=overwrite_file)
     return True
 
 

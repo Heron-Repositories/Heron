@@ -71,6 +71,10 @@ def save_video(data, parameters):
             if time_stamp:
                 add_timestamp_to_filename()
             need_parameters = False
+
+            worker_object.relic_create_parameters_df(file_name=file_name, time_stamp=time_stamp,
+                                                     pixel_format_in=pixel_format_in, pixel_format_out=pixel_format_out,
+                                                     fps=fps)
         except:
             return
     else:

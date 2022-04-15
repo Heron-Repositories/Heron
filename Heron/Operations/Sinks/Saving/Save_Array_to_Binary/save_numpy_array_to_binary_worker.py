@@ -71,6 +71,9 @@ def save_array(data, parameters):
             on_axis = parameters[3]
             output_type = parameters[4]
             need_parameters = False
+
+            worker_object.relic_create_parameters_df(file_name=file_name, time_stamp=time_stamp, expand=expand,
+                                                     on_axis=on_axis, output_type=output_type)
         except:
             return
 
