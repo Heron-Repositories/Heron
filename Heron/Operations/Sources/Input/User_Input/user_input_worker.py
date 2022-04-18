@@ -31,11 +31,7 @@ def initialise(_worker_object):
         latest_user_input = str(_worker_object.parameters[2])
 
         loop_on = True
-        # The main loop must start (loop_on = True and wait a bit) before the relic is created
-        gu.accurate_delay(0.1)
-        _worker_object.relic_create_parameters_df(visualisation_on=visualisation_on,
-                                                  output_type=output_type,
-                                                  user_input=latest_user_input)
+
     except:
         pass
 
@@ -49,7 +45,11 @@ def start_user_input_capture(_worker_object):
     global loop_on
 
     while not loop_on and not finish:
-        gu.accurate_delay(0.1)
+        gu.accurate_delay(1)
+
+    _worker_object.relic_create_parameters_df(visualisation_on=False,
+                                              output_type=output_type,
+                                              user_input=latest_user_input)
 
     while loop_on and not finish:
         try:
@@ -64,16 +64,18 @@ def start_user_input_capture(_worker_object):
                 if output_type == 'float':
                     latest_user_input = [float(i) for i in latest_user_input.split(' ')]
 
+                _worker_object.relic_update_substate_df(user_input=latest_user_input)
+
                 if visualisation_on:
                     print(latest_user_input)
 
                 result = np.array([latest_user_input])
-
                 _worker_object.send_data_to_com(result)
+
                 latest_user_input = ''
                 _worker_object.parameters[2] = latest_user_input
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
         time.sleep(0.1)
 

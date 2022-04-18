@@ -78,10 +78,7 @@ def initialise(_worker_object):
         running = True
         # The main loop must start (running = True and wait a bit) before the relic is created
         gu.accurate_delay(0.1)
-        worker_object.relic_create_parameters_df(visualisation_on=worker_object.visualisation_on,
-                                                 signal_out=signal_out,
-                                                 delay_generator=delay_generator.__name__,
-                                                 a=a, b=b, c=c)
+
     except:
         running = False
 
@@ -97,6 +94,11 @@ def run_timer(worker_object):
 
     while not running and not finish:
         gu.accurate_delay(0.1)
+
+    worker_object.relic_create_parameters_df(visualisation_on=worker_object.visualisation_on,
+                                             signal_out=signal_out,
+                                             delay_generator=delay_generator.__name__,
+                                             a=a, b=b, c=c)
 
     while running and not finish:
         visualise = worker_object.parameters[0]

@@ -112,13 +112,29 @@ class SinkWorker:
         """
         if self.initialised:
             data = [data[0].bytes, data[1].bytes, data[2].bytes] # Turn that on if the stream_pull_data.on_recv has copy=False
-            self.work_function(data, self.parameters)
+
+            try:
+                self.work_function(data, self.parameters, self.relic_update_substate_df)
+            except TypeError:
+                self.work_function(data, self.parameters)
+
             self.index += 1
         self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
-    def create_parameters_pandasdf_in_relic(self, **parameters):
+    def relic_create_parameters_df(self, **parameters):
+        self._relic_create_df('Parameters', **parameters)
+
+    def relic_create_substate_df(self, **variables):
+        self._relic_create_df('Substate', **variables)
+
+    def _relic_create_df(self, type, **variables):
+        if self.heron_relic is None:
+            self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
         if self.heron_relic.operational:
-            self.heron_relic.create_the_parameters_pandasdf(**parameters)
+            self.heron_relic.create_the_pandasdf(type, **variables)
+
+    def relic_update_substate_df(self, **variables):
+        self.heron_relic.update_the_substate_pandasdf(self.index, **variables)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -138,7 +154,7 @@ class SinkWorker:
                 #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
                 if self.initialised and self.heron_relic.operational:
-                    self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
+                    self.heron_relic.update_the_parameters_pandasdf(variables=self.parameters, worker_index=self.index)
 
     def heartbeat_callback(self, pulse):
         """

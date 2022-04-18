@@ -86,6 +86,7 @@ def start_key_press_capture(_worker_object):
            key_pressed_and_released[1] == waiting_for_key:
             vis.visualised_data = np.array([waiting_for_key])
             worker_object.send_data_to_com(vis.visualised_data)
+            worker_object.relic_update_substate_df(key_pressed=vis.visualised_data)
             key_pressed_and_released = [None, None]
         try:
             vis.visualisation_on = worker_object.parameters[0]

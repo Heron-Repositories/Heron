@@ -26,6 +26,7 @@ class SourceWorker:
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
         self.relic_path = relic_path
+        self.heron_relic = None
 
         self.time_of_pulse = time.perf_counter()
         self.port_sub_parameters = ct.PARAMETERS_FORWARDER_PUBLISH_PORT
@@ -85,13 +86,24 @@ class SourceWorker:
         self.index += 1
 
     def relic_create_parameters_df(self, **parameters):
-        self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
+        self._relic_create_df('Parameters', **parameters)
+
+    def relic_create_substate_df(self, **variables):
+        self._relic_create_df('Substate', **variables)
+
+    def _relic_create_df(self, type, **variables):
+        if self.heron_relic is None:
+            self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
         if self.heron_relic.operational:
-            self.heron_relic.create_the_parameters_pandasdf(**parameters)
+            self.heron_relic.create_the_pandasdf(type, **variables)
+
+    def relic_update_substate_df(self, **variables):
+        self.heron_relic.update_the_substate_pandasdf(self.index, **variables)
 
     def update_parameters(self):
         """
         This updates the self.parameters from the parameters send form the node (through the gui_com)
+        If the rlic system is up and running it also saves the new parameters into the Parameters df of the relic
         :return: Nothing
         """
         try:
