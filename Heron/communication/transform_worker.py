@@ -30,7 +30,8 @@ class TransformWorker:
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = self.parameters_topic.split('##')[-1]
 
-        self.heron_relic = HeronRelic(relic_path, self.node_name, self.node_index)
+        self.relic_path = relic_path
+        self.heron_relic = None
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -170,8 +171,8 @@ class TransformWorker:
                     self.initialised = self.initialisation_function(self)
             #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
-                if self.initialised and self.heron_relic.operational:
-                    self.heron_relic.update_the_parameters_pandasdf(variables=self.parameters, worker_index=self.index)
+                if self.initialised and self.heron_relic is not None and self.heron_relic.operational:
+                    self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
 
     def heartbeat_callback(self, pulse):
         """

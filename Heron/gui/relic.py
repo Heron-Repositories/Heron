@@ -29,6 +29,7 @@ def rearrange_pandasdf_columns(df):
 
     return df[new_columns]
 
+
 class HeronRelic():
     """
     The class that deals with saving into Relics (using reliquery) of the parameters and any other variable defined
@@ -41,6 +42,8 @@ class HeronRelic():
             from reliquery import Relic
         except ImportError:
             self.operational = False
+            FileStorage = None
+            Relic = None
 
         if relic_path == '_':
             self.operational = False

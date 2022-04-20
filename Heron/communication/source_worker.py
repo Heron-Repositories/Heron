@@ -114,7 +114,7 @@ class SourceWorker:
             if not self.initialised and self.initialisation_function is not None:
                 self.initialised = self.initialisation_function(self)
 
-            if self.initialised and self.heron_relic.operational:
+            if self.initialised and self.heron_relic is not None and self.heron_relic.operational:
                 self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
         except Exception as e:
             pass

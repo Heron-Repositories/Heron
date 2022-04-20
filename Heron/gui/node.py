@@ -96,7 +96,6 @@ class Node:
             dpg.remove_alias('relic#{}#{}'.format(self.operation.name, self.node_index))
         dpg.delete_item(self.id)
 
-
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
             if at == 'Input':
@@ -312,7 +311,7 @@ class Node:
                                                      default_value=attr)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
-                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.verbose,
+                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value='',
                                        callback=self.update_verbosity, width=400,
                                        hint='Log file name or verbosity level integer.',
                                        tag='verb#{}#{}'.format(self.operation.name, self.node_index))
