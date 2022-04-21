@@ -226,6 +226,10 @@ class SinkWorker:
 
     def on_kill(self, pid):
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
+
+        if self.heron_relic is not None and self.heron_relic.substate_pandasdf_exists:
+            self.heron_relic.save_substate_at_death()
+
         try:
             self.loops_on = False
             self.stream_pull_data.close()
