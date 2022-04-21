@@ -33,6 +33,7 @@ class SinkWorker:
         self.node_index = self.parameters_topic.split('##')[-1]
 
         self.relic_path = relic_path
+        self.import_reliquery()
         self.heron_relic = None
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
@@ -121,6 +122,17 @@ class SinkWorker:
 
             self.index += 1
         self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+
+    def import_reliquery(self):
+        # This import is required because it takes a good few seconds to load the package and if the import is done
+        # first time in the HeronRelic instance that delays the initialisation of the worker process which can be
+        # a problem
+        if self.relic_path != '_':
+            try:
+                import reliquery
+                import reliquery.storage
+            except ImportError:
+                pass
 
     def relic_create_parameters_df(self, **parameters):
         self._relic_create_df('Parameters', **parameters)

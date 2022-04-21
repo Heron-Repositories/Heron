@@ -16,6 +16,7 @@ def create_storage_names(relic_path):
     relic_type = relic_path.split(os.sep)[-1]
     return root, relic_type
 
+
 def rearrange_pandasdf_columns(df):
     """
     Takes a pandas Dataframe with columns 'DateTime' and 'WorkerIndex' amongst others and places them at the front
@@ -37,22 +38,26 @@ class HeronRelic():
     """
     def __init__(self, relic_path, node_name, node_index):
         self.operational = True
-        try:
-            from reliquery.storage import FileStorage
-            from reliquery import Relic
-        except ImportError:
-            self.operational = False
-            FileStorage = None
-            Relic = None
 
         if relic_path == '_':
             self.operational = False
+        else:
+            try:
+                import reliquery
+                import reliquery.storage
+                file_storage = reliquery.storage.FileStorage
+                relic = reliquery.Relic
+            except ImportError:
+                self.operational = False
+                reliquery = None
+                file_storage = None
+                relic = None
 
         if self.operational:
             root, relic_type = create_storage_names(relic_path)
             self.name = '{}##{}'.format(node_name, node_index)
-            self.storage = FileStorage(root, '{}##storage'.format(self.name))
-            self.relic = Relic(name=self.name, relic_type=relic_type, storage=self.storage)
+            self.storage = file_storage(root, '{}##storage'.format(self.name))
+            self.relic = relic(name=self.name, relic_type=relic_type, storage=self.storage)
         else:
             self.storage = None
             self.relic = None

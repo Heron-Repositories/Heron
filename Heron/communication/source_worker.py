@@ -26,6 +26,7 @@ class SourceWorker:
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
         self.relic_path = relic_path
+        self.import_reliquery()
         self.heron_relic = None
 
         self.time_of_pulse = time.perf_counter()
@@ -84,6 +85,17 @@ class SourceWorker:
     def send_data_to_com(self, data):
         self.socket_push_data.send_array(data, copy=False)
         self.index += 1
+
+    def import_reliquery(self):
+        # This import is required because it takes a good few seconds to load the package and if the import is done
+        # first time in the HeronRelic instance that delays the initialisation of the worker process which can be
+        # a problem
+        if self.relic_path != '_':
+            try:
+                import reliquery
+                import reliquery.storage
+            except ImportError:
+                pass
 
     def relic_create_parameters_df(self, **parameters):
         self._relic_create_df('Parameters', **parameters)
