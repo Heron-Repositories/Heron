@@ -396,7 +396,12 @@ def load_graph():
                     n.node_parameters_combos_items = value['node_parameters_combos_items']
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
-                    n.verbose = value['verbose']
+                    try:
+                        n.relic_verbosity = value['relic_verbosity']
+                        n.com_verbosity = value['com_verbosity']
+                        n.verbose = '{}||{}'.format(n.com_verbosity, n.relic_verbosity)
+                    except:
+                        n.verbose = value['verbose']
                     n.context = value['context']
                     n.socket_pub_parameters = value['socket_pub_parameters']
                     n.socket_sub_proof_of_life = value['socket_sub_proof_of_life']

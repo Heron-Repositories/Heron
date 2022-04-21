@@ -36,6 +36,8 @@ class Node:
         self.node_parameters = None
         self.node_parameters_combos_items = []
         self.parameter_inputs_ids = {}
+        self.com_verbosity = ''
+        self.relic_verbosity = ''
         self.verbose = ''
         self.context = None
         self.socket_pub_parameters = None
@@ -311,7 +313,7 @@ class Node:
                                                      default_value=attr)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
-                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value='',
+                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
                                        callback=self.update_verbosity, width=400,
                                        hint='Log file name or verbosity level integer.',
                                        tag='verb#{}#{}'.format(self.operation.name, self.node_index))
@@ -324,16 +326,17 @@ class Node:
 
                     with dpg.group(horizontal=True):
                         dpg.add_spacer(width=10)
-                        dpg.add_input_text(default_value='', callback=self.update_verbosity,
+                        dpg.add_input_text(default_value=self.relic_verbosity, callback=self.update_verbosity,
                                            hint='The path where the Relic for this worker process will be saved',
                                            tag='relic#{}#{}'.format(self.operation.name, self.node_index))
 
     def update_verbosity(self, sender, data):
-        relic_value = ''
+        self.com_verbosity = ''
+        self.relic_verbosity = ''
         if importlib.util.find_spec('reliquery') is not None:
-            relic_value = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
-        verbosity_value = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
-        self.verbose = '{}||{}'.format(verbosity_value, relic_value)
+            self.relic_verbosity = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
+        self.com_verbosity = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
+        self.verbose = '{}||{}'.format(self.com_verbosity, self.relic_verbosity)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
