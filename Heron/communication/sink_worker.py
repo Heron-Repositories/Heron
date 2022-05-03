@@ -35,6 +35,7 @@ class SinkWorker:
         self.relic_path = relic_path
         self.import_reliquery()
         self.heron_relic = None
+        self.num_of_iters_to_update_relics_substate = None
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -124,9 +125,13 @@ class SinkWorker:
         self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
     def import_reliquery(self):
-        # This import is required because it takes a good few seconds to load the package and if the import is done
-        # first time in the HeronRelic instance that delays the initialisation of the worker process which can be
-        # a problem
+        """
+        This import is required because it takes a good few seconds to load the package and if the import is done
+        first time in the HeronRelic instance that delays the initialisation of the worker process which can be
+        a problem
+        :return: Nothing
+        """
+        #
         if self.relic_path != '_':
             try:
                 import reliquery
@@ -135,18 +140,44 @@ class SinkWorker:
                 pass
 
     def relic_create_parameters_df(self, **parameters):
+        """
+        Creates a new relic with the Parameters pandasdf in it or adds the Parameters pandasdf in the existing Node's
+        Relic.
+        :param parameters: The dictionary of the parameters. The keys of the dict will become the column names of the
+        pandasdf
+        :return: Nothing
+        """
         self._relic_create_df('Parameters', **parameters)
 
     def relic_create_substate_df(self, **variables):
+        """
+        Creates a new relic with the Substate pandasdf in it or adds the Substate pandasdf in the existing Node's Relic.
+        :param variables: The dictionary of the variables to save. The keys of the dict will become the column names of
+        the pandasdf
+        :return: Nothing
+        """
         self._relic_create_df('Substate', **variables)
 
     def _relic_create_df(self, type, **variables):
+        """
+        Base function to create either a Parameters or a Substate pandasdf in a new or the existing Node's Relic
+        :param type: Parameters or Substate
+        :param variables: The variables dictionary to be saved in the pandas. The keys of the dict will become the c
+        olumn names of the pandasdf
+        :return: Nothing
+        """
         if self.heron_relic is None:
-            self.heron_relic = HeronRelic(self.relic_path, self.node_name, self.node_index)
+            self.heron_relic = HeronRelic(self.relic_path, self.node_name,
+                                          self.node_index, self.num_of_iters_to_update_relics_substate)
         if self.heron_relic.operational:
             self.heron_relic.create_the_pandasdf(type, **variables)
 
     def relic_update_substate_df(self, **variables):
+        """
+        Updates the Substate pandasdf of the Node's Relic
+        :param variables: The Substate's variables dict
+        :return: Nothing
+        """
         self.heron_relic.update_the_substate_pandasdf(self.index, **variables)
 
     def parameters_callback(self, parameters_in_bytes):

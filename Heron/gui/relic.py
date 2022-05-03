@@ -37,7 +37,7 @@ class HeronRelic():
     The class that deals with saving into Relics (using reliquery) of the parameters and any other variable defined
     in the worker script of a Node.
     """
-    def __init__(self, relic_path, node_name, node_index):
+    def __init__(self, relic_path, node_name, node_index, num_of_iters=None):
         self.operational = True
 
         if relic_path == '_':
@@ -69,6 +69,8 @@ class HeronRelic():
         self.temp_substate_pandasdf = None
 
         self.num_of_iters = ct.NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE
+        if num_of_iters is not None:
+            self.num_of_iters = num_of_iters
 
     def create_the_pandasdf(self, type, **variables):
         """
@@ -116,8 +118,14 @@ class HeronRelic():
         """
         Updates the Substate pandasdf of the relic. It first checks to see if the Substate pandadf exist and if it
         doesn't it creates it. The update happens incrementally through a self.temp_substate_pandasdf temporary
-        dataframe which gets loaded and at a ct.NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE number of
-        worker_function iterations it gets saved into the relic
+        dataframe which gets loaded and at a certain number of worker_function iterations it gets saved into the relic.
+        This number can be either ct.NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE when the Node's worker function
+        hasn't specified it in the xxx_worker.num_of_iters_to_update_relics_substate variable or that variable. If that
+        variable has the value of -1 then the information never gets saved to the hard disk until the process is about
+        to die at which point the whole pandas (which has been kept in RAM) gets dumped in one go to the HD.
+        Nodes that struggle to keep up with their operations can use the later strategy to not take any time in loading
+        and re-saving the pandasdf. But that means that if the Node crashes without calling the on_kill of the worker
+        object then the pandas is lost.
         :param worker_index: The index of the worker function iteration
         :param kwarg_variables: The variables passed as multiple arguments with names (**kwargs style)
         :return: Nothing
@@ -133,7 +141,7 @@ class HeronRelic():
             self.temp_substate_pandasdf = pd.concat([self.temp_substate_pandasdf, row], ignore_index=True)
             self.temp_substate_pandasdf.reset_index(drop=True, inplace=True)
 
-            if worker_index % self.num_of_iters == 0:
+            if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
                 self.save_current_substate_df()
 
     def save_current_substate_df(self):
@@ -155,7 +163,7 @@ class HeronRelic():
         """
         This is required because it will be called by the on_kill function of the Worker objects. This function is a
         callback that is called by a different Thread to the rest of the object so it will not see the self.relic
-        appropraitely (it cannot write to the metadata). So at death a new relic is created and saves the remaining
+        appropriately (it cannot write to the metadata). So at death a new relic is created and saves the remaining
         self.temp_substate_pandasdf in the relic's 'Substate' type
         :return: Nothing
         """
