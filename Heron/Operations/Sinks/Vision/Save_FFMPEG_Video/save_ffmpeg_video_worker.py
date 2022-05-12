@@ -71,7 +71,7 @@ def save_video(data, parameters):
                 add_timestamp_to_filename()
             need_parameters = False
 
-            worker_object.num_of_iters_to_update_relics_substate = -1
+            worker_object.num_of_iters_to_update_relics_substate = 3600 * 120  # Every hour
             worker_object.relic_create_parameters_df(file_name=file_name, time_stamp=time_stamp,
                                                      pixel_format_in=pixel_format_in, pixel_format_out=pixel_format_out,
                                                      fps=fps)

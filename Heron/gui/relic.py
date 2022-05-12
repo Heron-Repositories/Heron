@@ -97,7 +97,7 @@ class HeronRelic():
             self.parameters_pandasdf_exists = True
         elif type == 'Substate':
             self.substate_pandasdf_exists = True
-            self.temp_substate_pandasdf = df
+            self.temp_substate_pandasdf = df.copy(deep=True)
 
     def update_the_parameters_pandasdf(self, parameters: list, worker_index: int):
         """
@@ -157,7 +157,7 @@ class HeronRelic():
 
         self.relic.add_pandasdf(name='Substate', pandas_data=df)
 
-        self.temp_substate_pandasdf = self.temp_substate_pandasdf.iloc[0:0]
+        self.temp_substate_pandasdf = self.temp_substate_pandasdf.iloc[0:0].copy(deep=True)
 
     def save_substate_at_death(self):
         """
