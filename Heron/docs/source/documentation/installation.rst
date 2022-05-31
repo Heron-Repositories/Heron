@@ -3,7 +3,7 @@ Installation
 ============
 
 The hardcore way (as of |today|)
------------------
+--------------------------------
 
 Heron was designed so that it doesn't require installation.
 You can download the code from its github repository and just run it (check out the Startup paragraph on what running
@@ -94,7 +94,7 @@ or (but not both!)
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
 The standard way
----------------
+-----------------
 
 Heron can also be installed as a pip package. Just do
 
