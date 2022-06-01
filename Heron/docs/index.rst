@@ -4,34 +4,33 @@
    contain the root `toctree` directive.
 
 Heron's documentation!
-=================================
+======================
 
 .. toctree::
     :maxdepth: 2
     :caption: About
 
-    about/about_heron
-
+    source/about/about_heron
 
 .. toctree::
     :maxdepth: 2
     :caption: Documentation
 
-    documentation/installation
-    documentation/the_editor
-    documentation/lan_use
-    documentation/node_types
-    documentation/adding_repos
-    documentation/writing_new_nodes
-    documentation/writing_new_transforms_and_sinks
-    documentation/writing_new_sources
-    documentation/the_relic_system
+    source/documentation/installation
+    source/documentation/the_editor
+    source/documentation/lan_use
+    source/documentation/node_types
+    source/documentation/adding_repos
+    source/documentation/writing_new_nodes
+    source/documentation/writing_new_transforms_and_sinks
+    source/documentation/writing_new_sources
+    source/documentation/the_relic_system
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
-   autoapi/Heron/index
+   source/autoapi/Heron/index
 
 Indices and tables
 ==================
