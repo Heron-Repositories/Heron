@@ -10,28 +10,28 @@ Heron's documentation!
     :maxdepth: 2
     :caption: About
 
-    about/about_heron.rst
+    about/about_heron
 
 
 .. toctree::
     :maxdepth: 2
     :caption: Documentation
 
-    documentation/installation.rst
-    documentation/the_editor.rst
-    documentation/lan_use.rst
-    documentation/node_types.rst
-    documentation/adding_repos.rst
-    documentation/writing_new_nodes.rst
-    documentation/writing_new_transforms_and_sinks.rst
-    documentation/writing_new_sources.rst
-    documentation/the_relic_system.rst
+    documentation/installation
+    documentation/the_editor
+    documentation/lan_use
+    documentation/node_types
+    documentation/adding_repos
+    documentation/writing_new_nodes
+    documentation/writing_new_transforms_and_sinks
+    documentation/writing_new_sources
+    documentation/the_relic_system
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
-   autoapi/Heron/index.rst
+   autoapi/Heron/index
 
 Indices and tables
 ==================
