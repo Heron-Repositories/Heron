@@ -13,7 +13,7 @@ Let's test
     :maxdepth: 2
     :caption: Testing
 
-    test.rst
+    test
 
 
 Hello there
@@ -23,7 +23,7 @@ Hello there
     :maxdepth: 2
     :caption: About
 
-    source/about/about_heron.rst
+    source/about/about_heron
 
 Hello again
 -----------
@@ -32,21 +32,21 @@ Hello again
     :maxdepth: 2
     :caption: Documentation
 
-    source/documentation/installation.rst
-    source/documentation/the_editor.rst
-    source/documentation/lan_use.rst
-    source/documentation/node_types.rst
-    source/documentation/adding_repos.rst
-    source/documentation/writing_new_nodes.rst
-    source/documentation/writing_new_transforms_and_sinks.rst
-    source/documentation/writing_new_sources.rst
-    source/documentation/the_relic_system.rst
+    source/documentation/installation
+    source/documentation/the_editor
+    source/documentation/lan_use
+    source/documentation/node_types
+    source/documentation/adding_repos
+    source/documentation/writing_new_nodes
+    source/documentation/writing_new_transforms_and_sinks
+    source/documentation/writing_new_sources
+    source/documentation/the_relic_system
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference
 
-   source/autoapi/Heron/index.rst
+   source/autoapi/Heron/index
 
 Indices and tables
 ==================
