@@ -10,10 +10,8 @@ Let's test
 ----------
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Testing
 
-    test
+   test
 
 
 Hello there
