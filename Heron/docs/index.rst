@@ -4,7 +4,20 @@
    contain the root `toctree` directive.
 
 Heron's documentation!
-=================================
+======================
+
+Let's test
+----------
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Testing
+
+    test.rst
+
+
+Hello there
+-----------
 
 .. toctree::
     :maxdepth: 2
@@ -12,6 +25,8 @@ Heron's documentation!
 
     source/about/about_heron.rst
 
+Hello again
+-----------
 
 .. toctree::
     :maxdepth: 2
