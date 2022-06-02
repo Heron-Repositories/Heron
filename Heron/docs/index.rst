@@ -25,6 +25,7 @@ Heron's documentation!
     source/documentation/writing_new_transforms_and_sinks
     source/documentation/writing_new_sources
     source/documentation/the_relic_system
+    source/documentation/debugging
 
 .. toctree::
    :maxdepth: 2
