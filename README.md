@@ -1,6 +1,8 @@
 # Heron
 
-A more thorough description of both why Heron exists in the first place and how to use it (before the advent of a full manual) can be found in [this document](https://medium.com/@gdimitri/heron-a-hybrid-approach-to-data-pipelines-in-python-aa7719fe8f2e).
+A more thorough description of both why Heron exists in the first place and some info on how to use it can be found in [this document](https://medium.com/@gdimitri/heron-a-hybrid-approach-to-data-pipelines-in-python-aa7719fe8f2e).
+
+The manual is currently under construction [here](https://heron-42ad.readthedocs.io/en/latest/index.html).
 
 ## Introduction
 
@@ -38,6 +40,8 @@ dearpygui >= 1.2
 
 paramiko
 
+tornado
+
 Unfortunately the in-Node visualisation capabilities and a good few Nodes (Visualiser, Cameras, OpenCV filters) repy on opencv = 4.x (3.x should work but not tested). Sorry about that! In the future there will be an effort to remove basic dependency on opencv but for now, it is what it is.
 At the time of writting (Feb. 2022) conda will not install opencv for python > 3.8, so if you are using python 3.9 or newer you have to install opencv through pip.
 
@@ -46,6 +50,7 @@ If you use conda then dearpygui has to also be installed by pip (no conda packag
 So once you have a conda environment up and running (and you have added the conda-forge channel to your config as mentioned here https://ostechnix.com/enable-conda-forge-channel-for-conda-package-manager/) and you are in the environment in your command prompt you need to do the following:
 ```
 conda install numpy
+conda install tornado
 conda install pyzmq
 conda install paramiko
 
@@ -63,6 +68,7 @@ For optional libraries that are called by often used Nodes do
 conda install scipy
 conda install h5py
 conda install pynput
+conda install pyserial
 ```
 
 Finally type hints are used extensivelly so I would suggest a python >= 3.7
