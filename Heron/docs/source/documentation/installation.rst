@@ -96,17 +96,14 @@ or (but not both!)
 
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
-The standard way
+The standard ways
 ^^^^^^^^^^^^^^^^^
 
-Heron can also be installed as a pip package. Just do
+Heron wil, in the near future, also be available as a pip package.
+The pip install will have as requirements everything mentioned above except openCV.
 
-.. code-block:: python
 
-    pip install Heron_42ad
-
-The pip install has as requirements everything mentioned above except openCV.
-
+At some point after that a conda package will be released, but currently this is lower on the priority list.
 
 Node requirements
 ^^^^^^^^^^^^^^^^^
