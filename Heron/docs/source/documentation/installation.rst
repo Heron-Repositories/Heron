@@ -99,7 +99,7 @@ Heron will work with either version. It is up to you if you need the extra funct
 The standard ways
 ^^^^^^^^^^^^^^^^^
 
-Heron wil, in the near future, also be available as a pip package.
+Heron will, in the near future, also be available as a pip package.
 The pip install will have as requirements everything mentioned above except openCV.
 
 
