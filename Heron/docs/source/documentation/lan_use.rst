@@ -88,7 +88,7 @@ Figure 2.
 The SSH local server has to be populated with the user friendly name of the local computer (as set in the ssh info window)
 and the SSH remote server with the user friendly name of the WPM that will run the worker script. These are drop down menus
 and will give as options all the user friendly names currently saved in Heron.
-The "python script of worker process OR Python exe and script" is automatically populated with the path on the GUIM of
+The *python script of worker process OR Python exe and script* is automatically populated with the path on the GUIM of
 the worker script of the Node (so when a Node runs on the GUIM it usually does not need to be changed). But when the Node
 runs on a WPM then the info here needs to be different.
 In this case there needs to be the python executable of the WPM followed by the python worker script of the Node on the
@@ -105,8 +105,23 @@ the base directory of the WPM in order to run the worker script.
 
 The other two entries in the secondary window are by default empty and are used for debugging and data saving purposes
 (see :doc:`debugging` and :doc:`the_relic_system`). The important detail in the case of running a Node in a WPM is
-that the log file in the Log File or Verbosity Level entry box needs to be a file in the GUIM because it is generated
+that the log file in the *Log File or Verbosity Level* entry box needs to be a file in the GUIM because it is generated
 by the com process (which always runs on the GUIM). On the other hand the path where the Relic for this Node is going
 to be saved needs to be a path in the WPM.
+
+
+Multiple environments
+---------------------
+
+A direct consequence of being able to define the python executable that a worker process should be run with in each
+Node's secondary window is the fact that even on the same machine different Nodes can run using different Python
+environments, each set up specifically to support the functionality of a small set of Nodes. For example the
+`Spinnaker Camera <https://github.com/Heron-Repositories/Spinnaker-Camera>`_ Node can only run under a Python 3.8
+environment since the PySpin library it needs to interface with the Flir camera does not run on Pythons newer than
+3.8. One can set up a Python 3.8 with PySpin environment separate to the environment that Heron and most of its Nodes
+run on and still be able to grab the frames a Flir camera generates and process them with code running in different
+(more modern) environments. All one would have to do is add to the 
+*python script of worker process OR Python exe and script* entry box the full path to the environment's python
+executable in front of the full path of the worker script to the Node.
 
 
