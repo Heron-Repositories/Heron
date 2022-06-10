@@ -120,7 +120,7 @@ environments, each set up specifically to support the functionality of a small s
 environment since the PySpin library it needs to interface with the Flir camera does not run on Pythons newer than
 3.8. One can set up a Python 3.8 with PySpin environment separate to the environment that Heron and most of its Nodes
 run on and still be able to grab the frames a Flir camera generates and process them with code running in different
-(more modern) environments. All one would have to do is add to the 
+(more modern) environments. All one would have to do is add to the
 *python script of worker process OR Python exe and script* entry box the full path to the environment's python
 executable in front of the full path of the worker script to the Node.
 
