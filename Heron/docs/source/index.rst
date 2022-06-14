@@ -23,8 +23,6 @@ Heron's documentation!
     documentation/node_types.rst
     documentation/adding_repos.rst
     documentation/writing_new_nodes.rst
-    documentation/writing_new_transforms_and_sinks.rst
-    documentation/writing_new_sources.rst
     documentation/the_relic_system.rst
     documentation/debugging.rst
 

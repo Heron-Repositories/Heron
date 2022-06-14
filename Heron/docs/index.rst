@@ -22,8 +22,6 @@ Heron's documentation!
     source/documentation/node_types
     source/documentation/adding_repos
     source/documentation/writing_new_nodes
-    source/documentation/writing_new_transforms_and_sinks
-    source/documentation/writing_new_sources
     source/documentation/the_relic_system
     source/documentation/debugging
 

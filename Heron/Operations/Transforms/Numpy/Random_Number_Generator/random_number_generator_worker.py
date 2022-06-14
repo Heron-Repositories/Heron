@@ -9,9 +9,14 @@ sys.path.insert(0, path.dirname(current_dir))
 
 import numpy as np
 from Heron import general_utils as gu, constants as ct
+from Heron.gui.visualisation_dpg import VisualisationDPG
+
+vis: VisualisationDPG
 
 
 def initialise(worker_object):
+    global vis
+
     try:
         visualisation_on = worker_object.parameters[0]
         function_name = worker_object.parameters[1].split(':')[0]
@@ -21,6 +26,8 @@ def initialise(worker_object):
 
     worker_object.relic_create_parameters_df(visualisation_on=visualisation_on, function_name=function_name,
                                              a=a, b=b, c=c, d=d)
+    vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
+                           _visualisation_type='Value', _buffer=20)
     return True
 
 
@@ -38,18 +45,18 @@ def create_evaulation_string(parameters):
 
 
 def random_number(data, parameters):
+    global vis
 
     if parameters is None:
         return np.array([ct.IGNORE])
     else:
-        visualisation_on = parameters[0]
+        vis.visualisation_on = parameters[0]
         evaluated_string = create_evaulation_string(parameters)
         result = eval(evaluated_string)
         if type(result) is not np.ndarray:
             result = np.array([result])
 
-        if visualisation_on:
-            print(result)
+        vis.visualise(result)
 
         return [result]
 
