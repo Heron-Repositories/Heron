@@ -7,20 +7,14 @@ while path.split(current_dir)[-1] != r'Heron':
     current_dir = path.dirname(current_dir)
 sys.path.insert(0, path.dirname(current_dir))
 
-import numpy as np
-import dearpygui.dearpygui as dpg
-import cv2
-import threading
-import pprint as pp
 from Heron.communication.socket_for_serialization import Socket
-from Heron.communication.transform_worker import TransformWorker
 from Heron.gui.visualisation_dpg import VisualisationDPG
 from Heron import general_utils as gu
 
 visualisation_dpg: VisualisationDPG
 
 
-def get_vis_type_parameter(_worker_object):
+def initialise(_worker_object):
     global worker_object
     global visualisation_dpg
 
@@ -30,14 +24,13 @@ def get_vis_type_parameter(_worker_object):
     visualisation_type = worker_object.parameters[1]
     buffer = worker_object.parameters[2]
 
-    visualisation_dpg = VisualisationDPG(_visualisation_type=visualisation_type,
-                                         _buffer=buffer)
+    visualisation_dpg = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
+                                         _visualisation_type=visualisation_type, _buffer=buffer)
 
     worker_object.relic_create_parameters_df(visualisation_on=visualisation_on,
                                               visualisation_type=visualisation_type,
                                               buffer=buffer)
     return True
-
 
 
 def visualise(msg, parameters):
@@ -61,12 +54,11 @@ def visualise(msg, parameters):
 
 def on_end_of_life():
     global visualisation_dpg
-
     visualisation_dpg.end_of_life()
 
 
 if __name__ == "__main__":
-    worker_object = gu.start_the_transform_worker_process(initialisation_function=get_vis_type_parameter,
+    worker_object = gu.start_the_transform_worker_process(initialisation_function=initialise,
                                                           work_function=visualise,
                                                           end_of_life_function=on_end_of_life)
     worker_object.start_ioloop()

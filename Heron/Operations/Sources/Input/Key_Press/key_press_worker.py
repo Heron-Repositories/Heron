@@ -12,7 +12,7 @@ sys.path.insert(0, path.dirname(current_dir))
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Input.Key_Press import key_press_com
 from Heron.communication.source_worker import SourceWorker
-from Heron.gui.visualisation import Visualisation
+from Heron.gui.visualisation_dpg import VisualisationDPG
 from pynput.keyboard import Listener
 
 worker_object: SourceWorker
@@ -21,7 +21,7 @@ key_pressed_and_released = [None, None]
 previous_user_input = False
 loop_on = True
 new_input_for_vis = ''
-vis: Visualisation
+vis: VisualisationDPG
 
 
 def on_key_pressed(key):
@@ -66,14 +66,12 @@ def start_key_press_capture(_worker_object):
     global vis
 
     worker_object = _worker_object
-    vis = Visualisation(worker_object.node_name, worker_object.node_index)
-    vis.set_new_visualisation_loop(visualisation_to_stdout)
-    vis.visualisation_init()
+    vis = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
+                           _visualisation_type='Value', _buffer=20)
     listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
     listener.start()
 
-    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on,
-                                              key='')
+    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, key='')
 
     while loop_on:
         try:
@@ -84,9 +82,10 @@ def start_key_press_capture(_worker_object):
 
         if key_pressed_and_released[0] == waiting_for_key and \
            key_pressed_and_released[1] == waiting_for_key:
-            vis.visualised_data = np.array([waiting_for_key])
-            worker_object.send_data_to_com(vis.visualised_data)
-            worker_object.relic_update_substate_df(key_pressed=vis.visualised_data)
+            data = np.array([waiting_for_key])
+            vis.visualise(data)
+            worker_object.send_data_to_com(data)
+            worker_object.relic_update_substate_df(key_pressed=data)
             key_pressed_and_released = [None, None]
         try:
             vis.visualisation_on = worker_object.parameters[0]
@@ -104,6 +103,7 @@ def on_end_of_life():
         listener.stop()
     except:
         pass
+    vis.end_of_life()
 
 
 if __name__ == "__main__":
