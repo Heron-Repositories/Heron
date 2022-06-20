@@ -17,5 +17,6 @@ Submodules
    relic/index.rst
    ssh_info_editor/index.rst
    visualisation/index.rst
+   visualisation_dpg/index.rst
 
 

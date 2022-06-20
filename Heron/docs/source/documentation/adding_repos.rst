@@ -41,7 +41,9 @@ The only requirement for a valid Heron Node repository is its correct folder str
 |       worker_script.py
 
 
-Here is an example with 4 Nodes in it
+Here is an example with 4 Nodes in it, a Source called *Weird Camera* (under Vision), a Transform called
+*Super Motor Controller* (under Motion) and two Sinks called *Saving CSVs* (under Saving) and
+*Some Other Sink Node* (under General).
 
 | My_awesome_Nodes_repo
 |   README.md
@@ -75,6 +77,11 @@ Here is an example with 4 Nodes in it
 |         Some_Other_Sink_Node
 |            some_other_sink_node_com.py
 |            some_other_sink_node_worker.py
+
+The actual name of the Node as seen on Heron's GUI is set in the xxx_com.py script. It is good practice to give the
+folder holding the Node (i.e. the Python scripts) the same name but with underscores instead of spaces. Heron doesn't
+mind if the name of the folder is different but it does mind spaces so pretend it is 1980 and make folder names
+without spaces.
 
 The folder __top__ needs to exist if the Subcategory you are making under the Sources/Transforms/Sinks folder doesn't
 already exist in your Heron folder structure. Otherwise it can be skipped. In general it is a good idea to just include

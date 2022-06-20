@@ -16,7 +16,7 @@ documentation. Of course if you are lucky and someone else has set up a LAN for 
 In both cases there is a conceptual separation between the machine that runs Heron's GUI (let's call it the GUI Machine
 := GUIM) and the machines that simply run one or more worker processes (let's call those the worker process machines
 := WPMs).
-The end result of any type of LAN setup should be something that fullfills the following points:
+The end result of any type of LAN setup should be something that fulfills the following points:
 
 #. All machines should be running an SSH client and an SSH server.
 #. The GUIM needs to be able to SSH into all the WPMs (accounts, IPs and ports all working).

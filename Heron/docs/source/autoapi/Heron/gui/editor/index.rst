@@ -49,7 +49,6 @@ Attributes
    Heron.gui.editor.forwarders
    Heron.gui.editor.node_selector
    Heron.gui.editor.port_generator
-   Heron.gui.editor.icon_path
    Heron.gui.editor.default_font
    Heron.gui.editor.start_graph_button_id
    Heron.gui.editor.node_selector
@@ -229,11 +228,6 @@ Attributes
 
 .. py:function:: create_node_selector_window()
 
-
-.. py:data:: icon_path
-   
-
-   
 
 .. py:data:: default_font
    
