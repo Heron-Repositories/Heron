@@ -56,7 +56,7 @@ previous Nodes in the pipeline and do something with them without passing them f
 
 
 Creating a Graph (Pipeline)
-----------------------------
+____________________________
 
 To create a pipeline ones does the pretty obvious. Preses the Node buttons that the pipeline requires, connects the
 the Nodes that have now appeared on the Node Editor window (by connecting an output of one Node to an input of another)
@@ -64,7 +64,7 @@ and finally sets the parameter values for the different Nodes (don't forget to s
 
 
 Running a Graph (a Node's life)
---------------------------------
+________________________________
 
 Once a Graph has been constructed then one can press the *Start Graph* button which will do two things.
 First it will stop Heron from acting like a pipeline editor (no Nodes can be added, deleted or (dis)connected). Second
@@ -95,7 +95,7 @@ is closed down) then all processes (the three forwarders and the com and worker 
 
 
 The Heartbeat System
----------------------
+_____________________
 
 While a Graph is running Heron sends every so often a message to all the Nodes telling them that all is fine and they
 should keep on operating. This is called a Heartbeat and the number of heartbeats per second is defined in the
