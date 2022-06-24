@@ -1,6 +1,6 @@
 
-All about Nodes
-================
+All about the Nodes
+===================
 
 A Node in Heron is a word of many faces. It is used interchangeably to mean either the two processes that
 are responsible for executing a certain functionality and communicating with other Nodes (so the Actor in the Actor-based
@@ -46,21 +46,24 @@ For more details on how Nodes are composed through the xxx_com.py and xxx_worker
 
 
 The Node types
-----------------
+______________
 
 Heron understands three types of Nodes, Sources, Transforms and Sinks. The main difference between them is the
 inputs and outputs they are allowed to have. Sources generate their own data and can only have outputs (no inputs).
 Transforms take data from other Nodes into their inputs and, well, transform them, sending the transformed data out to
-other Nodes through their outputs. So the they have both inputs and outputs. Finally Sinks are meant to take data from
-previous Nodes in the pipeline and do something with them without passing them further on (no no outputs).
+other Nodes through their outputs. So they have both inputs and outputs. Finally Sinks are meant to take data from
+previous Nodes in the pipeline and do something with them without passing them further on (so, no outputs).
 
 
 Creating a Graph (Pipeline)
 ____________________________
 
-To create a pipeline ones does the pretty obvious. Preses the Node buttons that the pipeline requires, connects the
+To create a pipeline ones does the pretty obvious. Presses the Node buttons that the pipeline requires, connects
 the Nodes that have now appeared on the Node Editor window (by connecting an output of one Node to an input of another)
-and finally sets the parameter values for the different Nodes (don't forget to save). That's it.
+and finally sets the parameter values for the different Nodes (don't forget to save). That's it. Well, there is also
+the issue of telling the Nodes whose worker function is to run on another machine, where exactly that machine is
+(done through the Node's secondary window as described in :doc:`the_editor` and :doc:`lan_use`). But now that is it
+for real.
 
 
 Running a Graph (a Node's life)
@@ -75,7 +78,7 @@ is no initialisation function or when it has returned True, Heron will pass the 
 to the xxx_worker.py script and then, well it depends on what type the Node is.
 
 For Source Nodes, Heron will call the worker_function in the xxx_worker.py script once. This assumes that the function
-is an infinite loop that generates data and deals itself with passing those to the com process of Heron (this is much
+is an infinite loop that generates data and deals itself with passing those to the com process of the Node (this is much
 simpler than it sounds and you can see how it is done in :doc:`writing_new_nodes`).
 
 For Transform and Sink Nodes Heron will call the worker_function of the xxx_worker.py script as a callback every time
@@ -89,7 +92,7 @@ the new data which will be lost. **IMPORTANT:** *Heron has no buffer to hold any
 still processing its previous message.* It is up to the user to verify that no important messages are lost. For that
 Heron offers a number of debugging tools (see :doc:`debugging`).
 
-The above fully define what a Node does during an active Graph. Once the *Stop Graph* button has been pressed (or Heron
+The above fully defines what a Node does during an active Graph. Once the *Stop Graph* button has been pressed (or Heron
 is closed down) then all processes (the three forwarders and the com and worker processes for all Nodes) are killed
 (see below). At this point each Node will execute its on_end_of_life function taking care of any loose ends.
 
@@ -123,6 +126,43 @@ HEARTBEATS_TO_DEATH * HEARTBEAT_RATE seconds the Node will always kill itself. T
 of those two constants. These constants can have different values on different machines.
 
 
+The inner workings
+__________________
+
+When a Graph is starting, the Heron GUI process will go through each of the Nodes in the Graph and will spun up a process.
+This is known as the com process of the Node. This always runs on the same machine as the Heron GUI and is responsible
+for the communication between Nodes. When the com process is up and running it will start a second process called the
+worker process of the Node. This runs the code that is in the xxx_worker.py script of the Node. The worker process
+will do the main work of the Node and will communicate with the com process in order to get any messages from other
+Nodes or send messages to other Nodes. The messaging between com processes is facilitated through another process
+called data forwarder and is done using the PUB SUB protocol of 0MQ.
+
+There are two more communication pathways to be considered that deal with the communication between Heron's GUI
+process and each of the Nodes' worker processes. The first pathway deals with an initial messaging between the
+worker process and the Heron GUI process and is required so that the GUI process becomes aware when the worker process
+is up and running. The second allows the GUI process to send messages to the worker processes every time a parameter
+in the Nodes' GUIs changes. Currently Heron does not allow the worker process of a Node to change the parameters shown
+on the GUI of the Node.
+
+A schematic of all the processes and communication pathways between them can be seen in Figure 2B.
+
+
+.. image:: ../images/Heron-data-diagram.png
+Figure 2. Heron’s design principles. A. On the right, Heron’s Node structure showing the
+two processes that define a running Node and how messages are passed between them.
+The design of the special message defined as ‘data’ is shown on the left. B. Heron’s
+processes and message passing diagram. Each rectangle represents a process. The top
+rectangle is the Heron process, while the two rectangles below that and the rectangle at
+the bottom of the figure are the three forwarders. The proof of life forwarder deals with
+messages relating with whether a worker process has initialised correctly. The
+parameters forwarder deals with messages that pass the different parameter values from
+the editor process (the GUI) to the individual Nodes. Finally, the data forwarder deals
+with the passing of the data messages between the com processes of the Nodes. The
+squares represent the worker (top) and com (bottom) process of three Nodes (a Source,
+a Transform and a Sink from left to right). Solid arrows represent message passing
+between processes using either the PUB SUB or the PUSH PULL type of sockets as
+defined in the 0MQ protocol. Dashed line arrows represent data passing within a single
+process.
 
 
 
