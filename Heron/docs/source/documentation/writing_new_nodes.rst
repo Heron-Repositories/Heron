@@ -34,6 +34,9 @@ that allow you to minimise and maximize different parts of the scripts. Ignore t
 editor.
 
 
+______________________________________________________________________________________________________________________________
+
+
 The com script
 --------------
 The xxx_com.py script (from now on referred to as simply the com script) deals with the basic definition of the Node.
@@ -124,6 +127,8 @@ directory as the com script the WorkerDefaultExecutable variable should always b
 where 'xxx_worker.py' is the string of the name of the worker script provided by the Node's developer.
 
 
+______________________________________________________________________________________________________________________________
+
 The worker script
 -----------------
 
@@ -184,13 +189,17 @@ than the worker functions of the Sources when they are called by the Heron frame
 The initialisation function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When a worker process starts, Heron will send the Node's parameters to the worker process. It will try to do so
-NUMBER_OF_INITIAL_PARAMETERS_UPDATES times (this variable is set in the constants.py script) with 500ms gap in between.
-If it fails then the worker process will not function and it will terminate after HEARTBEAT_RATE * HEARTBEATS_TO_DEATH
-seconds. Every time Heron's GUI sends parameters to the worker process, the process checks if it has an initialisation
-function and if it marked as initialised. If it has an initialisation function and isn't initialised it will call
-its initialisation function (which should always try to read the parameters). If it returns True then the parameters
-have been read (and all other initialisation has been completed) and then the worker process is marked as initialised.
+The initialisation function is used in order for the Node to run any initialisation code before it starts calling the
+worker function. Apart from initialisation code pertaining to the specific Node, all worker processes need to check that
+they can read the parameters sent from the Heron GUI process. This communication takes some time to initiate during which the
+worker function must not be called. When a worker process starts, Heron will send the Node's parameters to the worker process.
+It will try to do so NUMBER_OF_INITIAL_PARAMETERS_UPDATES times (this variable is set in the constants.py script) with
+500ms gap in between. If it fails then the worker process will not function and it will terminate after
+HEARTBEAT_RATE * HEARTBEATS_TO_DEATH seconds. Every time Heron's GUI sends parameters to the worker process, the process
+checks if it has an initialisation function and if it is marked as initialised. If it has an initialisation function and
+isn't initialised it will call its initialisation function (which should always try to read the parameters). If it
+returns True then the parameters have been read (and all other initialisation has been completed) and then the worker
+process is marked as initialised.
 
 In order for the above mechanism to work the initialisation function must always check if it can read parameters from
 the worker_object. This is done with code that looks like this
@@ -326,4 +335,11 @@ If the Node has a single output then the numpy array returned still needs to be 
 There are two more elements of Node scripting, the :doc:`in Node Visualisation API <visualisation>` and the
 :doc:`Relic system for saving state <the_relic_system>` which are described in their own documentation.
 
+The end of life function
+^^^^^^^^^^^^^^^^^^^^^^^^
+The final function that must be defined in a worker script is the end of life function. Heron will call this function
+when the process terminates itself (see the Running a Graph (a Node's life) paragraph in :doc:`node_types`). This is
+where code that deals with gracefully closing down the process should be written (e.g. closing graphical elements,
+releasing memory, etc.). Since this function has to be defined, if there is nothing to close down then a pass call
+should be used.
 
