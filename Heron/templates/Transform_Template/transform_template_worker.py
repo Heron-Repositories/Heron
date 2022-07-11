@@ -127,16 +127,20 @@ def work_function(data, parameters, relic_update_substate_df):
     print(topic)  # prints will not work if the operation is running on a different computer.
 
     message = data[1:]  # data[0] is the topic
-    image = Socket.reconstruct_array_from_bytes_message_cv2correction(message)
+    # This is needed to reconstruct the message that comes in into the numpy array that it is.
+    # Use Socket.reconstruct_array_from_bytes_message if the data is just a numpy array
+    # or Socket.reconstruct_array_from_bytes_message_cv2correction if the data is an image (and the numpy array's type
+    # needs to be unsigned
+    message = Socket.reconstruct_array_from_bytes_message(message)
 
     # Now do stuff
-    print(image.shape)
-    some_data_to_visualise = image
+    print(message.shape)
+    some_data_to_visualise = message
 
     # Save something to the Relic. This is optional. If you do not use the Relic system to save some data then you
     # can define the work function as work_function(data, parameters) and not use the relic_update_substate_df
     # parameter
-    relic_update_substate_df(image__shape=image.shape)
+    relic_update_substate_df(image__shape=message.shape)
 
     # Whatever data the Node must visualise should be passed to the vis.visualise function
     vis.visualise(some_data_to_visualise)
@@ -146,7 +150,7 @@ def work_function(data, parameters, relic_update_substate_df):
     # So in this example the data would go out of the 'Something Out 1' output and the np.array([ct.IGNORE]) would go
     # out of the 'Something Out 2' output. If you want to stop one or more outputs from sending out any data on the
     # current pass then put as an array the np.array([ct.IGNORE]) array. The com process knows to ignore this array.
-    result = [image, np.array([ct.IGNORE])]
+    result = [message, np.array([ct.IGNORE])]
 
     return result
 

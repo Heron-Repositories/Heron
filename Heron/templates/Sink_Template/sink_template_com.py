@@ -49,7 +49,7 @@ ParametersDefaultValues = [False,
                             'item 2'],
                            0.0,
                            2]  # The default values of each parameter.  These are the values the Node will
-# have when first created into the Node Editor. Parameter of 'list' type become drop down menus and the list of their
+# have when first created into the Node Editor. Parameters of 'list' type become drop down menus and the list of their
 # default values becomes the drop down menu items. The Node by default uses the first item (so the order matters).
 
 # The following line needs to exist with the correct name for the xxx_worker.py script
@@ -58,7 +58,7 @@ WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), 'sink_template_wor
 
 
 # <editor-fold desc="The following code is called as its own process when the editor starts the graph.
-#  You can refactor the name of the xxx_com variable but do not change anything else">
+#  You can refactor the name of the xxx_com variable in line 64 but do not change anything else">
 if __name__ == "__main__":
     #  In this case refactor the name sink_template_com to whatever_com
     sink_template_com = gu.start_the_sink_communications_process()

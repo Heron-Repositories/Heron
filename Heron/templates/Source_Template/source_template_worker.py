@@ -23,7 +23,6 @@ from Heron import general_utils as gu
 # <editor-fold desc="Global variables if required. Global variables operate obviously within the scope of the process
 # that is running when this script is called so they pose no existential threats and are very useful in keeping state
 # over different calls of the work function (see below).">
-need_parameters = True
 running = False
 global_var_1: str
 global_var_2: str
@@ -63,8 +62,6 @@ def initialise(worker_object):
     except:
         return False
 
-    global need_parameters
-
     # VISUALISATION
     # The following three lines are required if you want visualisation from the Node itself. There are currently four
     # visualisation types ('Image', 'Value', 'Single Pane Plot', 'Multi Pane Plot') you can choose from. See the
@@ -87,13 +84,14 @@ def initialise(worker_object):
 
 #  The worker_function of the Source Operation has access to the SourceWorker worker_object
 def work_function(worker_object):
-    global need_parameters
     global running
     global vis
     global global_var_1
     global global_var_2
     global global_var_3
     global global_var_4
+
+    need_parameters = True
 
     # You can check if the parameters have been grabbed from the Node's GUI
     while need_parameters:
@@ -142,6 +140,7 @@ def work_function(worker_object):
 
         # This line doesn't exist in the Transform and Sink work_functions but is required here because, in the Source
         # case it is the work_function that needs to push the data to the com process.
+        # The result needs to be a numpy array. Source Nodes do not allow more than one output (see the worker template)
         worker_object.send_data_to_com(result)
 
         # Maybe add a delay (in ms)

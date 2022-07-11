@@ -35,7 +35,8 @@ NodeAttributeNames = ['Parameters', 'Something Out 1']
 
 NodeAttributeType = ['Static', 'Output']  # Whether the above names are outputs or inputs. A Source can only have
 # a single Output. If the first attribute name is Parameters then the first attribute type must be Static
-# (i.e. neither an Output nor and Input).
+# (i.e. neither an Output nor and Input). So for a Source Node the only possible combinations of NodeAttributeType are
+# ['Static', 'Output'] or ['Output']
 
 ParameterNames = ['Visualisation', 'Parameter 1', 'Parameter 2', 'Parameter 3', 'Parameter 4']  # If there are
 # parameters then write their names here. If there are not make an empty list (i.e. ParameterNames = [])

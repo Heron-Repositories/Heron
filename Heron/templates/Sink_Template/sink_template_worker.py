@@ -131,8 +131,11 @@ def work_function(data, parameters, relic_update_substate_df):
     # The message is a numpy array send in two parts, a header dic (as bytes0 with the array's info and list of bytes
     # that carry the array's payload.
     message = data[1:]
-    message = Socket.reconstruct_array_from_bytes_message(message)[0]  # This is needed to reconstruct the message
-    # that comes in into the numpy array that it is.
+    # This is needed to reconstruct the message that comes in into the numpy array that it is.
+    # Use Socket.reconstruct_array_from_bytes_message if the data is just a numpy array
+    # or Socket.reconstruct_array_from_bytes_message_cv2correction if the data is an image (and the numpy array's type
+    # needs to be unsigned
+    message = Socket.reconstruct_array_from_bytes_message(message)
 
     # Now do stuff
     print(message.shape)
