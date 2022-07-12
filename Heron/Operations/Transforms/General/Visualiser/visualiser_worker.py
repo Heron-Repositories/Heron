@@ -40,12 +40,10 @@ def visualise(msg, parameters):
     data = Socket.reconstruct_array_from_bytes_message(message)
 
     if parameters is not None:
-        visualisation_on = parameters[0]
-        visualisation_dpg.visualisation_on = visualisation_on
-
         try:
+            visualisation_on = parameters[0]
+            visualisation_dpg.visualisation_on = visualisation_on
             visualisation_dpg.visualise(data)
-
         except Exception as e:
             print(e)
 
