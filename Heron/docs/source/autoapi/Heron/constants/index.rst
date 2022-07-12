@@ -103,7 +103,7 @@ Module Contents
    
 
 .. py:data:: DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS
-   :annotation: = 0.3
+   :annotation: = 0.5
 
    
 
