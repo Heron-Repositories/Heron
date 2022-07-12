@@ -32,6 +32,7 @@ then, in the initialisation function the vis object needs to be instantiated. Th
 * _base_plot_title: A string giving the base label name for each plot for Multi Pane, or the name of the plot for Single Pane. In the Multi Pane the actual plots will be numbered starting from 0 as in the case of the _y_axis_base_label
 
 An example of making a VisualisationDPG object for a text box type of visualisation is the following:
+
 .. code-block:: python
 
     visualisation_type = 'Value'
