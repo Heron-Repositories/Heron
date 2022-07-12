@@ -11,7 +11,7 @@ from Heron import general_utils as gu
 class VisualisationDPG:
 
     def __init__(self, _node_name, _node_index, _visualisation_type='Image', _buffer=10, _image_size=None,
-                 _x_axis_label=None, _y_axis_labels=None, _plot_title=None):
+                 _x_axis_label=None, _y_axis_base_label=None, _base_plot_title=None):
         """
         The basic class for handling visualisations (using the dearpygui library for most of what it does).
         :param _node_name: The node's name (found in worker_object.node_name)
@@ -19,6 +19,12 @@ class VisualisationDPG:
         :param _visualisation_type: Can be 'Image', 'Value', 'Single Pane Plot', 'Multi Pane Plot'
         :param _buffer: The number of data points shown on a single visualisation window if the 'visualisation_type is not 'Image'
         :param _image_size: The size of an image if the _visualisation_type is 'Image'
+        :param _x_axis_label: A string with the name of the x axis
+        :param _y_axis_base_label: A string with the base name of the y axes for the Multi Pane or the name of the y
+        axis for the Single Pane. In the Multi Pane the actual names will be numbered (_y_axis_base_label 0,
+        _y_axis_base_label 1, etc.)
+        :param _base_plot_title: A string giving the base name for each plot for Multi Pane, or the name of the plot for
+        Single Pane. In the Multi Pane the actual plots will be numbered starting from 0
         """
 
         self.visualisation_on = False
@@ -29,10 +35,10 @@ class VisualisationDPG:
             self.x_axis_label = 'Data index'
         else:
             self.x_axis_label = _x_axis_label
-        self.y_axis_labels = _y_axis_labels
-        if _plot_title is None:
+        self.y_axis_label = _y_axis_base_label
+        if _base_plot_title is None:
             self.plot_title = 'Plot'
-        self.plot_title = _plot_title
+        self.plot_title = _base_plot_title
         self.window_name = '{} {}'.format(_node_name, _node_index)
 
         self.visualiser_showing = False
@@ -155,21 +161,24 @@ class VisualisationDPG:
 
         if not self.initialised_plots:
 
-            if self.y_axis_labels is None:
-                self.y_axis_labels = ['Data[{}]'.format(i) for i in np.arange(number_of_lines)]
+            if self.y_axis_label is None:
+                self.y_axis_label = 'Data'
+            y_axis_labels = [self.y_axis_label + '[{}]'.format(i) for i in np.arange(number_of_lines)]
+
             if self.plot_title is None:
-                self.plot_title = ["Plot {}".format(k) for k in np.arange(number_of_lines)]
+                self.plot_title = 'Plot'
+            plot_title = [self.plot_title + " {}".format(k) for k in np.arange(number_of_lines)]
 
             for n in np.arange(number_of_lines):
-                self.dpg_ids[self.plot_title[n]] = \
-                    dpg.add_plot(label=self.plot_title[n], height=int(800 / self.data.shape[0]), width=1030, show=True,
+                self.dpg_ids[plot_title[n]] = \
+                    dpg.add_plot(label=plot_title[n], height=int(800 / self.data.shape[0]), width=1030, show=True,
                                  parent=self.dpg_ids['Visualisation'])
 
                 self.dpg_ids['x_axis {}'.format(n)] = \
-                    dpg.add_plot_axis(dpg.mvXAxis, label=self.x_axis_label, parent=self.dpg_ids[self.plot_title[n]])
+                    dpg.add_plot_axis(dpg.mvXAxis, label=self.x_axis_label, parent=self.dpg_ids[plot_title[n]])
 
                 self.dpg_ids['y_axis {}'.format(n)] = \
-                    dpg.add_plot_axis(dpg.mvYAxis, label=self.y_axis_labels[n], parent=self.dpg_ids[self.plot_title[n]])
+                    dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_labels[n], parent=self.dpg_ids[plot_title[n]])
 
                 self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show),
                                                                              self.data[n, :length_to_show],
@@ -222,13 +231,14 @@ class VisualisationDPG:
                 dpg.set_item_width(self.dpg_ids['Visualisation'], 1050)
                 dpg.set_item_height(self.dpg_ids['Visualisation'], 770)
 
-                if self.y_axis_labels is None:
-                    self.y_axis_labels = ['Data']
+                if self.y_axis_label is None:
+                    self.y_axis_label = 'Data'
+                y_axis_label = self.y_axis_label
 
                 with dpg.plot(label=self.plot_title, height=700, width=1000, show=True, pan_button=True,
                               fit_button=True) as self.dpg_ids['Plot 0']:
                     self.dpg_ids['x_axis'] = dpg.add_plot_axis(dpg.mvXAxis, label=self.x_axis_label)
-                    self.dpg_ids['y_axis'] = dpg.add_plot_axis(dpg.mvYAxis, label=self.y_axis_labels[0])
+                    self.dpg_ids['y_axis'] = dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_label)
 
             elif self.visualisation_type == 'Multi Pane Plot':
                 dpg.set_viewport_width(1050)

@@ -27,7 +27,8 @@ def initialise(worker_object):
     worker_object.relic_create_parameters_df(visualisation_on=visualisation_on, function_name=function_name,
                                              a=a, b=b, c=c, d=d)
     vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
-                           _visualisation_type='Value', _buffer=20)
+                           _visualisation_type='Single Pane Plot', _buffer=20, _x_axis_label='Points',
+                           _y_axis_base_label='The generated data', _base_plot_title='Some random numbers')
     return True
 
 
