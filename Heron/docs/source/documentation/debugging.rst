@@ -68,13 +68,13 @@ Heron will generate a Heron.log file and the messages will be registered there. 
 and stack trace registering applies also to worker processes running on separate machines, so if something goes wrong one
 should first check the Heron.log file on the machine that the worker process of the Node is running.
 
-Heron also offers a local to a script way to log information. In the general_utilities there is a function called
+Heron also offers a local way to log information. In the general_utilities there is a function called
 setup_logger. Using this will generate a separate logger with a specified log file that the worker script of a Node
 can use to log information. Use this as follows:
 
 .. code-block:: python
 
-    from Heron import constants as ct, general_utils as gu
+    from Heron import general_utils as gu
     logger = gu.setup_logger('Name of Logger', full_path_log_file_name)
 
     logger.info('Some information')
