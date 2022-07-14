@@ -2,7 +2,15 @@
 
 A more thorough description of both why Heron exists in the first place and some info on how to use it can be found in [this document](https://medium.com/@gdimitri/heron-a-hybrid-approach-to-data-pipelines-in-python-aa7719fe8f2e).
 
-The manual is currently under construction [here](https://heron-42ad.readthedocs.io/en/latest/index.html).
+The manual is [here](https://heron-42ad.readthedocs.io/en/latest/index.html).
+
+# Videos and Tutorials
+
+A summer 2022 talk at the Sainsbury Wellcome Centre introducing Heron: 
+https://www.youtube.com/watch?v=o6Pz-1uaJjY
+
+A quick overview of using Heron through an example of putting together a pipeline involving Single Board Computers, Deep Convolutional Networks and a game of Snake.
+https://www.youtube.com/watch?v=dRXeFBYG50Q
 
 ## Introduction
 
@@ -36,6 +44,8 @@ pyzmq >= 22.x
 
 numpy
 
+pandas
+
 dearpygui >= 1.2
 
 paramiko
@@ -50,6 +60,7 @@ If you use conda then dearpygui has to also be installed by pip (no conda packag
 So once you have a conda environment up and running (and you have added the conda-forge channel to your config as mentioned here https://ostechnix.com/enable-conda-forge-channel-for-conda-package-manager/) and you are in the environment in your command prompt you need to do the following:
 ```
 conda install numpy
+conda install pandas
 conda install tornado
 conda install pyzmq
 conda install paramiko
@@ -86,9 +97,6 @@ Then there are the Transform nodes which grab data from one of their inputs, tra
 Finally there are Sink nodes which only have inputs and which are meant as final saving points for the data. In the above example this is the Save FFMPEG video which takes the canny transformed frame and adds it to a video file (through running ffmpeg).
 
 In the future there will be Kernel nodes with no inputs or outputs (self sufficient processes that do stuff without requiring input or generating output).
-
-A first showcase of Heron can be found in this video:
-https://www.youtube.com/watch?v=dRXeFBYG50Q
 
 ![Alt - text](https://github.com/georgedimitriadis/large_gifs_for_other_repos/blob/main/Heron_GIF_MidRes_5FPS.gif)
 ## Heron protocol
