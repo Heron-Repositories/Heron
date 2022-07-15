@@ -102,7 +102,6 @@ def run_timer(worker_object):
 
     while running and not finish:
         visualise = worker_object.parameters[0]
-        print(visualise)
         result = np.array([signal_out])
         worker_object.send_data_to_com(result)
 
