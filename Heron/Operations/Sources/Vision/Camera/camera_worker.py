@@ -10,11 +10,11 @@ sys.path.insert(0, path.dirname(current_dir))
 import cv2 as cv2
 from Heron import general_utils as gu
 from Heron.Operations.Sources.Vision.Camera import camera_com
-from Heron.gui.visualisation import Visualisation
+from Heron.gui.visualisation_dpg import VisualisationDPG
 
 acquiring_on = False
 capture = None
-vis: Visualisation
+vis: VisualisationDPG
 
 
 def run_camera(worker_object):
@@ -22,8 +22,8 @@ def run_camera(worker_object):
     global acquiring_on
     global vis
 
-    vis = Visualisation(worker_object.node_name, worker_object.node_index)
-    vis.visualisation_init()
+    vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
+                           _visualisation_type='Image', _buffer=1)
 
     if not acquiring_on:  # Get the parameters from the node
 
@@ -43,12 +43,13 @@ def run_camera(worker_object):
 
     while acquiring_on:
 
-        ret, vis.visualised_data = capture.read()
-        worker_object.send_data_to_com(vis.visualised_data)
+        ret, result = capture.read()
+        worker_object.send_data_to_com(result)
         try:
             vis.visualisation_on = worker_object.parameters[0]
         except:
             vis.visualisation_on = camera_com.ParametersDefaultValues[0]
+        vis.visualise(result)
 
 
 def on_end_of_life():

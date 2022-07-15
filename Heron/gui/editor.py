@@ -607,6 +607,8 @@ def create_node_selector_window():
 
 dpg.create_context()
 dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
+#icon_path = os.path.join(heron_path, 'resources', 'Aelopile.ico')
+#dpg.set_viewport_small_icon(icon_path)
 
 with dpg.font_registry():
     # add font (set as default for entire app)

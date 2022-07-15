@@ -14,6 +14,7 @@ setup(
                       'numpy',
                       'dearpygui>=1.2',
                       'paramiko',
+                      'opencv-python>=4.5'
                       'pandas',
                       'h5py',
                       'tornado',

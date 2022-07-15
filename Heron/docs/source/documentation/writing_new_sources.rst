@@ -1,3 +1,0 @@
-
-Writing new Source Nodes
-========================

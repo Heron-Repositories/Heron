@@ -73,7 +73,7 @@ Classes
    .. py:method:: update_parameters(self)
 
       This updates the self.parameters from the parameters send form the node (through the gui_com)
-      If the rlic system is up and running it also saves the new parameters into the Parameters df of the relic
+      If the relic system is up and running it also saves the new parameters into the Parameters df of the relic
       :return: Nothing
 
 

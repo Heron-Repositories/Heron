@@ -1,7 +1,9 @@
-.. Heron documentation master file, created by
-   sphinx-quickstart on Wed Apr 27 16:02:26 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. This is used to create the local doc (outside of readthedocs) and runs the
+  autoapi.
+  It will be called with the command 'sphinx-build -b html . ../build' inside the
+  Heron/Heron/docs/source directory. This will also build the source/autoapi/Heron/index
+  that can then be used by the readthedocs (docs\index.rst) to put the automatically
+  created API on the readthedocs page
 
 Heron's documentation!
 =================================
@@ -23,9 +25,9 @@ Heron's documentation!
     documentation/node_types.rst
     documentation/adding_repos.rst
     documentation/writing_new_nodes.rst
-    documentation/writing_new_transforms_and_sinks.rst
-    documentation/writing_new_sources.rst
+    documentation/visualisation.rst
     documentation/the_relic_system.rst
+    documentation/debugging.rst
 
 .. toctree::
    :maxdepth: 2

@@ -16,7 +16,7 @@ sys.path.insert(0, path.dirname(current_dir))
 # <editor-fold desc="Extra imports if required">
 import numpy as np
 from Heron.communication.socket_for_serialization import Socket
-from Heron.gui.visualisation import Visualisation
+from Heron.gui.visualisation_dpg import VisualisationDPG
 from Heron import general_utils as gu
 # </editor-fold>
 
@@ -30,7 +30,7 @@ global_var_3: float
 global_var_4: int
 
 # The following global is useful if you need a updatable visualisation window in the Node
-vis: Visualisation
+vis: VisualisationDPG
 # </editor-fold>
 
 
@@ -46,22 +46,33 @@ def initialise(_worker_object):
     global global_var_3
     global global_var_4
 
-    # The following two lines are required if you want visualisation from the Node itself. If you do not change the
-    # Visualisation object's visualisation_loop then the Visualisation will  assume the data is an image and use cv2
-    # to try and display it.
-    vis = Visualisation(_worker_object.node_name, _worker_object.node_index)
-    vis.visualisation_init()
-
-    # put the initialisation of the Node's parameter's in a try loop to take care of the time it takes for the GUI to
+    # INITIALISE PARAMETERS
+    # Put the initialisation of the Node's parameter's in a try loop to take care of the time it takes for the GUI to
     # update the SinkWorker object.
     try:
         parameters = _worker_object.parameters
         global_var_1 = parameters[1]
         global_var_2 = parameters[2]
         global_var_3 = parameters[3]
-        global_var_1 = parameters[4]
+        global_var_4 = parameters[4]
     except:
         return False
+
+    # VISUALISATION
+    # The following three lines are required if you want visualisation from the Node itself. There are currently four
+    # visualisation types ('Image', 'Value', 'Single Pane Plot', 'Multi Pane Plot') you can choose from. See the
+    # gui.visualisation_dpg.VisualisationDPG class.
+    visualisation_type = 'Value'
+    buffer = 20
+    vis = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
+                                         _visualisation_type=visualisation_type, _buffer=buffer)
+
+    # RELIC
+    # If you want the possibility to save the parameters as you update them live during a Graph running then add the
+    # following line. The names parameter_var_1, parameter_var_2, etc. will be the names of the columns in the saved
+    # pandas dataframe.
+    _worker_object.relic_create_parameters_df(parameter_var_1=global_var_1, parameter_var_2=global_var_2,
+                                              parameter_var_3=global_var_3, parameter_var_4=global_var_4)
 
     # Do other initialisation stuff
     return True
@@ -76,7 +87,7 @@ def initialise(_worker_object):
 # Graph pipeline is running.
 # The data is a list with two items. The first is the topic of the connection. If the Node has multiple Inputs then
 # the topic will tell you which Input the data packet arrived from.
-def work_function(data, parameters):
+def work_function(data, parameters, relic_update_substate_df):
     global global_var_1
     global global_var_2
     global global_var_3
@@ -120,14 +131,23 @@ def work_function(data, parameters):
     # The message is a numpy array send in two parts, a header dic (as bytes0 with the array's info and list of bytes
     # that carry the array's payload.
     message = data[1:]
-    message = Socket.reconstruct_array_from_bytes_message(message)[0]  # This is needed to reconstruct the message
-    # that comes in into the numpy array that it is.
+    # This is needed to reconstruct the message that comes in into the numpy array that it is.
+    # Use Socket.reconstruct_array_from_bytes_message if the data is just a numpy array
+    # or Socket.reconstruct_array_from_bytes_message_cv2correction if the data is an image (and the numpy array's type
+    # needs to be unsigned
+    message = Socket.reconstruct_array_from_bytes_message(message)
 
     # Now do stuff
     print(message.shape)
+    some_data_to_visualise = np.random.random((100, 100))
 
-    # Whatever data the Node must visualise should be put in the vis.visualised_data variable
-    vis.visualised_data = np.random.random((100,100))
+    # Save something to the Relic. This is optional. If you do not use the Relic system to save some data then you
+    # can define the work function as work_function(data, parameters) and not use the relic_update_substate_df
+    # parameter
+    relic_update_substate_df(message_shape=message.shape)
+
+    # Whatever data the Node must visualise should be passed to the vis.visualise function
+    vis.visualise(some_data_to_visualise)
 
     # This function does not return anything.
 
@@ -137,7 +157,7 @@ def on_end_of_life():
     global vis
 
     # If using in Node visualisation then the vis object must be cleared here like this
-    vis.kill()
+    vis.end_of_life()
 
 
 # This needs to exist. The worker_function and the end_of_life function must be defined and passed. The initialisation_

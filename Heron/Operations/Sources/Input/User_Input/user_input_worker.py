@@ -11,12 +11,15 @@ sys.path.insert(0, path.dirname(current_dir))
 
 from Heron import general_utils as gu
 from Heron.communication.source_worker import SourceWorker
+from Heron.gui.visualisation_dpg import VisualisationDPG
+
 
 worker_object: SourceWorker
 visualisation_on: bool
 latest_user_input: str
 loop_on = False
 finish = False
+vis: VisualisationDPG
 
 
 def initialise(_worker_object):
@@ -24,11 +27,15 @@ def initialise(_worker_object):
     global output_type
     global latest_user_input
     global loop_on
+    global vis
 
     try:
         visualisation_on = _worker_object.parameters[0]
         output_type = _worker_object.parameters[1]
         latest_user_input = str(_worker_object.parameters[2])
+
+        vis = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
+                               _visualisation_type='Value', _buffer=20)
 
         loop_on = True
 
@@ -57,6 +64,8 @@ def start_user_input_capture(_worker_object):
             output_type = _worker_object.parameters[1]
             latest_user_input = str(_worker_object.parameters[2])
 
+            vis.visualisation_on = visualisation_on
+
             if latest_user_input != '':
 
                 if output_type == 'int':
@@ -66,11 +75,9 @@ def start_user_input_capture(_worker_object):
 
                 _worker_object.relic_update_substate_df(user_input=latest_user_input)
 
-                if visualisation_on:
-                    print(latest_user_input)
-
                 result = np.array([latest_user_input])
                 _worker_object.send_data_to_com(result)
+                vis.visualise(result)
 
                 latest_user_input = ''
                 _worker_object.parameters[2] = latest_user_input
@@ -86,6 +93,7 @@ def on_end_of_life():
 
     finish = False
     loop_on = False
+    vis.end_of_life()
 
 
 if __name__ == "__main__":

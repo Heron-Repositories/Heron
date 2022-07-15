@@ -12,6 +12,7 @@ Subpackages
 
    Operations/index.rst
    communication/index.rst
+   docs/index.rst
    gui/index.rst
 
 

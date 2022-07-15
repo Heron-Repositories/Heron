@@ -15,7 +15,7 @@ sys.path.insert(0, path.dirname(current_dir))
 
 # <editor-fold desc="Extra imports if required">
 import numpy as np
-from Heron.gui.visualisation import Visualisation
+from Heron.gui.visualisation_dpg import VisualisationDPG
 from Heron import general_utils as gu
 # </editor-fold>
 
@@ -23,7 +23,6 @@ from Heron import general_utils as gu
 # <editor-fold desc="Global variables if required. Global variables operate obviously within the scope of the process
 # that is running when this script is called so they pose no existential threats and are very useful in keeping state
 # over different calls of the work function (see below).">
-need_parameters = True
 running = False
 global_var_1: str
 global_var_2: str
@@ -31,7 +30,7 @@ global_var_3: float
 global_var_4: int
 
 # The following global is useful if you need a updatable visualisation window in the Node
-vis: Visualisation
+vis: VisualisationDPG
 # </editor-fold>
 
 
@@ -63,14 +62,21 @@ def initialise(worker_object):
     except:
         return False
 
-    # The following lines are required if you want visualisation from the Node itself. If this Node doesn't have its
-    # own visualisation then you do not need the vis object.
-    # If you do not change the Visualisation object's visualisation_loop then the Visualisation will assume the data is
-    # an image and use cv2 to try and display it. For examples of different visualisations see the Visualiser Node's
-    # worker script.
-    global need_parameters
-    vis = Visualisation(worker_object.node_name, worker_object.node_index)
-    vis.visualisation_init()
+    # VISUALISATION
+    # The following three lines are required if you want visualisation from the Node itself. There are currently four
+    # visualisation types ('Image', 'Value', 'Single Pane Plot', 'Multi Pane Plot') you can choose from. See the
+    # gui.visualisation_dpg.VisualisationDPG class.
+    visualisation_type = 'Value'
+    buffer = 20
+    vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
+                           _visualisation_type=visualisation_type, _buffer=buffer)
+
+    # RELIC
+    # If you want the possibility to save the parameters as you update them live during a Graph running then add the
+    # following line. The names parameter_var_1, parameter_var_2, etc. will be the names of the columns in the saved
+    # pandas dataframe.
+    worker_object.relic_create_parameters_df(parameter_var_1=global_var_1, parameter_var_2=global_var_2,
+                                             parameter_var_3=global_var_3, parameter_var_4=global_var_4)
 
     # Do other initialisation stuff
     return True
@@ -78,13 +84,14 @@ def initialise(worker_object):
 
 #  The worker_function of the Source Operation has access to the SourceWorker worker_object
 def work_function(worker_object):
-    global need_parameters
     global running
     global vis
     global global_var_1
     global global_var_2
     global global_var_3
     global global_var_4
+
+    need_parameters = True
 
     # You can check if the parameters have been grabbed from the Node's GUI
     while need_parameters:
@@ -125,21 +132,28 @@ def work_function(worker_object):
         # Do stuff
         result = np.random.random((100, 100))
 
-        # Send whatever needs to be visualised to the visualisation object
-        vis.visualised_data = result
+        # Save something to the Relic. This is optional.
+        worker_object.relic_update_substate_df(result_shape=result.shape)
+
+        # Whatever data the Node must visualise should be passed to the vis.visualise function
+        vis.visualise(result)
 
         # This line doesn't exist in the Transform and Sink work_functions but is required here because, in the Source
         # case it is the work_function that needs to push the data to the com process.
-        worker_object.socket_push_data.send_array(result, copy=False)
+        # The result needs to be a numpy array. Source Nodes do not allow more than one output (see the worker template)
+        worker_object.send_data_to_com(result)
 
+        # Maybe add a delay (in ms)
         gu.accurate_delay(100)
 
 
 def on_end_of_life():
     global running
     global vis
+    # If using in Node visualisation then the vis object must be cleared here like this
+    vis.end_of_life()
 
-    vis.kill()
+    # The following line will stop the infinite loop before the process closes down.
     running = False
 
 

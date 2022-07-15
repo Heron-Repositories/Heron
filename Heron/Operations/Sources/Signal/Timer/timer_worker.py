@@ -10,6 +10,8 @@ sys.path.insert(0, path.dirname(current_dir))
 import numpy as np
 import scipy.stats as ss
 from Heron import general_utils as gu
+from Heron.gui.visualisation_dpg import VisualisationDPG
+
 
 running = False
 finish = False
@@ -18,6 +20,7 @@ delay_generator: str
 a: float
 b: float
 c: float
+vis: VisualisationDPG
 
 
 def constant(a, b, c):
@@ -55,11 +58,12 @@ def initialise(_worker_object):
     global delay_generator
     global a, b, c
     global running
+    global vis
 
     worker_object = _worker_object
 
     try:
-        worker_object.visualisation_on = worker_object.parameters[0]
+        visualisation_on = worker_object.parameters[0]
         signal_out = worker_object.parameters[1]
         delay_generator_str = worker_object.parameters[2].split(':')[0]
         a, b, c = worker_object.parameters[3], worker_object.parameters[4], worker_object.parameters[5]
@@ -91,22 +95,26 @@ def run_timer(worker_object):
     global a, b, c
     global running
     global finish
+    global vis
 
     while not running and not finish:
         gu.accurate_delay(0.1)
 
-    worker_object.relic_create_parameters_df(visualisation_on=worker_object.visualisation_on,
+    worker_object.relic_create_parameters_df(visualisation_on=worker_object.parameters[0],
                                              signal_out=signal_out,
                                              delay_generator=delay_generator.__name__,
                                              a=a, b=b, c=c)
+    vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
+                           _visualisation_type='Value', _buffer=20)
 
     while running and not finish:
         visualise = worker_object.parameters[0]
+        vis.visualisation_on = visualise
+
         result = np.array([signal_out])
         worker_object.send_data_to_com(result)
 
-        if visualise:
-            print(result)
+        vis.visualise(result)
 
         sleep_for = 1000 * delay_generator(a, b, c)
         gu.accurate_delay(sleep_for)
@@ -115,9 +123,12 @@ def run_timer(worker_object):
 def on_end_of_life():
     global running
     global finish
+    global vis
 
     finish = True
     running = False
+
+    vis.end_of_life()
 
 
 if __name__ == "__main__":

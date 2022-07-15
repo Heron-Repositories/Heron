@@ -1,9 +1,12 @@
 
+Installation & Startup
+======================
+
 Installation
-============
+------------
 
 The hardcore way (as of |today|)
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Heron was designed so that it doesn't require installation.
 You can download the code from its github repository and just run it (check out the Startup paragraph on what running
@@ -93,34 +96,58 @@ or (but not both!)
 
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
-The standard way
------------------
+The standard ways
+^^^^^^^^^^^^^^^^^
 
-Heron can also be installed as a pip package. Just do
+Heron will, in the near future, also be available as a pip package.
+The pip install will have as requirements everything mentioned above except openCV.
 
-.. code-block:: python
 
-    pip install heron_of_alexandria
-
-The pip install has as requirements everything mentioned above except openCV.
-
+At some point after that a conda package will be released, but currently this is lower on the priority list.
 
 Node requirements
------------------
+^^^^^^^^^^^^^^^^^
 
 The above requirements are for Heron and the Nodes that come bundled together in the Heron repository.
-The `heron-repos <https://github.com/Heron-Repositories>`_ holds some more Nodes, and hopefully in the future there will be
-many more of them. Each Node has its own imports and the environment that runs the worker script of a Node
+The `heron-repos <https://github.com/Heron-Repositories>`_ holds more Nodes, and in the future there will be
+many more of them. Each Node has its own imports and the environment that runs the worker script of some Nodes
 needs to have all the required packages both for the basic Heron functionality and for the Nodes it is
 running.
 
 Environments
-------------
+^^^^^^^^^^^^^
 
 It is not a bad idea to put Heron and its basic needs all in a single environment separate from everything else.
 On the other hand as long as you keep your environment consistent Heron won't complain. The way Heron operates though
 allows you to have Nodes that work only in different environments than Heron's and with requirements that would clash
 with each other and still be used in the same pipeline (again see :doc:`lan_use`).
+
+Startup
+-------
+
+Heron's GUI is just a Python script so the way to run it is by calling in a command line the following code
+
+.. code-block:: bash
+
+    python directory_path_to_Heron/Heron/gui/editor.py
+
+If you have used an environment you need to first activate that. If you are on Windows and you do not want to deal
+with command lines all the time then make a batch file (e.g. Heron.bat) and put in it whatever you would write on your
+command line. So if for example you have set up a conda environment called base then put in the batch file this:
+
+.. code-block:: bash
+
+    CALL conda activate base
+    python directory_path_to_Heron\Heron\gui\editor.py
+
+If you are on Linux the assumption is you do not need this manual to set up a bash file.
+
+
+
+
+
+
+
 
 
 
