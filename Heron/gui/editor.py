@@ -54,7 +54,7 @@ def generate_node_tree():
     dir_id = 100000
     for d in os.walk(path_to_nodes):
         if len(d[1]) > 0:
-            temp = d[0].split('\\')
+            temp = d[0].split(os.path.sep)
             i = -1
             parent = ''
             while temp[i] != 'Heron':
