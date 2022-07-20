@@ -21,7 +21,7 @@ If the worker process is running on a different machine then neither the debugge
 statements will pass their output to the main machine and Heron's command line window. In order to solve this (and to
 also keep a general eye on Heron's overall performance) Heron has implemented two levels of Python's logging.
 
-The com process verbosity and log
+The com process's verbosity and log
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Each Node's secondary window provides an entry named 'Log file or Verbosity level'. There a user can set either a number
 (for now all numbers do the same thing but in the future there might be more verbosity levels) or a full path to a log
