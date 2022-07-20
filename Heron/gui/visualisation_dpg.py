@@ -122,11 +122,12 @@ class VisualisationDPG:
         Formats the self.data (assuming it is a 1D or 2D array) and puts them to a single plot window of a DPG window
         :return: Nothing
         """
-        if self.buffer == -1:
+
+        if self.buffer == -1 or self.buffer > self.data.shape[-1]:
             length_to_show = self.data.shape[-1]
         else:
             length_to_show = self.buffer
-
+        print('Length = {}'.format(length_to_show))
         number_of_lines = 1
         if len(self.data.shape) > 1:
             number_of_lines = self.data.shape[0]
@@ -134,15 +135,15 @@ class VisualisationDPG:
         if not self.initialised_plots:
             for n in np.arange(0, number_of_lines):
                 self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show), 
-                                                                             self.data[n:length_to_show],
+                                                                             self.data[n, -length_to_show:],
                                                                              parent=self.dpg_ids['y_axis'])
             self.initialised_plots = True
 
         if number_of_lines > 1:
             for n in np.arange(number_of_lines):
-                dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n:length_to_show]])
+                dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n, -length_to_show:]])
         else:
-            dpg.set_value(self.dpg_ids['Plot line {}'.format(0)], [np.arange(length_to_show), self.data[:length_to_show]])
+            dpg.set_value(self.dpg_ids['Plot line {}'.format(0)], [np.arange(length_to_show), self.data[-length_to_show:]])
         dpg.fit_axis_data(self.dpg_ids['x_axis'])
 
     def _show_2d_plot(self):
@@ -151,7 +152,7 @@ class VisualisationDPG:
         DPG window
         :return: Nothing
         """
-        if self.buffer == -1:
+        if self.buffer == -1 or self.buffer > self.data_shape[-1]:
             length_to_show = self.data.shape[-1]
         else:
             length_to_show = self.buffer
@@ -181,12 +182,12 @@ class VisualisationDPG:
                     dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_labels[n], parent=self.dpg_ids[plot_title[n]])
 
                 self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show),
-                                                                             self.data[n, :length_to_show],
+                                                                             self.data[n, -length_to_show:],
                                                                              parent=self.dpg_ids['y_axis {}'.format(n)])
             self.initialised_plots = True
 
         for n in np.arange(number_of_lines):
-            dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n, :length_to_show]])
+            dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n, -length_to_show:]])
 
     def _update_dpg_gui(self):
         """
@@ -320,6 +321,7 @@ class VisualisationDPG:
         :return:
         '''
         self.data = data
+
         try:
             if self.visualisation_type == 'Image':
                 self._show_image()
