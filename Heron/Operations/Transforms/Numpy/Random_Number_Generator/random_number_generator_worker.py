@@ -32,7 +32,7 @@ def initialise(worker_object):
     return True
 
 
-def create_evaulation_string(parameters):
+def create_evaluation_string(parameters):
     function_name = parameters[1].split(':')[0]
     functions_arguments = [t.split('=')[1] for t in parameters[1].split(':')[1].split(',')]
     number_of_variables = len(parameters[1].split(':')[1].split(','))
@@ -52,7 +52,7 @@ def random_number(data, parameters):
         return np.array([ct.IGNORE])
     else:
         vis.visualisation_on = parameters[0]
-        evaluated_string = create_evaulation_string(parameters)
+        evaluated_string = create_evaluation_string(parameters)
         result = eval(evaluated_string)
         if type(result) is not np.ndarray:
             result = np.array([result])
