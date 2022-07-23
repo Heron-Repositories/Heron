@@ -36,7 +36,7 @@ function and the Source Nodes' worker function and through the relic_update_subs
 argument to the worker functions of the Transform and Sink Nodes every time they are called by Heron.
 
 More sepcifically the worker_object has two methods (relic_create_parameters_df and relic_update_substate_df) and a
-variable (num_of_iters) that pertain to the Relic system.
+variable (num_of_iters_to_update_relics_substate) that pertain to the Relic system.
 
 Saving the parameters
 ^^^^^^^^^^^^^^^^^^^^^
@@ -96,15 +96,18 @@ The Parameters dataframe, as mentioned above is automatically updates every time
 operation especially if it needs to happen many times per second (at the speed at which a fast Node might need to
 call its worker function) and/or that data saved are large.
 
-Currently the Node's developer and users can control every when Heron will save the dataframe (which is constantly being
+Currently the Node's developer and users can control when Heron will save the dataframe (which is constantly being
 updated in RAM) to disk. This is achieved either through a global variable found in the constants script called
-NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE or through a Node specific variable called num_of_iters the the
-worker object exposes. If the num_of_iters is set then it takes precedence over the global variable.
+NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE or through a Node specific variable called
+num_of_iters_to_update_relics_substate the worker object exposes. If the num_of_iters_to_update_relics_substate is set
+then it takes precedence over the global variable.
 
-If the num_of_iters (or the NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE when no num_of_iters is set for the Node)
-is set to -1 then the Relic system will update the Substate dataframe to disk every time the relic_update_substate_df
-function is called (which might or might not be at every itteration of the Node according to how the users has implemented
-the relic_update_substate_df function).
+If the num_of_iters_to_update_relics_substate (or the NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE when no
+num_of_iters_to_update_relics_substate is set for the Node) is set to -1 then the Relic system will not update the
+Substate dataframe to disk until the process is about to terminate. There is a tradeoff here. If the relic's dataframe
+is saved to disk only as the process closes down then any crash that would abnormally terminate the process without
+allowing it to run its end_of_life function will mean loss of the relic's dataframe. On the other hand long running
+processes in machines with small RAM might run out of memory while keeping the dataframe in RAM.
 
 
 Loading saved Relics

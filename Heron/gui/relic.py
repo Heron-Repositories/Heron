@@ -1,5 +1,7 @@
 
 import os
+import threading
+
 import pandas as pd
 from datetime import datetime
 from Heron import constants as ct
@@ -137,12 +139,24 @@ class HeronRelic():
             variables['DateTime'] = datetime.now()
             variables['WorkerIndex'] = worker_index
 
-            row = pd.DataFrame([variables])
-            self.temp_substate_pandasdf = pd.concat([self.temp_substate_pandasdf, row], ignore_index=True)
-            self.temp_substate_pandasdf.reset_index(drop=True, inplace=True)
+            update_thread = threading.Thread(target=self.update_the_substate_pandasdf_thread,
+                                             args=(worker_index, variables))
+            update_thread.start()
 
-            if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
-                self.save_current_substate_df()
+    def update_the_substate_pandasdf_thread(self, worker_index, variables):
+        """
+        The thread spawned to do the relic substate update of the pandasdf as described in the
+        update_the_substate_pandasdf function (which is calling this thread)
+        :param worker_index: The index of the worker function iteration
+        :param variables: The variables saved in the dataframe passed as a dict
+        :return:
+        """
+        row = pd.DataFrame([variables])
+        self.temp_substate_pandasdf = pd.concat([self.temp_substate_pandasdf, row], ignore_index=True)
+        self.temp_substate_pandasdf.reset_index(drop=True, inplace=True)
+
+        if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
+            self.save_current_substate_df()
 
     def save_current_substate_df(self):
         """
