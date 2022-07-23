@@ -127,16 +127,22 @@ class VisualisationDPG:
             length_to_show = self.data.shape[-1]
         else:
             length_to_show = self.buffer
-        print('Length = {}'.format(length_to_show))
-        number_of_lines = 1
+
         if len(self.data.shape) > 1:
             number_of_lines = self.data.shape[0]
+            if not self.initialised_plots:
+                for n in np.arange(0, number_of_lines):
+                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show).tolist(),
+                                                                                 self.data[n, -length_to_show:],
+                                                                                 parent=self.dpg_ids['y_axis'])
+        else:
+            number_of_lines = 1
+            if not self.initialised_plots:
+                for n in np.arange(0, number_of_lines):
+                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show).tolist(),
+                                                                                 self.data[-length_to_show:],
+                                                                                 parent=self.dpg_ids['y_axis'])
 
-        if not self.initialised_plots:
-            for n in np.arange(0, number_of_lines):
-                self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show), 
-                                                                             self.data[n, -length_to_show:],
-                                                                             parent=self.dpg_ids['y_axis'])
             self.initialised_plots = True
 
         if number_of_lines > 1:
