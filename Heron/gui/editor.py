@@ -397,9 +397,9 @@ def load_graph():
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
                     try:
-                        n.relic_verbosity = value['relic_verbosity']
+                        n.savenodestate_verbosity = value['relic_verbosity']
                         n.com_verbosity = value['com_verbosity']
-                        n.verbose = '{}||{}'.format(n.com_verbosity, n.relic_verbosity)
+                        n.verbose = '{}||{}'.format(n.com_verbosity, n.savenodestate_verbosity)
                     except:
                         n.verbose = value['verbose']
                     n.context = value['context']

@@ -37,7 +37,7 @@ class Node:
         self.node_parameters_combos_items = []
         self.parameter_inputs_ids = {}
         self.com_verbosity = ''
-        self.relic_verbosity = ''
+        self.savenodestate_verbosity = ''
         self.verbose = ''
         self.context = None
         self.socket_pub_parameters = None
@@ -94,8 +94,8 @@ class Node:
 
     def remove_from_editor(self):
         dpg.remove_alias('verb#{}#{}'.format(self.operation.name, self.node_index))
-        if dpg.does_alias_exist('relic#{}#{}'.format(self.operation.name, self.node_index)):
-            dpg.remove_alias('relic#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('savenodestate#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
         dpg.delete_item(self.id)
 
     def get_numbers_of_inputs_and_outputs(self):
@@ -319,24 +319,24 @@ class Node:
                                        tag='verb#{}#{}'.format(self.operation.name, self.node_index))
 
                 if importlib.util.find_spec('reliquery') is not None:
-                    # Create the relic input only if reliquery is present
+                    # Create the savenodestate input only if reliquery is present
                     with dpg.group(horizontal=True):
                         dpg.add_spacer(width=10)
-                        dpg.add_text(default_value='Save Relic to directory:')
+                        dpg.add_text(default_value='Save the Node State to directory:')
 
                     with dpg.group(horizontal=True):
                         dpg.add_spacer(width=10)
-                        dpg.add_input_text(default_value=self.relic_verbosity, callback=self.update_verbosity,
-                                           hint='The path where the Relic for this worker process will be saved',
-                                           tag='relic#{}#{}'.format(self.operation.name, self.node_index))
+                        dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
+                                           hint='The path where the Node State for this worker process will be saved',
+                                           tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
 
     def update_verbosity(self, sender, data):
         self.com_verbosity = ''
-        self.relic_verbosity = ''
+        self.savenodestate_verbosity = ''
         if importlib.util.find_spec('reliquery') is not None:
-            self.relic_verbosity = dpg.get_value('relic#{}#{}'.format(self.operation.name, self.node_index))
+            self.savenodestate_verbosity = dpg.get_value('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
         self.com_verbosity = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
-        self.verbose = '{}||{}'.format(self.com_verbosity, self.relic_verbosity)
+        self.verbose = '{}||{}'.format(self.com_verbosity, self.savenodestate_verbosity)
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',

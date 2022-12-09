@@ -15,12 +15,14 @@ from Heron.gui.visualisation_dpg import VisualisationDPG
 acquiring_on = False
 capture = None
 vis: VisualisationDPG
+frame=0
 
 
 def run_camera(worker_object):
     global capture
     global acquiring_on
     global vis
+    global frame
 
     vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
                            _visualisation_type='Image', _buffer=1)
@@ -44,6 +46,8 @@ def run_camera(worker_object):
     while acquiring_on:
 
         ret, result = capture.read()
+        worker_object.savenodestate_update_substate_df(frame=frame)
+        frame += 1
         worker_object.send_data_to_com(result)
         try:
             vis.visualisation_on = worker_object.parameters[0]
