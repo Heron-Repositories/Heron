@@ -32,7 +32,7 @@ NUMBER_OF_INITIAL_PARAMETERS_UPDATES = 5
 
 IGNORE = 'Ignore'
 
-NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE = 1000
+NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE = 1000
 
 # Use this delay in order to allow multiple output, multiple links per output Nodes to function. 0.2ms is the smallest
 # delay to allow any number of outputs and links to the next Node to function.

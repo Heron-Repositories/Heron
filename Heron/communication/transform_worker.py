@@ -10,12 +10,12 @@ from Heron import constants as ct
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
-from Heron.gui.relic import HeronRelic
+from Heron.gui.save_node_state import SaveNodeState
 
 
 class TransformWorker:
     def __init__(self, recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function,
-                 parameters_topic, num_sending_topics, relic_path,
+                 parameters_topic, num_sending_topics, savenodestate_path,
                  ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' '):
 
         self.pull_data_port = pull_port
@@ -30,10 +30,9 @@ class TransformWorker:
         self.node_name = parameters_topic.split('##')[-2]
         self.node_index = self.parameters_topic.split('##')[-1]
 
-        self.relic_path = relic_path
-        self.import_reliquery()
-        self.heron_relic = None
-        self.num_of_iters_to_update_relics_substate = None
+        self.savenodestate_path = savenodestate_path
+        self.heron_savenodestate = None
+        self.num_of_iters_to_update_savenodestate_substate = None
 
         self.ssh_com = SSHCom(ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                               ssh_local_password=ssh_local_password)
@@ -124,7 +123,7 @@ class TransformWorker:
             data = [data[0].bytes, data[1].bytes, data[2].bytes]
 
             try:
-                results = self.work_function(data, self.parameters, self.relic_update_substate_df)
+                results = self.work_function(data, self.parameters, self.savenodestate_update_substate_df)
             except TypeError:
                 results = self.work_function(data, self.parameters)
 
@@ -141,41 +140,26 @@ class TransformWorker:
                 send_topics += 1
             self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
 
-    def import_reliquery(self):
+    def savenodestate_create_parameters_df(self, **parameters):
         """
-        This import is required because it takes a good few seconds to load the package and if the import is done
-        first time in the HeronRelic instance that delays the initialisation of the worker process which can be
-        a problem
-        :return: Nothing
-        """
-        #
-        if self.relic_path != '_':
-            try:
-                import reliquery
-                import reliquery.storage
-            except ImportError:
-                pass
-
-    def relic_create_parameters_df(self, **parameters):
-        """
-        Creates a new relic with the Parameters pandasdf in it or adds the Parameters pandasdf in the existing Node's
+        Creates a new savenodestate with the Parameters pandasdf in it or adds the Parameters pandasdf in the existing Node's
         Relic.
         :param parameters: The dictionary of the parameters. The keys of the dict will become the column names of the
         pandasdf
         :return: Nothing
         """
-        self._relic_create_df('Parameters', **parameters)
+        self._savenodestate_create_df('Parameters', **parameters)
 
-    def relic_create_substate_df(self, **variables):
+    def savenodestate_create_substate_df(self, **variables):
         """
-        Creates a new relic with the Substate pandasdf in it or adds the Substate pandasdf in the existing Node's Relic.
+        Creates a new savenodestate with the Substate pandasdf in it or adds the Substate pandasdf in the existing Node's Relic.
         :param variables: The dictionary of the variables to save. The keys of the dict will become the column names of
         the pandasdf
         :return: Nothing
         """
-        self._relic_create_df('Substate', **variables)
+        self._savenodestate_create_df('Substate', **variables)
 
-    def _relic_create_df(self, type, **variables):
+    def _savenodestate_create_df(self, type, **variables):
         """
         Base function to create either a Parameters or a Substate pandasdf in a new or the existing Node's Relic
         :param type: Parameters or Substate
@@ -183,19 +167,19 @@ class TransformWorker:
         olumn names of the pandasdf
         :return: Nothing
         """
-        if self.heron_relic is None:
-            self.heron_relic = HeronRelic(self.relic_path, self.node_name,
-                                          self.node_index, self.num_of_iters_to_update_relics_substate)
-        if self.heron_relic.operational:
-            self.heron_relic.create_the_pandasdf(type, **variables)
+        if self.heron_savenodestate is None:
+            self.heron_savenodestate = SaveNodeState(self.savenodestate_path, self.node_name,
+                                                  self.node_index, self.num_of_iters_to_update_savenodestate_substate)
+        if self.heron_savenodestate.operational:
+            self.heron_savenodestate.create_the_pandasdf(type, **variables)
 
-    def relic_update_substate_df(self, **variables):
+    def savenodestate_update_substate_df(self, **variables):
         """
         Updates the Substate pandasdf of the Node's Relic
         :param variables: The Substate's variables dict
         :return: Nothing
         """
-        self.heron_relic.update_the_substate_pandasdf(self.index, **variables)
+        self.heron_savenodestate.update_the_substate_pandasdf(self.index, **variables)
 
     def parameters_callback(self, parameters_in_bytes):
         """
@@ -214,8 +198,8 @@ class TransformWorker:
                     self.initialised = self.initialisation_function(self)
             #print('Updated parameters in {} = {}'.format(self.parameters_topic, args))
 
-                if self.initialised and self.heron_relic is not None and self.heron_relic.operational:
-                    self.heron_relic.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
+                if self.initialised and self.heron_savenodestate is not None and self.heron_savenodestate.operational:
+                    self.heron_savenodestate.update_the_parameters_pandasdf(parameters=self.parameters, worker_index=self.index)
 
     def heartbeat_callback(self, pulse):
         """
@@ -279,8 +263,8 @@ class TransformWorker:
     def on_kill(self, pid):
         print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
 
-        if self.heron_relic is not None and self.heron_relic.substate_pandasdf_exists:
-            self.heron_relic.save_substate_at_death()
+        if self.heron_savenodestate is not None and self.heron_savenodestate.substate_pandasdf_exists:
+            self.heron_savenodestate.save_substate_at_death()
 
         try:
             self.visualisation_on = False

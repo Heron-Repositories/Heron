@@ -70,7 +70,7 @@ class HeronRelic():
         self.substate_pandasdf_exists = False
         self.temp_substate_pandasdf = None
 
-        self.num_of_iters = ct.NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE
+        self.num_of_iters = ct.NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE
         if num_of_iters is not None:
             self.num_of_iters = num_of_iters
 

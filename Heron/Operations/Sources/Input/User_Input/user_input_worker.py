@@ -54,9 +54,9 @@ def start_user_input_capture(_worker_object):
     while not loop_on and not finish:
         gu.accurate_delay(1)
 
-    _worker_object.relic_create_parameters_df(visualisation_on=False,
-                                              output_type=output_type,
-                                              user_input=latest_user_input)
+    _worker_object.savenodestate_create_parameters_df(visualisation_on=False,
+                                                      output_type=output_type,
+                                                      user_input=latest_user_input)
 
     while loop_on and not finish:
         try:
@@ -73,7 +73,7 @@ def start_user_input_capture(_worker_object):
                 if output_type == 'float':
                     latest_user_input = [float(i) for i in latest_user_input.split(' ')]
 
-                _worker_object.relic_update_substate_df(user_input=latest_user_input)
+                _worker_object.savenodestate_update_substate_df(user_input=latest_user_input)
 
                 result = np.array([latest_user_input])
                 _worker_object.send_data_to_com(result)

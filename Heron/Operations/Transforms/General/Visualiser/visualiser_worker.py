@@ -27,9 +27,9 @@ def initialise(_worker_object):
     visualisation_dpg = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
                                          _visualisation_type=visualisation_type, _buffer=buffer)
 
-    worker_object.relic_create_parameters_df(visualisation_on=visualisation_on,
-                                              visualisation_type=visualisation_type,
-                                              buffer=buffer)
+    worker_object.savenodestate_create_parameters_df(visualisation_on=visualisation_on,
+                                                     visualisation_type=visualisation_type,
+                                                     buffer=buffer)
     return True
 
 

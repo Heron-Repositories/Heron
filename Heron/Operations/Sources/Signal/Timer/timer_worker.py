@@ -100,10 +100,10 @@ def run_timer(worker_object):
     while not running and not finish:
         gu.accurate_delay(0.1)
 
-    worker_object.relic_create_parameters_df(visualisation_on=worker_object.parameters[0],
-                                             signal_out=signal_out,
-                                             delay_generator=delay_generator.__name__,
-                                             a=a, b=b, c=c)
+    worker_object.savenodestate_create_parameters_df(visualisation_on=worker_object.parameters[0],
+                                                     signal_out=signal_out,
+                                                     delay_generator=delay_generator.__name__,
+                                                     a=a, b=b, c=c)
     vis = VisualisationDPG(_node_name=worker_object.node_name, _node_index=worker_object.node_index,
                            _visualisation_type='Value', _buffer=20)
 

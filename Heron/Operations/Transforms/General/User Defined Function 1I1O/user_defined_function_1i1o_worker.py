@@ -47,7 +47,7 @@ def initialise(worker_object):
     except:
         return False
 
-    worker_object.relic_create_parameters_df(functions_path=functions_path)
+    worker_object.savenodestate_create_parameters_df(functions_path=functions_path)
 
     return True
 

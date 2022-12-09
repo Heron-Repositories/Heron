@@ -58,9 +58,9 @@ def save_video(data, parameters):
                 add_timestamp_to_filename()
             need_parameters = False
 
-            worker_object.num_of_iters_to_update_relics_substate = 3600 * 120  # Every hour
-            worker_object.relic_create_parameters_df(file_name=file_name, time_stamp=time_stamp,
-                                                     fourcc=fourcc_str, fps=fps)
+            worker_object.num_of_iters_to_update_savenodestate_substate = 3600 * 120  # Every hour
+            worker_object.savenodestate_create_parameters_df(file_name=file_name, time_stamp=time_stamp,
+                                                             fourcc=fourcc_str, fps=fps)
         except:
             return
     else:
@@ -82,7 +82,7 @@ def save_video(data, parameters):
             video_out = cv2.VideoWriter(file_name, fourcc, fps, (w, h), c)
             start_timer = time.perf_counter()
 
-        worker_object.relic_update_substate_df(image_size=size)
+        worker_object.savenodestate_update_substate_df(image_size=size)
 
 
 def on_end_of_life():

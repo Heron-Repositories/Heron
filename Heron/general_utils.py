@@ -234,7 +234,7 @@ def start_the_source_worker_process(work_function, end_of_life_function, initial
     worker_object = SourceWorker(port=port, parameters_topic=parameters_topic,
                                  initialisation_function=initialisation_function,
                                  end_of_life_function=end_of_life_function,
-                                 num_sending_topics=num_sending_topics, relic_path=relic,
+                                 num_sending_topics=num_sending_topics, savenodestate_path=relic,
                                  ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                  ssh_local_password=ssh_local_password)
     worker_object.connect_socket()
@@ -286,7 +286,7 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
     worker_object = TransformWorker(recv_topics_buffer=buffer, pull_port=pull_port,
                                     initialisation_function=initialisation_function, work_function=work_function,
                                     end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                                    num_sending_topics=num_sending_topics, relic_path=relic,
+                                    num_sending_topics=num_sending_topics, savenodestate_path=relic,
                                     ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                     ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()
@@ -333,7 +333,7 @@ def start_the_sink_worker_process(work_function, end_of_life_function, initialis
     worker_object = SinkWorker(recv_topics_buffer=buffer, pull_port=pull_port,
                                initialisation_function=initialisation_function, work_function=work_function,
                                end_of_life_function=end_of_life_function, parameters_topic=parameters_topic,
-                               num_sending_topics=num_sending_topics, relic_path=relic,
+                               num_sending_topics=num_sending_topics, savenodestate_path=relic,
                                ssh_local_ip=ssh_local_ip, ssh_local_username=ssh_local_username,
                                ssh_local_password=ssh_local_password)
     worker_object.connect_sockets()

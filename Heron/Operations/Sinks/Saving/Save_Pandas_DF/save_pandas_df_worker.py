@@ -68,8 +68,8 @@ def initialise(_worker_object):
 
     df = pd.DataFrame(columns=column_names)
 
-    worker_object.relic_create_parameters_df(visualisation_on=vis, column_names=column_names, file_name=file_name,
-                                             overwrite_file=overwrite_file)
+    worker_object.savenodestate_create_parameters_df(visualisation_on=vis, column_names=column_names, file_name=file_name,
+                                                     overwrite_file=overwrite_file)
     return True
 
 

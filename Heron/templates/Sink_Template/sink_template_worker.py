@@ -71,8 +71,8 @@ def initialise(_worker_object):
     # If you want the possibility to save the parameters as you update them live during a Graph running then add the
     # following line. The names parameter_var_1, parameter_var_2, etc. will be the names of the columns in the saved
     # pandas dataframe.
-    _worker_object.relic_create_parameters_df(parameter_var_1=global_var_1, parameter_var_2=global_var_2,
-                                              parameter_var_3=global_var_3, parameter_var_4=global_var_4)
+    _worker_object.savenodestate_create_parameters_df(parameter_var_1=global_var_1, parameter_var_2=global_var_2,
+                                                      parameter_var_3=global_var_3, parameter_var_4=global_var_4)
 
     # Do other initialisation stuff
     return True

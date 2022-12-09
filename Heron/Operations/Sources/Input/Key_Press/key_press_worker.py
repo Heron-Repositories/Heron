@@ -71,7 +71,7 @@ def start_key_press_capture(_worker_object):
     listener = Listener(on_press=on_key_pressed, on_release=on_key_released)
     listener.start()
 
-    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, key='')
+    worker_object.savenodestate_create_parameters_df(visualisation_on=vis.visualisation_on, key='')
 
     while loop_on:
         try:
@@ -85,7 +85,7 @@ def start_key_press_capture(_worker_object):
             data = np.array([waiting_for_key])
             vis.visualise(data)
             worker_object.send_data_to_com(data)
-            worker_object.relic_update_substate_df(key_pressed=data)
+            worker_object.savenodestate_update_substate_df(key_pressed=data)
             key_pressed_and_released = [None, None]
         try:
             vis.visualisation_on = worker_object.parameters[0]

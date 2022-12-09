@@ -30,7 +30,7 @@ def initialise(worker_object):
     vis = Visualisation(worker_object.node_name, worker_object.node_index)
     vis.visualisation_init()
 
-    worker_object.relic_create_parameters_df(visualisation_on=vis.visualisation_on, x_shape=x_shape, y_shape=y_shape)
+    worker_object.savenodestate_create_parameters_df(visualisation_on=vis.visualisation_on, x_shape=x_shape, y_shape=y_shape)
 
     return True
 

@@ -37,8 +37,8 @@ def run_camera(worker_object):
             except:
                 cv2.waitKey(1)
 
-    worker_object.relic_create_parameters_df(visualisation_on=False,
-                                             camera_index=cam_index)
+    worker_object.savenodestate_create_parameters_df(visualisation_on=False,
+                                                     camera_index=cam_index)
     worker_object.initialised = True
 
     while acquiring_on:
