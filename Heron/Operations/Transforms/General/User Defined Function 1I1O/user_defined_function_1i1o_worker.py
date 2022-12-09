@@ -42,7 +42,6 @@ def initialise(worker_object):
         functions_dir = path.dirname(path.abspath(functions_path))
         functions_name = path.basename(path.abspath(functions_path)).split('.')[0]
         sys.path.insert(0, functions_dir)
-
         module = ilb.import_module(functions_name)
         function = getattr(module, 'function')
     except:
