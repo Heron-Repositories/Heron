@@ -269,9 +269,10 @@ class VisualisationDPG:
         Stops the DPG loop
         :return: Nothing
         """
-        dpg.stop_dearpygui()
         self.visualiser_showing = False
         self.is_dearpygui_running = False
+
+        dpg.stop_dearpygui()
 
     def _dpg_visualisation_thread(self):
         """
@@ -290,7 +291,6 @@ class VisualisationDPG:
                 self._stop_dpg()
 
             gu.accurate_delay(10)
-
         self._stop_dpg()
 
     def _on_resize_viewport(self):

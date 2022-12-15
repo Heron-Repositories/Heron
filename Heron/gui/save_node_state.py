@@ -41,6 +41,7 @@ class SaveNodeState():
         self.substate_pandasdf: pd.DataFrame
 
         self.num_of_iters = ct.NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE
+
         if num_of_iters is not None:
             self.num_of_iters = num_of_iters
 
@@ -51,48 +52,51 @@ class SaveNodeState():
         column names
         :return: Nothing
         """
-        assert type == 'Parameters' or type == 'Substate', 'The type of the pandasdf in SaveNodeState.create_the_pandasdf()' \
-                                                           'must be either "Parameters" or "Substate"'
-        variables['DateTime'] = datetime.now()
-        variables['WorkerIndex'] = 0
 
-        df = pd.DataFrame([variables])
+        if self.operational:
+            assert type == 'Parameters' or type == 'Substate', 'The type of the pandasdf in SaveNodeState.create_the_pandasdf()' \
+                                                               'must be either "Parameters" or "Substate"'
+            variables['DateTime'] = datetime.now()
+            variables['WorkerIndex'] = 0
 
-        df['DateTime'] = pd.to_datetime(df['DateTime'], format='%Y-%m-%d %H:%M:%S')
-        df = rearrange_pandasdf_columns(df)
+            df = pd.DataFrame([variables])
 
-        folder = os.path.join(self.path, self.name)
+            df['DateTime'] = pd.to_datetime(df['DateTime'], format='%Y-%m-%d %H:%M:%S')
+            df = rearrange_pandasdf_columns(df)
 
-        if type == 'Parameters':
-            self.parameters_pandasdf_exists = True
-            self.parameters_pandasdf = df.copy(deep=True)
-            os.makedirs(folder, exist_ok=True)
-            self.parameters_pandasdf.to_pickle(os.path.join(self.path, self.name, 'Parameters.df'))
+            folder = os.path.join(self.path, self.name)
 
-        elif type == 'Substate':
-            self.substate_pandasdf_exists = True
-            self.substate_pandasdf = df.copy(deep=True)
-            os.makedirs(folder, exist_ok=True)
-            self.substate_pandasdf.to_pickle(os.path.join(self.path, self.name, 'Substate.df'))
+            if type == 'Parameters':
+                self.parameters_pandasdf_exists = True
+                self.parameters_pandasdf = df.copy(deep=True)
+                os.makedirs(folder, exist_ok=True)
+                self.parameters_pandasdf.to_pickle(os.path.join(self.path, self.name, 'Parameters.df'))
+
+            elif type == 'Substate':
+                self.substate_pandasdf_exists = True
+                self.substate_pandasdf = df.copy(deep=True)
+                os.makedirs(folder, exist_ok=True)
+                self.substate_pandasdf.to_pickle(os.path.join(self.path, self.name, 'Substate.df'))
 
     def save_current_df(self, type):
         """
         :return: Nothing
         """
-        assert type == 'Parameters' or type == 'Substate', 'The type of the pandasdf in SaveNodeState.save_current_df()' \
-                                                           'must be either "Parameters" or "Substate"'
+        if self.operational:
+            assert type == 'Parameters' or type == 'Substate', 'The type of the pandasdf in SaveNodeState.save_current_df()' \
+                                                               'must be either "Parameters" or "Substate"'
 
-        df = pd.read_pickle(os.path.join(self.path, self.name, '{}.df'.format(type)))
-        if type == 'Parameters':
-            df = pd.concat([df, self.parameters_pandasdf], ignore_index=True)
-            self.parameters_pandasdf = self.parameters_pandasdf.iloc[0:0].copy(deep=True)
-        elif type == 'Substate':
-            df = pd.concat([df, self.substate_pandasdf], ignore_index=True)
-            self.substate_pandasdf = self.substate_pandasdf.iloc[0:0].copy(deep=True)
+            df = pd.read_pickle(os.path.join(self.path, self.name, '{}.df'.format(type)))
+            if type == 'Parameters':
+                df = pd.concat([df, self.parameters_pandasdf], ignore_index=True)
+                self.parameters_pandasdf = self.parameters_pandasdf.iloc[0:0].copy(deep=True)
+            elif type == 'Substate':
+                df = pd.concat([df, self.substate_pandasdf], ignore_index=True)
+                self.substate_pandasdf = self.substate_pandasdf.iloc[0:0].copy(deep=True)
 
-        df.reset_index(drop=True, inplace=True)
+            df.reset_index(drop=True, inplace=True)
 
-        df.to_pickle(os.path.join(self.path, self.name, '{}.df'.format(type)))
+            df.to_pickle(os.path.join(self.path, self.name, '{}.df'.format(type)))
 
     def update_the_parameters_pandasdf(self, parameters: list, worker_index: int):
         """
@@ -102,7 +106,7 @@ class SaveNodeState():
         :param worker_index: The index of the iteration of the worker
         :return: Nothing
         """
-        if self.parameters_pandasdf_exists:
+        if self.parameters_pandasdf_exists and self.operational:
             parameters = [worker_index] + parameters
             parameters = [datetime.now()] + parameters
             row = pd.DataFrame([parameters])
@@ -127,15 +131,16 @@ class SaveNodeState():
         :return: Nothing
         """
 
-        if not self.substate_pandasdf_exists:
-            self.create_the_pandasdf(type='Substate', **variables)
+        if self.operational:
+            if not self.substate_pandasdf_exists:
+                self.create_the_pandasdf(type='Substate', **variables)
 
-        variables['DateTime'] = datetime.now()
-        variables['WorkerIndex'] = worker_index
+            variables['DateTime'] = datetime.now()
+            variables['WorkerIndex'] = worker_index
 
-        update_thread = threading.Thread(target=self.update_the_substate_pandasdf_thread,
-                                         args=(worker_index, variables))
-        update_thread.start()
+            update_thread = threading.Thread(target=self.update_the_substate_pandasdf_thread,
+                                             args=(worker_index, variables))
+            update_thread.start()
 
     def update_the_substate_pandasdf_thread(self, worker_index, variables):
         """
