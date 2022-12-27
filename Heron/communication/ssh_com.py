@@ -150,7 +150,10 @@ class SSHCom:
                     new_arguments_list.append(arguments_list[i])
             else:
                 new_arguments_list = arguments_list
-            return subprocess.Popen(new_arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP).pid
+
+            kwargs = {'start_new_session': True} if os.name == 'posix' else \
+                {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+            return subprocess.Popen(new_arguments_list, **kwargs).pid
         else:
             self.client.connect(self.remote_server_info['IP'],
                                 int(self.remote_server_info['Port']),

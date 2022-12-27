@@ -386,7 +386,11 @@ class Node:
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)
-        self.process = subprocess.Popen(arguments_list, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        kwargs = {'start_new_session': True} if os.name == 'posix' else \
+        {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+        self.process = subprocess.Popen(arguments_list, **kwargs)
+
         print('Started COM {}_{} process with PID = {}'.format(self.name, self.node_index, self.process.pid))
         # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).
         self.wait_for_proof_of_life()

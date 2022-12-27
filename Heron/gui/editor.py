@@ -196,8 +196,10 @@ def start_forwarders_process(path_to_com):
     """
     global forwarders
 
+    kwargs = {'start_new_session': True} if os.name == 'posix' else \
+        {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
     forwarders = subprocess.Popen(['python', os.path.join(path_to_com, 'forwarders.py'), 'False', 'False', 'False'],
-                                  creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                                  **kwargs)
 
     print('Main loop PID = {}'.format(os.getpid()))
     print('Forwarders PID = {}'.format(forwarders.pid))
