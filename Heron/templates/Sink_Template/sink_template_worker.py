@@ -87,7 +87,7 @@ def initialise(_worker_object):
 # Graph pipeline is running.
 # The data is a list with two items. The first is the topic of the connection. If the Node has multiple Inputs then
 # the topic will tell you which Input the data packet arrived from.
-def work_function(data, parameters, relic_update_substate_df):
+def work_function(data, parameters, savenodestate_update_substate_df):
     global global_var_1
     global global_var_2
     global global_var_3
@@ -144,7 +144,7 @@ def work_function(data, parameters, relic_update_substate_df):
     # Save something to the Relic. This is optional. If you do not use the Relic system to save some data then you
     # can define the work function as work_function(data, parameters) and not use the relic_update_substate_df
     # parameter
-    relic_update_substate_df(message_shape=message.shape)
+    savenodestate_update_substate_df(message_shape=message.shape)
 
     # Whatever data the Node must visualise should be passed to the vis.visualise function
     vis.visualise(some_data_to_visualise)

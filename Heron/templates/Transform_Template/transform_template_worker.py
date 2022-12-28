@@ -84,7 +84,7 @@ def initialise(_worker_object):
     return True
 
 
-def work_function(data, parameters, relic_update_substate_df):
+def work_function(data, parameters, savenodestate_update_substate_df):
     global vis
     global global_var_1
     global global_var_2
@@ -140,7 +140,7 @@ def work_function(data, parameters, relic_update_substate_df):
     # Save something to the Relic. This is optional. If you do not use the Relic system to save some data then you
     # can define the work function as work_function(data, parameters) and not use the relic_update_substate_df
     # parameter
-    relic_update_substate_df(image__shape=message.shape)
+    savenodestate_update_substate_df(image__shape=message.shape)
 
     # Whatever data the Node must visualise should be passed to the vis.visualise function
     vis.visualise(some_data_to_visualise)
