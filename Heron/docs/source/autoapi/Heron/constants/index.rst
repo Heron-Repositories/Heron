@@ -97,13 +97,13 @@ Module Contents
 
    
 
-.. py:data:: NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE
+.. py:data:: NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE
    :annotation: = 1000
 
    
 
 .. py:data:: DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS
-   :annotation: = 0.5
+   :annotation: = 0.3
 
    
 

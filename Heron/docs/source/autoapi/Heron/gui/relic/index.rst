@@ -83,6 +83,15 @@ Functions
       :return: Nothing
 
 
+   .. py:method:: update_the_substate_pandasdf_thread(self, worker_index, variables)
+
+      The thread spawned to do the relic substate update of the pandasdf as described in the
+      update_the_substate_pandasdf function (which is calling this thread)
+      :param worker_index: The index of the worker function iteration
+      :param variables: The variables saved in the dataframe passed as a dict
+      :return:
+
+
    .. py:method:: save_current_substate_df(self)
 
       This grabs the relic's Substate pandasdf, concatenates it with the self.temp_substate_pandasdf df and saves

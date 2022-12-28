@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: SinkWorker(recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function, parameters_topic, num_sending_topics, relic_path, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' ')
+.. py:class:: SinkWorker(recv_topics_buffer, pull_port, initialisation_function, work_function, end_of_life_function, parameters_topic, num_sending_topics, savenodestate_path, ssh_local_ip=' ', ssh_local_username=' ', ssh_local_password=' ')
 
    .. py:method:: connect_sockets(self)
 
@@ -38,32 +38,24 @@ Classes
       :return: Nothing
 
 
-   .. py:method:: import_reliquery(self)
+   .. py:method:: savenodestate_create_parameters_df(self, **parameters)
 
-      This import is required because it takes a good few seconds to load the package and if the import is done
-      first time in the HeronRelic instance that delays the initialisation of the worker process which can be
-      a problem
-      :return: Nothing
-
-
-   .. py:method:: relic_create_parameters_df(self, **parameters)
-
-      Creates a new relic with the Parameters pandasdf in it or adds the Parameters pandasdf in the existing Node's
+      Creates a new savenodestate with the Parameters pandasdf in it or adds the Parameters pandasdf in the existing Node's
       Relic.
       :param parameters: The dictionary of the parameters. The keys of the dict will become the column names of the
       pandasdf
       :return: Nothing
 
 
-   .. py:method:: relic_create_substate_df(self, **variables)
+   .. py:method:: savenodestate_create_substate_df(self, **variables)
 
-      Creates a new relic with the Substate pandasdf in it or adds the Substate pandasdf in the existing Node's Relic.
+      Creates a new savenodestate with the Substate pandasdf in it or adds the Substate pandasdf in the existing Node's Relic.
       :param variables: The dictionary of the variables to save. The keys of the dict will become the column names of
       the pandasdf
       :return: Nothing
 
 
-   .. py:method:: _relic_create_df(self, type, **variables)
+   .. py:method:: _savenodestate_create_df(self, type, **variables)
 
       Base function to create either a Parameters or a Substate pandasdf in a new or the existing Node's Relic
       :param type: Parameters or Substate
@@ -72,7 +64,7 @@ Classes
       :return: Nothing
 
 
-   .. py:method:: relic_update_substate_df(self, **variables)
+   .. py:method:: savenodestate_update_substate_df(self, **variables)
 
       Updates the Substate pandasdf of the Node's Relic
       :param variables: The Substate's variables dict
