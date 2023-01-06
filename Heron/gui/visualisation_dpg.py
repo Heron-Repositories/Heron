@@ -4,7 +4,6 @@ import dearpygui.dearpygui as dpg
 import cv2
 import threading
 import pprint as pp
-from Heron.communication.socket_for_serialization import Socket
 from Heron import general_utils as gu
 
 
@@ -95,10 +94,14 @@ class VisualisationDPG:
         Formats and puts the self.data on a Text DPG window
         :return: Nothning
         """
-        if len(self.data) == 1:
-            self.data_to_show = self.data[0]
-            self.data_to_show = str(self.data_to_show)
-            splitter = '\n'
+        if type(self.data) != dict:
+            if len(self.data) == 1:
+                self.data_to_show = self.data[0]
+                self.data_to_show = str(self.data_to_show)
+                splitter = '\n'
+            else:
+                self.data_to_show = pp.pformat(self.data)
+                splitter = '||\n'
         else:
             self.data_to_show = pp.pformat(self.data)
             splitter = '||\n'
@@ -306,7 +309,7 @@ class VisualisationDPG:
         dpg.set_item_height(self.dpg_ids['Visualisation'], height - 40)
 
         series = 1
-        if self.data is not None and len(self.data.shape) > 1 and self.visualisation_type == 'Multi Pane Plot':
+        if self.data is not None and self.visualisation_type == 'Multi Pane Plot' and len(self.data.shape) > 1:
             series = self.data.shape[0]
 
         height_divisor = 1
@@ -328,6 +331,9 @@ class VisualisationDPG:
         '''
         self.data = data
 
+        if type(self.data) == dict and self.visualisation_type != 'Value':
+            print('From Visualiser {}. A dict can be visualised only by a Value Visualiser'.format(self.window_name))
+
         try:
             if self.visualisation_type == 'Image':
                 self._show_image()
@@ -346,6 +352,7 @@ class VisualisationDPG:
 
         except Exception as e:
             print(e)
+
 
     def end_of_life(self):
         """

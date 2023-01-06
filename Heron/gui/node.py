@@ -58,24 +58,6 @@ class Node:
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
 
-    def get_attribute_order(self, type):
-        number_of_static_attrs = 0
-        for at in self.operation.attribute_types:
-            if 'Static' in at:
-                number_of_static_attrs += 1
-
-        number_of_input_attrs = 0
-        number_of_output_attrs = 0
-        order = {}
-        for at, attr_order_num in zip(self.operation.attribute_types, range(len(self.operation.attributes))):
-            if type == 'Input' and type in at:
-                order[self.operation.attributes[attr_order_num]] = number_of_input_attrs
-                number_of_input_attrs += 1
-            if type == 'Output' and type in at:
-                order[self.operation.attributes[attr_order_num]] = number_of_output_attrs
-                number_of_output_attrs += 1
-        return order
-
     def initialise_parameters_socket(self):
         if self.context is None:
             self.context = zmq.Context()
@@ -100,9 +82,9 @@ class Node:
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:
-            if at == 'Input':
+            if 'Input' in at:
                 self.num_of_inputs = self.num_of_inputs + 1
-            if at == 'Output':
+            if 'Output' in at:
                 self.num_of_outputs = self.num_of_outputs + 1
 
     def get_corresponding_operation(self):
@@ -195,9 +177,9 @@ class Node:
             same_line_widget_ids = []
             for i, attr in enumerate(self.operation.attributes):
 
-                if self.operation.attribute_types[i] == 'Input':
+                if 'Input' in self.operation.attribute_types[i]:
                     attribute_type = dpg.mvNode_Attr_Input
-                elif self.operation.attribute_types[i] == 'Output':
+                elif 'Output' in self.operation.attribute_types[i]:
                     attribute_type = dpg.mvNode_Attr_Output
                 elif self.operation.attribute_types[i] == 'Static':
                     attribute_type = dpg.mvNode_Attr_Static
@@ -207,8 +189,11 @@ class Node:
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type):
                     if attribute_type == 1:
                         dpg.add_spacer()
+                    colour = [255, 255, 255, 255]
+                    if 'Dict' in self.operation.attribute_types[i]:
+                        colour = [0, 255, 0, 255]
                     dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                                 default_value=attr)
+                                 default_value=attr, color=colour)
 
                     if 'Parameters' in attr:
                         for k, parameter in enumerate(self.operation.parameters):
@@ -370,6 +355,7 @@ class Node:
 
         num_of_inputs = len(self.topics_in)
         num_of_outputs = len(self.topics_out)
+
         arguments_list.append(str(num_of_inputs))
         if 'Input' in self.operation.attribute_types:
             for topic_in in self.topics_in:

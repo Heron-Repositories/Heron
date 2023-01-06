@@ -121,7 +121,7 @@ class SinkWorker:
                 self.work_function(data, self.parameters)
 
             self.index += 1
-        self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+        self.socket_push_data.send_data(np.array([ct.IGNORE]), copy=False)
 
     def savenodestate_create_parameters_df(self, **parameters):
         """

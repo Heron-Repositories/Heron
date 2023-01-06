@@ -104,9 +104,8 @@ class SourceCom:
         :param msg: The link packet (carrying the actual link (np array))
         :return:
         """
-
         # A specific worker with multiple outputs should send from its infinite loop a message with multiple parts
-        # (using multiple send_array(data, flags=zmq.SNDMORE) commands). For an example see how the transform_worker
+        # (using multiple send_data(data, flags=zmq.SNDMORE) commands). For an example see how the transform_worker
         # sends data to the com from its data_callback function
         # TODO The bellow will not work for multiple outputs. I have to find out how many times a callback is called
         #  when data are send with SNDMORE flag !!!
@@ -115,13 +114,13 @@ class SourceCom:
         new_message_data = []
         if len(self.outputs) > 1:
             for i in range(len(self.outputs)):
-                array_data = Socket.reconstruct_array_from_bytes_message(msg[i])
+                array_data = Socket.reconstruct_data_from_bytes_message(msg[i])
                 new_message_data.append(array_data)
                 if type(array_data[0]) == np.str_:
                     if array_data[0] == ct.IGNORE:
                         ignoring_outputs[i] = True
         else:
-            array_data = Socket.reconstruct_array_from_bytes_message(msg)
+            array_data = Socket.reconstruct_data_from_bytes_message(msg)
             new_message_data.append(array_data)
             if type(array_data[0]) == np.str_:
                 if array_data[0] == ct.IGNORE:
@@ -141,7 +140,7 @@ class SourceCom:
                 self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
-                self.socket_pub_data.send_array(new_message_data[k], copy=False)
+                self.socket_pub_data.send_data(new_message_data[k], copy=False)
                 # This delay is critical to get single output to multiple inputs to work!
                 gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
 

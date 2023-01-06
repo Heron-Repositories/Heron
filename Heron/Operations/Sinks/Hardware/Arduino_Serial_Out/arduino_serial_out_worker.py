@@ -61,7 +61,7 @@ def work_function(data, parameters):
     topic = data[0]
 
     message = data[1:]
-    message = Socket.reconstruct_array_from_bytes_message(message)[0]
+    message = Socket.reconstruct_data_from_bytes_message(message)[0]
 
     if vis:
         print(message)

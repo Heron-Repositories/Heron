@@ -7,12 +7,91 @@ import signal
 import math
 from struct import *
 import logging
+import functools
+import inspect
+import warnings
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
 from Heron.communication.transform_worker import TransformWorker
 from Heron.communication.sink_com import SinkCom
 from Heron.communication.sink_worker import SinkWorker
+
+
+string_types = (type(b''), type(u''))
+
+
+def deprecated(reason):
+    """
+    This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used.
+    """
+
+    if isinstance(reason, string_types):
+
+        # The @deprecated is used with a 'reason'.
+        #
+        # .. code-block:: python
+        #
+        #    @deprecated("please, use another function")
+        #    def old_function(x, y):
+        #      pass
+
+        def decorator(func1):
+
+            if inspect.isclass(func1):
+                fmt1 = "Call to deprecated class {name} ({reason})."
+            else:
+                fmt1 = "Call to deprecated function {name} ({reason})."
+
+            @functools.wraps(func1)
+            def new_func1(*args, **kwargs):
+                warnings.simplefilter('always', DeprecationWarning)
+                warnings.warn(
+                    fmt1.format(name=func1.__name__, reason=reason),
+                    category=DeprecationWarning,
+                    stacklevel=2
+                )
+                warnings.simplefilter('default', DeprecationWarning)
+                return func1(*args, **kwargs)
+
+            return new_func1
+
+        return decorator
+
+    elif inspect.isclass(reason) or inspect.isfunction(reason):
+
+        # The @deprecated is used without any 'reason'.
+        #
+        # .. code-block:: python
+        #
+        #    @deprecated
+        #    def old_function(x, y):
+        #      pass
+
+        func2 = reason
+
+        if inspect.isclass(func2):
+            fmt2 = "Call to deprecated class {name}."
+        else:
+            fmt2 = "Call to deprecated function {name}."
+
+        @functools.wraps(func2)
+        def new_func2(*args, **kwargs):
+            warnings.simplefilter('always', DeprecationWarning)
+            warnings.warn(
+                fmt2.format(name=func2.__name__),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            warnings.simplefilter('default', DeprecationWarning)
+            return func2(*args, **kwargs)
+
+        return new_func2
+
+    else:
+        raise TypeError(repr(type(reason)))
 
 
 def convertToNumber (s):
@@ -207,7 +286,7 @@ def start_the_source_communications_process(node_attribute_type, node_attribute_
 
     outputs = []
     for i, t in enumerate(node_attribute_type):
-        if t == 'Output':
+        if 'Output' in t:
             outputs.append(node_attribute_names[i])
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
@@ -255,7 +334,7 @@ def start_the_transform_communications_process(node_attribute_type, node_attribu
 
     outputs = []
     for i, t in enumerate(node_attribute_type):
-        if t == 'Output':
+        if 'Output' in t:
             outputs.append(node_attribute_names[i])
 
     com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,

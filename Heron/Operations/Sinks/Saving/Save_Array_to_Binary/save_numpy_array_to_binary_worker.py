@@ -78,7 +78,7 @@ def save_array(data, parameters):
             return
 
     message = data[1:]  # data[0] is the topic
-    array = Socket.reconstruct_array_from_bytes_message(message)
+    array = Socket.reconstruct_data_from_bytes_message(message)
 
     if input_shape is None:
         try:

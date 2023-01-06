@@ -2,7 +2,7 @@
 import zmq
 import numpy as np
 import ast
-import time
+from Heron import general_utils as gu
 
 class Socket(zmq.Socket):
     """
@@ -13,20 +13,47 @@ class Socket(zmq.Socket):
     def __init__(self, *a, **kw):
         super().__init__(*a, *kw)
 
-    def send_array(self, array, flags=0, copy=True, track=False):
+    def send_data(self, data, flags=0, copy=True, track=False):
+        if type(data) == np.ndarray:
+            self._send_array(data, flags=flags, copy=copy, track=track)
+        if type(data) == dict:
+            self._send_dict(data, flags=flags)
+
+    def _send_array(self, array, flags=0, copy=True, track=False):
         """
-        Send a numpy array nthrough a series of messages
+        Send a numpy array through a series of messages
         :param array: The array
         :param flags: See zmq.Socket.send flags
         :param copy: If copy is True then the whole array is copied over. If False then only the array's memory pointer is send
         :param track:
         :return:
         """
-        md = dict(dtype=str(array.dtype), shape=array.shape)
-        self.send_json(md, flags|zmq.SNDMORE)
+        md = dict(data_type='ndarray', dtype=str(array.dtype), shape=array.shape)
+        self.send_json(md, flags | zmq.SNDMORE)
         return self.send(array, flags, copy=copy, track=track)
 
-    def recv_array(self, flags=0, copy=True, track=False):
+    def _send_dict(self, dictionary, flags=0):
+        """
+        Send a dictionary through a series of messages
+        :param dictionary: The dictionary
+        :param flags: See zmq.Socket.send flags
+        :param copy: If copy is True then the whole array is copied over. If False then only the array's memory pointer is send
+        :param track:
+        :return:
+        """
+        md = dict(data_type='dict')
+        self.send_json(md, flags | zmq.SNDMORE)
+        return self.send_json(dictionary, flags)
+
+    def recv_data(self, flags=0, copy=True, track=False):
+        md = self.recv_json(flags=flags)
+        type = md['data_type']
+        if type == 'ndarray':
+            return self._recv_array(md=md, flags=flags, copy=copy, track=track)
+        if type == 'dict':
+            return self._recv_dict(flags=flags)
+
+    def _recv_array(self, md, flags=0, copy=True, track=False):
         """
         Receive a numpy array
         :param flags: See zmq.Socket.recv flags
@@ -34,11 +61,21 @@ class Socket(zmq.Socket):
         :param track: see the track parameter of the zmq.Socket.recv()
         :return:
         """
-        md = self.recv_json(flags=flags)
         msg = self.recv(flags=flags, copy=copy, track=track)
         buf = memoryview(msg)
         A = np.frombuffer(buf, dtype=md['dtype'])
-        return A.reshape(md['shape'])
+        result = A.reshape(md['shape'])
+        return result
+
+    def _recv_dict(self, flags=0):
+        """
+        Receive a dictionary
+        :param flags: See zmq.Socket.recv flags
+        :param copy: see the copy parameter of the zmq.Socket.recv()
+        :param track: see the track parameter of the zmq.Socket.recv()
+        :return:
+        """
+        return self.recv_json(flags=flags)
 
     @staticmethod
     def switch_type_to_unsigned(type):
@@ -53,7 +90,68 @@ class Socket(zmq.Socket):
         return type
 
     @staticmethod
-    def _reconstruct_array_from_bytes_message(msg, switch_to_unsigned=False):
+    def reconstruct_data_from_bytes_message(msg):
+
+        md_bytes = msg[0]
+
+        md_str = md_bytes.decode("UTF-8")
+        md = ast.literal_eval(md_str)
+
+        data_type = md['data_type']
+        if data_type == 'ndarray':
+            dtype = md['dtype']
+            shape = md['shape']
+            return Socket._reconstruct_array_from_bytes_message(msg, dtype=dtype, shape=shape, switch_to_unsigned=False)
+
+        if data_type == 'dict':
+            return Socket._reconstruct_dict_from_bytes_message(msg)
+
+    @staticmethod
+    def _reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=False):
+        """
+        Static method to reconstruct a message that represents a numpy array to that array
+        :param msg: The message received from zmq
+        :param switch_to_unsigned: If true then switch the arrays type to unsigned
+        :return:
+        """
+        if switch_to_unsigned:
+            dtype = Socket.switch_type_to_unsigned(dtype)
+
+        data = msg[1]
+        buf = memoryview(data)
+        array = np.frombuffer(buf, dtype=dtype)
+
+        return array.reshape(shape)
+
+    @staticmethod
+    def _reconstruct_dict_from_bytes_message(msg):
+        data_bytes = msg[1]
+        data_str = data_bytes.decode("UTF-8")
+        data = ast.literal_eval(data_str)
+
+        return data
+
+    @staticmethod
+    def reconstruct_array_from_bytes_message_cv2correction(msg):
+        """
+        OpenCV has a bug that cannot deal with images with signed types. This function turns the numpy
+        array's type to unsigned to solve that problem
+        :param msg: The message representing the numpy array received from zmq
+        :return: ndarray that represents an image that can be read by cv2
+        """
+        md_bytes = msg[0]
+
+        md_str = md_bytes.decode("UTF-8")
+        md = ast.literal_eval(md_str)
+
+        dtype = md['dtype']
+        shape = md['shape']
+
+        return Socket._reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=True)
+
+    @staticmethod
+    @gu.deprecated("Use reconstruct_data_from_bytes_message")
+    def reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=False):
         """
         Static method to reconstruct a message that represents a numpy array to that array
         :param msg: The message received from zmq
@@ -65,28 +163,7 @@ class Socket(zmq.Socket):
         md_str = md_bytes.decode("UTF-8")
         md = ast.literal_eval(md_str)
 
-        type = md['dtype']
+        dtype = md['dtype']
+        shape = md['shape']
 
-        if switch_to_unsigned:
-            type = Socket.switch_type_to_unsigned(type)
-
-        data = msg[1]
-        buf = memoryview(data)
-        array = np.frombuffer(buf, dtype=type)
-
-        return array.reshape(md['shape'])
-
-    @staticmethod
-    def reconstruct_array_from_bytes_message(msg):
-        return Socket._reconstruct_array_from_bytes_message(msg, switch_to_unsigned=False)
-
-
-    @staticmethod
-    def reconstruct_array_from_bytes_message_cv2correction(msg):
-        """
-        OpenCV has a bug that cannot deal with images with signed types. This function turns the numpy
-        array's type to unsigned to solve that problem
-        :param msg: The message representing the numpy array received from zmq
-        :return:
-        """
-        return Socket._reconstruct_array_from_bytes_message(msg, switch_to_unsigned=True)
+        return Socket._reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=False)

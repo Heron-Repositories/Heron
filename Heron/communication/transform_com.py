@@ -175,7 +175,7 @@ class TransformCom:
         prev_topic = self.socket_sub_data.recv()
         prev_data_index = self.socket_sub_data.recv()
         prev_data_time = self.socket_sub_data.recv()
-        prev_messagedata = self.socket_sub_data.recv_array()
+        prev_messagedata = self.socket_sub_data.recv_data()
         # The following while ensures that the transform works only on the the latest available
         # message from the previous node. If the transform is too slow compared to the input node
         # this while throws all past messages away.
@@ -188,11 +188,10 @@ class TransformCom:
                 prev_topic = self.socket_sub_data.recv(zmq.NOBLOCK)
                 prev_data_index = self.socket_sub_data.recv(zmq.NOBLOCK)
                 prev_data_time = self.socket_sub_data.recv(zmq.NOBLOCK)
-                prev_messagedata = self.socket_sub_data.recv_array(zmq.NOBLOCK)
+                prev_messagedata = self.socket_sub_data.recv_data(zmq.NOBLOCK)
             except:
                 prev_topic = None
                 pass
-
         return topic, data_index, data_time, messagedata
 
     def start_ioloop(self):
@@ -227,7 +226,8 @@ class TransformCom:
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                    self.socket_push_data.send_array(messagedata, copy=False)
+                    self.socket_push_data.send_data(messagedata, copy=False)
+
                     t2 = time.perf_counter()
 
                 # Get the transformed link (wait for the socket_pull_data to get some link from the worker_exec)
@@ -238,11 +238,14 @@ class TransformCom:
                 for i in range(len(self.outputs)):
                     header = self.socket_pull_data.recv()
                     bytes = self.socket_pull_data.recv()
-                    array_data = Socket.reconstruct_array_from_bytes_message([header, bytes])
+                    array_data = Socket.reconstruct_data_from_bytes_message([header, bytes])
+
                     new_message_data.append(array_data)
-                    if type(array_data[0]) == np.str_:
-                        if array_data[0] == ct.IGNORE:
-                            ignoring_outputs[i] = True
+
+                    if type(array_data) == np.ndarray:
+                        if type(array_data[0]) == np.str_:
+                            if array_data[0] == ct.IGNORE:
+                                ignoring_outputs[i] = True
 
                 t3 = time.perf_counter()
 
@@ -260,7 +263,7 @@ class TransformCom:
                         self.socket_pub_data.send("{}".format(st).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(t3).encode('ascii'), flags=zmq.SNDMORE)
-                        self.socket_pub_data.send_array(new_message_data[k], copy=False)
+                        self.socket_pub_data.send_data(new_message_data[k], copy=False)
                         # This delay is critical to get single output to multiple inputs to work!
                         gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
                 t4 = time.perf_counter()

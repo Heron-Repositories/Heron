@@ -83,7 +83,7 @@ class SourceWorker:
                                              self.port_pub_proof_of_life, skip_ssh=True)
 
     def send_data_to_com(self, data):
-        self.socket_push_data.send_array(data, copy=False)
+        self.socket_push_data.send_data(data, copy=False)
         self.index += 1
 
     def savenodestate_create_parameters_df(self, **parameters):

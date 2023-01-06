@@ -58,7 +58,7 @@ def work_function(data, parameters):
     topic = data[0].decode('utf-8')
 
     message = data[1:]  # data[0] is the topic
-    input_data = Socket.reconstruct_array_from_bytes_message(message)
+    input_data = Socket.reconstruct_data_from_bytes_message(message)
 
     result = function(topic, input_data)
 

@@ -129,16 +129,17 @@ class TransformWorker:
 
             for i, array_in_list in enumerate(results):
                 if i < len(results) - 1:
-                    self.socket_push_data.send_array(array_in_list, flags=zmq.SNDMORE, copy=False)
+                    self.socket_push_data.send_data(array_in_list, flags=zmq.SNDMORE, copy=False)
                 else:
-                    self.socket_push_data.send_array(array_in_list, copy=False)
+                    self.socket_push_data.send_data(array_in_list, copy=False)
+
             self.index += 1
         else:
             send_topics = 0
             while send_topics < self.num_sending_topics - 1:
-                self.socket_push_data.send_array(np.array([ct.IGNORE]), flags=zmq.SNDMORE, copy=False)
+                self.socket_push_data.send_data(np.array([ct.IGNORE]), flags=zmq.SNDMORE, copy=False)
                 send_topics += 1
-            self.socket_push_data.send_array(np.array([ct.IGNORE]), copy=False)
+            self.socket_push_data.send_data(np.array([ct.IGNORE]), copy=False)
 
     def savenodestate_create_parameters_df(self, **parameters):
         """

@@ -128,10 +128,10 @@ def work_function(data, parameters, savenodestate_update_substate_df):
 
     message = data[1:]  # data[0] is the topic
     # This is needed to reconstruct the message that comes in into the numpy array that it is.
-    # Use Socket.reconstruct_array_from_bytes_message if the data is just a numpy array
+    # Use Socket.reconstruct_data_from_bytes_message if the data is just a numpy array
     # or Socket.reconstruct_array_from_bytes_message_cv2correction if the data is an image (and the numpy array's type
     # needs to be unsigned
-    message = Socket.reconstruct_array_from_bytes_message(message)
+    message = Socket.reconstruct_data_from_bytes_message(message)
 
     # Now do stuff
     print(message.shape)

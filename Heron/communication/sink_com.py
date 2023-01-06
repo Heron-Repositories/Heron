@@ -169,7 +169,7 @@ class SinkCom:
         prev_topic = self.socket_sub_data.recv()
         prev_data_index = self.socket_sub_data.recv()
         prev_data_time = self.socket_sub_data.recv()
-        prev_messagedata = self.socket_sub_data.recv_array()
+        prev_messagedata = self.socket_sub_data.recv_data()
         # The following while ensures that the sink works only on the the latest available
         # message from the previous node. If the sink is too slow compared to the input node
         # this while throws all past messages away.
@@ -182,7 +182,7 @@ class SinkCom:
                 prev_topic = self.socket_sub_data.recv(zmq.NOBLOCK)
                 prev_data_index = self.socket_sub_data.recv(zmq.NOBLOCK)
                 prev_data_time = self.socket_sub_data.recv(zmq.NOBLOCK)
-                prev_messagedata = self.socket_sub_data.recv_array(zmq.NOBLOCK)
+                prev_messagedata = self.socket_sub_data.recv_data(zmq.NOBLOCK)
             except:
                 prev_topic = None
                 pass
@@ -220,7 +220,7 @@ class SinkCom:
 
                     # Send link to be transformed to the worker_exec
                     self.socket_push_data.send(topic, flags=zmq.SNDMORE)
-                    self.socket_push_data.send_array(messagedata, copy=False)
+                    self.socket_push_data.send_data(messagedata, copy=False)
                     t2 = time.perf_counter()
 
                 # Get the end of worker function link (wait for the socket_pull_data to get some link from the worker_exec)
