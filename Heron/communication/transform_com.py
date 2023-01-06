@@ -239,7 +239,6 @@ class TransformCom:
                     header = self.socket_pull_data.recv()
                     bytes = self.socket_pull_data.recv()
                     array_data = Socket.reconstruct_data_from_bytes_message([header, bytes])
-
                     new_message_data.append(array_data)
 
                     if type(array_data) == np.ndarray:

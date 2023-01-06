@@ -2,7 +2,9 @@
 import zmq
 import numpy as np
 import ast
-from Heron import general_utils as gu
+import json
+from Heron import decorators as dec
+
 
 class Socket(zmq.Socket):
     """
@@ -126,9 +128,7 @@ class Socket(zmq.Socket):
     @staticmethod
     def _reconstruct_dict_from_bytes_message(msg):
         data_bytes = msg[1]
-        data_str = data_bytes.decode("UTF-8")
-        data = ast.literal_eval(data_str)
-
+        data = json.loads(data_bytes)
         return data
 
     @staticmethod
@@ -150,8 +150,8 @@ class Socket(zmq.Socket):
         return Socket._reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=True)
 
     @staticmethod
-    @gu.deprecated("Use reconstruct_data_from_bytes_message")
-    def reconstruct_array_from_bytes_message(msg, dtype, shape, switch_to_unsigned=False):
+    @dec.deprecated("Use reconstruct_data_from_bytes_message")
+    def reconstruct_array_from_bytes_message(msg):
         """
         Static method to reconstruct a message that represents a numpy array to that array
         :param msg: The message received from zmq
