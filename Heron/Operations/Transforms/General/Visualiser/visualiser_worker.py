@@ -37,7 +37,6 @@ def visualise(msg, parameters):
     global visualisation_dpg
 
     message = msg[1:]  # data[0] is the topic
-
     data = Socket.reconstruct_data_from_bytes_message(message)
 
     if parameters is not None:

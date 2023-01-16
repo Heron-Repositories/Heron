@@ -218,6 +218,7 @@ class TransformCom:
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
+
                     sockets_in = dict(self.poller.poll(timeout=1))
 
                     if self.verbose == 1:
@@ -279,8 +280,8 @@ class TransformCom:
                 if self.logger:
                     self.logger.info('{} : {} : {} : {} : {}'.format(self.index, data_index, topic, data_in_time,
                                                                      datetime.now()))
-            except:
-                pass
+            except Exception as e:
+                print(e)
 
     def on_kill(self, signal, frame):
         """

@@ -36,7 +36,7 @@ NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE = 1000
 
 # Use this delay in order to allow multiple output, multiple links per output Nodes to function. 0.2ms is the smallest
 # delay to allow any number of outputs and links to the next Node to function.
-# For saving time and if there are no Nodes that output multiple times then set it to 0
+# For saving time and if there are no Nodes that have multiple outputs then set it to 0
 DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS = 0.3
 
 
