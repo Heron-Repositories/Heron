@@ -218,7 +218,6 @@ class TransformCom:
 
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
-
                     sockets_in = dict(self.poller.poll(timeout=1))
 
                     if self.verbose == 1:
@@ -264,6 +263,7 @@ class TransformCom:
                         self.socket_pub_data.send("{}".format(self.index).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send("{}".format(t3).encode('ascii'), flags=zmq.SNDMORE)
                         self.socket_pub_data.send_data(new_message_data[k], copy=False)
+
                         # This delay is critical to get single output to multiple inputs to work!
                         gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
                 t4 = time.perf_counter()

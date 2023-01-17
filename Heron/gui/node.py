@@ -190,7 +190,7 @@ class Node:
                     if attribute_type == 1:
                         dpg.add_spacer()
                     colour = [255, 255, 255, 255]
-                    if 'Dict' in self.operation.attribute_types[i]:
+                    if 'Dict' in self.operation.attributes[i]:
                         colour = [0, 255, 0, 255]
                     dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                  default_value=attr, color=colour)
