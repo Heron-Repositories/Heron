@@ -22,7 +22,7 @@ operations_list = op_list.generate_operations_list() #operations_list  # This ge
 # in the Heron/Operations directory
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-last_used_port = 6000
+last_used_port = 18600
 nodes_list = []
 links_dict = {}
 panel_coordinates = [0, 0]
