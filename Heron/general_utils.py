@@ -64,6 +64,11 @@ def accurate_delay(delay):
         pass
 
 
+def print_and_logging(message):
+    print(message)
+    logging.debug(message)
+
+
 def choose_color_according_to_operations_type(operations_parent_name):
     """
     Returns a colour to colour the operations list in the gui according to the type they belong to

@@ -1,10 +1,8 @@
 
-
 import threading
 import platform
 import signal
 import os
-import time
 from pathlib import Path
 import json
 import subprocess
@@ -15,7 +13,7 @@ import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication.socket_for_serialization import Socket
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 
 
 class Node:
@@ -350,7 +348,9 @@ class Node:
         self.worker_executable = dpg.get_value(sender)
 
     def start_com_process(self):
+
         self.initialise_proof_of_life_socket()
+
         arguments_list = ['python', self.operation.executable, self.starting_port]
 
         num_of_inputs = len(self.topics_in)
@@ -377,12 +377,13 @@ class Node:
         {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
         self.process = subprocess.Popen(arguments_list, **kwargs)
 
-        print('Started COM {}_{} process with PID = {}'.format(self.name, self.node_index, self.process.pid))
+        print('Started COM {} process with PID = {}'.format(self.name, self.process.pid))
         # Wait until the worker_exec sends a proof_of_life signal (i.e. it is up and running).
         self.wait_for_proof_of_life()
 
         # Then update the parameters
         self.update_parameters()
+
         self.start_thread_to_send_parameters_multiple_times()
 
         with dpg.theme_component(0, parent=self.theme_id):
@@ -391,7 +392,7 @@ class Node:
     def sending_parameters_multiple_times(self):
         for i in range(ct.NUMBER_OF_INITIAL_PARAMETERS_UPDATES):
             self.update_parameters()
-            time.sleep(0.5)
+            gu.accurate_delay(500)
 
     def start_thread_to_send_parameters_multiple_times(self):
         thread_parameters = threading.Thread(target=self.sending_parameters_multiple_times, daemon=True)
@@ -412,7 +413,7 @@ class Node:
             self.process.send_signal(signal.CTRL_BREAK_EVENT)
         elif platform.system() == 'Linux':
             self.process.terminate()
-        time.sleep(0.5)
+        gu.accurate_delay(500)
         self.process.kill()
         self.process = None
 
