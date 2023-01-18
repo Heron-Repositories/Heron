@@ -6,7 +6,7 @@ import os
 import signal
 import pickle
 from Heron.communication.socket_for_serialization import Socket
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
 from Heron.gui.save_node_state import SaveNodeState
 
@@ -80,7 +80,7 @@ class SourceWorker:
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
         self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
-                                             self.port_pub_proof_of_life, skip_ssh=True)
+                                             self.port_pub_proof_of_life, skip_ssh=False)
 
     def send_data_to_com(self, data):
         self.socket_push_data.send_data(data, copy=False)
@@ -189,14 +189,15 @@ class SourceWorker:
         that lets the node (in the gui_com process) that the worker_exec is running and ready to receive parameter updates.
         :return: Nothing
         """
-        #print('---Sending POL {}'.format('topic = {}, msg = POL'.format(self.parameters_topic.encode('ascii'))))
+        # gu.print_and_logging('---Sending POL {}'.format('topic = {}, msg = POL'.format(self.parameters_topic.encode('ascii'))))
         for i in range(100):
             try:
                 self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
                 self.socket_pub_proof_of_life.send_string('POL')
             except:
                 pass
-            time.sleep(0.1)
+            gu.accurate_delay(10)
+        # gu.print_and_logging('--- Finished sending POL from {}'.format(self.node_name))
 
     def start_heartbeat_thread(self):
         """

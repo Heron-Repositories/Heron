@@ -6,7 +6,7 @@ import os
 import signal
 import zmq
 import numpy as np
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
@@ -100,7 +100,7 @@ class TransformWorker:
         self.socket_pub_proof_of_life = Socket(self.context, zmq.PUB)
         self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
         self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
-                                             self.port_pub_proof_of_life, skip_ssh=True)
+                                             self.port_pub_proof_of_life, skip_ssh=False)
 
     def data_callback(self, data):
         """
@@ -235,15 +235,15 @@ class TransformWorker:
         :return: Nothing
         """
 
-        #print('---Sending POL {}'.format('{}##POL'.format(self.parameters_topic)))
+        # gu.print_and_logging('---Sending POL {}'.format('{}##POL'.format(self.parameters_topic)))
         for i in range(100):
             try:
                 self.socket_pub_proof_of_life.send(self.parameters_topic.encode('ascii'), zmq.SNDMORE)
                 self.socket_pub_proof_of_life.send_string('POL')
             except:
                 pass
-            time.sleep(0.1)
-        #print('--- Finished sending POL from {} {}'.format(self.node_name, self.node_index))
+            gu.accurate_delay(10)
+        # gu.print_and_logging('--- Finished sending POL from {}'.format(self.node_name))
 
     def start_ioloop(self):
         """

@@ -81,8 +81,9 @@ class SSHCom:
         :param socket_ip: The localhost ip address used by Heron (probably 127.0.0.1)
         :param socket_port: The port to connect to
         :param skip_ssh: If true then the connection doesn't use an ssh tunnel even if there is an SSH server running
-        locally. This is used for the case of sockets that do proof of life (and connect to the local proof of life
-        forwarder).
+        locally. This was used for the case of sockets that do proof of life (and connect to the local proof of life
+        forwarder). It is not used any more. The ability though to create a local socket without ssh piping even with
+        a local ssh server running is left in this function
         :return: Nothing
         """
 
@@ -112,7 +113,7 @@ class SSHCom:
 
     def connect_socket_to_remote(self, socket, socket_ip):
         if self.remote_server_id != 'None':
-            logging.debug('ssh remote with port : {}'.format(socket_ip))
+            logging.debug('ssh remote with ip:port : {}'.format(socket_ip))
             tunnelling_pid = zmq.ssh.tunnel_connection(socket, socket_ip, "{}@{}".
                                                        format(self.remote_server_info['username'],
                                                               self.remote_server_info['IP']),
@@ -159,6 +160,7 @@ class SSHCom:
                                 int(self.remote_server_info['Port']),
                                 self.remote_server_info['username'],
                                 self.remote_server_info['password'])
+            #print(self.list_to_string(arguments_list))
             stdin, self.stdout, self.stderr = self.client.exec_command(self.list_to_string(arguments_list))
             stderr_thread = threading.Thread(target=self.remote_stderr_thread, daemon=True)
             stdout_thread = threading.Thread(target=self.remote_stdout_thread, daemon=True)
