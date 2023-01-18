@@ -22,7 +22,7 @@ operations_list = op_list.generate_operations_list() #operations_list  # This ge
 # in the Heron/Operations directory
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-last_used_port = 18600
+last_used_port = 6050
 nodes_list = []
 links_dict = {}
 panel_coordinates = [0, 0]
@@ -221,10 +221,8 @@ def on_start_graph(sender, data):
         path_to_com = os.path.join(path_to_com.parent, 'communication')
 
         start_forwarders_process(path_to_com)
-
         for n in nodes_list:
             n.start_com_process()
-
         update_control_graph_buttons(True)
 
 
