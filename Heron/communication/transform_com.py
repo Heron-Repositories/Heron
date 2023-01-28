@@ -4,6 +4,8 @@ import time
 import threading
 import zmq
 import os
+import psutil
+
 from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
@@ -13,7 +15,7 @@ from Heron.communication.ssh_com import SSHCom
 class TransformCom:
 
     def __init__(self, receiving_topics, sending_topics, parameters_topic, push_port, worker_exec, verbose=True,
-                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None, cpu_to_pin='Any'):
         self.receiving_topics = receiving_topics
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
@@ -27,6 +29,9 @@ class TransformCom:
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
+        self.cpu_to_pin = cpu_to_pin
+        if cpu_to_pin != 'Any':
+            gu.pin_process_to_core(cpu_to_pin)
 
         self.port_pub_data = ct.DATA_FORWARDER_SUBMIT_PORT
         self.port_sub_data = ct.DATA_FORWARDER_PUBLISH_PORT

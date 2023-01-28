@@ -7,6 +7,7 @@ import signal
 import math
 from struct import *
 import logging
+import psutil
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
@@ -132,6 +133,17 @@ def add_timestamp_to_filename(file_name, datetime):
     return file_name
 
 
+def pin_process_to_core(affinity):
+    affinity = [int(affinity)]
+    proc = psutil.Process()  # get self pid
+    print(f'PID: {proc.pid}')
+    aff = proc.cpu_affinity()
+    print(f'Affinity before: {aff}')
+    proc.cpu_affinity(affinity)
+    aff = proc.cpu_affinity()
+    print(f'Affinity after: {aff}')
+
+
 def parse_arguments_to_com(args):
     """
     Turns the list of argv arguments that is send to a com process (by the editor) into appropriate list of strings
@@ -146,6 +158,7 @@ def parse_arguments_to_com(args):
     ssh_local_server = The ID of the local ssh server (see ssh_info.json) if the node is to run its worker_exec over ssh
     ssh_remote_server = The ID of the remote ssh server (see ssh_info.json) if the node is to run its worker_exec over ssh
     worker_exec = The python script (or executable) of the worker_exec process
+    cpu_to_pin = The cpu core to pin the Com and Worker executables
     """
     args = args[1:]
     port = args[0]
@@ -159,14 +172,15 @@ def parse_arguments_to_com(args):
     if num_of_sending_topics > 0:
         for k in range(num_of_sending_topics):
             sending_topics.append(args[k + num_of_receiving_topics + 3])
-    parameters_topic = args[-5]
-    verbose = args[-4]
-    ssh_local_server = args[-3]
-    ssh_remote_server = args[-2]
-    worker_exec = args[-1]
+    parameters_topic = args[-6]
+    verbose = args[-5]
+    ssh_local_server = args[-4]
+    ssh_remote_server = args[-3]
+    worker_exec = args[-2]
+    cpu_to_pin = args[-1]
 
     return port, receiving_topics, sending_topics, parameters_topic, verbose, \
-        ssh_local_server, ssh_remote_server, worker_exec
+        ssh_local_server, ssh_remote_server, worker_exec, cpu_to_pin
 
 
 def parse_arguments_to_worker(args):
@@ -179,9 +193,9 @@ def parse_arguments_to_worker(args):
     parameters_topic = the node_name of the topic the process receives parameter updates from the node
     receiving_topics = a list of the names of the topics the process receives (inputs) link at
     verbose = the verbosity of the worker_exec process (True or False)
-    ssh_local_ip =
-    ssh_local_username =
-    ssh_local_password =
+    ssh_local_ip = The ip of the local computer (the one running the Heron GUI)
+    ssh_local_username = The username of the ssh server running on the local computer
+    ssh_local_password = The password of the ssh server running on the local computer
     """
     args = args[1:]
     port = args[0]
@@ -207,8 +221,8 @@ def start_the_source_communications_process(node_attribute_type, node_attribute_
     :return: The SourceCom object
     """
 
-    push_port, _, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec =\
-        parse_arguments_to_com(sys.argv)
+    push_port, _, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec,\
+        cpu_to_pin = parse_arguments_to_com(sys.argv)
 
     outputs = []
     for i, t in enumerate(node_attribute_type):
@@ -217,7 +231,7 @@ def start_the_source_communications_process(node_attribute_type, node_attribute_
 
     com_object = SourceCom(sending_topics=sending_topics, parameters_topic=parameters_topic, port=push_port,
                            worker_exec=worker_exec, verbose=verbose, ssh_local_server_id=ssh_local_server_id,
-                           ssh_remote_server_id=ssh_remote_server_id, outputs=outputs)
+                           ssh_remote_server_id=ssh_remote_server_id, outputs=outputs, cpu_to_pin=cpu_to_pin)
 
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
@@ -232,9 +246,8 @@ def start_the_source_worker_process(work_function, end_of_life_function, initial
     :param work_function:
     :return:
     """
-    port, parameters_topic, _, num_sending_topics, relic, ssh_local_ip, ssh_local_username, ssh_local_password =\
-        parse_arguments_to_worker(sys.argv)
-    #verbose = verbose == 'True'
+    port, parameters_topic, _, num_sending_topics, relic, ssh_local_ip, ssh_local_username, ssh_local_password\
+        = parse_arguments_to_worker(sys.argv)
 
     worker_object = SourceWorker(port=port, parameters_topic=parameters_topic,
                                  initialisation_function=initialisation_function,
@@ -256,7 +269,7 @@ def start_the_transform_communications_process(node_attribute_type, node_attribu
     :return: The TransformCom object
     """
     push_port, receiving_topics, sending_topics, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id,\
-        worker_exec = parse_arguments_to_com(sys.argv)
+        worker_exec, cpu_to_pin = parse_arguments_to_com(sys.argv)
 
     outputs = []
     for i, t in enumerate(node_attribute_type):
@@ -266,7 +279,7 @@ def start_the_transform_communications_process(node_attribute_type, node_attribu
     com_object = TransformCom(sending_topics=sending_topics, receiving_topics=receiving_topics,
                               parameters_topic=parameters_topic, push_port=push_port, worker_exec=worker_exec,
                               verbose=verbose, ssh_local_server_id=ssh_local_server_id,
-                              ssh_remote_server_id=ssh_remote_server_id, outputs=outputs)
+                              ssh_remote_server_id=ssh_remote_server_id, outputs=outputs, cpu_to_pin=cpu_to_pin)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -282,7 +295,6 @@ def start_the_transform_worker_process(work_function, end_of_life_function, init
     """
     pull_port, parameters_topic, receiving_topics, num_sending_topics, relic, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
-    #verbose = verbose == 'True'
 
     buffer = {}
     for rt in receiving_topics:
@@ -306,13 +318,13 @@ def start_the_sink_communications_process():
     and the forwarder)
     :return: The SinkCom object
     """
-    push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec = \
-        parse_arguments_to_com(sys.argv)
+    push_port, receiving_topics, _, parameters_topic, verbose, ssh_local_server_id, ssh_remote_server_id, worker_exec,\
+        cpu_to_pin = parse_arguments_to_com(sys.argv)
 
-    #verbose = verbose == 'True'
     com_object = SinkCom(receiving_topics=receiving_topics, parameters_topic=parameters_topic,
                          push_port=push_port, worker_exec=worker_exec, verbose=verbose,
-                         ssh_local_server_id=ssh_local_server_id, ssh_remote_server_id=ssh_remote_server_id)
+                         ssh_local_server_id=ssh_local_server_id, ssh_remote_server_id=ssh_remote_server_id,
+                         cpu_to_pin=cpu_to_pin)
     com_object.connect_sockets()
     com_object.start_heartbeat_thread()
     com_object.start_worker()
@@ -329,7 +341,6 @@ def start_the_sink_worker_process(work_function, end_of_life_function, initialis
 
     pull_port, parameters_topic, receiving_topics, num_sending_topics, relic, ssh_local_ip, ssh_local_username, \
         ssh_local_password = parse_arguments_to_worker(sys.argv)
-    #verbose = verbose == 'True'
 
     buffer = {}
     for rt in receiving_topics:

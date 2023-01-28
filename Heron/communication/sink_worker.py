@@ -6,6 +6,8 @@ import os
 import signal
 import zmq
 import numpy as np
+import psutil
+
 from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.socket_for_serialization import Socket
@@ -27,6 +29,7 @@ class SinkWorker:
         self.parameters_topic = parameters_topic
         self.num_sending_topics = int(num_sending_topics)
         self.recv_topics_buffer = recv_topics_buffer
+
         self.loops_on = True
         self.initialised = False
         self.node_name = self.parameters_topic.split('##')[-2]

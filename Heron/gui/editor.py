@@ -397,9 +397,10 @@ def load_graph():
                     n.ssh_local_server = value['ssh_local_server']
                     n.ssh_remote_server = value['ssh_remote_server']
                     try:
-                        n.savenodestate_verbosity = value['relic_verbosity']
+                        n.savenodestate_verbosity = value['savenodestate_verbosity']
                         n.com_verbosity = value['com_verbosity']
                         n.verbose = '{}||{}'.format(n.com_verbosity, n.savenodestate_verbosity)
+                        n.cpu_to_pin = value['cpu_to_pin']
                     except:
                         n.verbose = value['verbose']
                     n.context = value['context']
@@ -606,7 +607,7 @@ def create_node_selector_window():
 
 
 dpg.create_context()
-dpg.create_viewport(title='Heron', width=1700, height=1000, x_pos=350, y_pos=0)
+dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
 #icon_path = os.path.join(heron_path, 'resources', 'Aelopile.ico')
 #dpg.set_viewport_small_icon(icon_path)
 
@@ -614,7 +615,7 @@ with dpg.font_registry():
     # add font (set as default for entire app)
     default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
 
-with dpg.window(width=1700, height=1000, pos=[0, 0]) as main_window:
+with dpg.window(width=1620, height=1000, pos=[0, 0]) as main_window:
     dpg.set_primary_window(main_window, True)
     # The Start Graph button that starts all processes
     with dpg.group(horizontal=True):
@@ -645,7 +646,7 @@ node_selector = create_node_selector_window()
 with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
     # The node editor
     with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
-                         width=1300, height=dpg.get_item_height(main_window) - 100) as node_editor:
+                         width=1220, height=dpg.get_item_height(main_window) - 100) as node_editor:
         dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
 
 # dpg.show_debug()

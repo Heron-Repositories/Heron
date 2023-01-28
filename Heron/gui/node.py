@@ -8,7 +8,7 @@ import json
 import subprocess
 import zmq
 import copy
-import importlib
+import psutil
 import dearpygui.dearpygui as dpg
 from Heron.gui import operations_list as op
 from Heron.general_utils import choose_color_according_to_operations_type
@@ -42,19 +42,26 @@ class Node:
         self.socket_sub_proof_of_life = None
         self.theme_id = None
         self.extra_window_id = None
+        self.possible_cpus_to_pin = ['Any']
+        self.cpu_to_pin = 'Any'
         self.operations_list = op.operations_list
 
         self.get_corresponding_operation()
         self.get_node_index()
         self.assign_default_parameters()
         self.get_numbers_of_inputs_and_outputs()
-        #self.generate_default_topics()
+        self.generate_cpus_to_pin_list()
 
         self.ssh_server_id_and_names = None
         self.get_ssh_server_names_and_ids()
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
+
+    def generate_cpus_to_pin_list(self):
+        n_cpus = psutil.cpu_count()
+        for cpu in range(n_cpus):
+            self.possible_cpus_to_pin.append(str(cpu))
 
     def initialise_parameters_socket(self):
         if self.context is None:
@@ -250,7 +257,7 @@ class Node:
                                                 callback=self.update_ssh_combo_boxes)
 
             with dpg.window(label='##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                            width=450, height=250, pos=[self.coordinates[0] + 400, self.coordinates[1] + 200],
+                            width=550, height=250, pos=[self.coordinates[0] + 400, self.coordinates[1] + 200],
                             show=False, popup=True) as self.extra_window_id:
 
                 # Add the local ssh input
@@ -287,13 +294,15 @@ class Node:
                         width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
 
                 # Add the verbocity input
-                dpg.add_spacer(height=6)
+                dpg.add_spacer(height=10)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
                     attr = 'Log file or Verbosity level:'
                     attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
                     self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                                      default_value=attr)
+
+                dpg.add_spacer(height=10)
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=10)
                     dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
@@ -301,25 +310,39 @@ class Node:
                                        hint='Log file name or verbosity level integer.',
                                        tag='verb#{}#{}'.format(self.operation.name, self.node_index))
 
-                if importlib.util.find_spec('reliquery') is not None:
-                    # Create the savenodestate input only if reliquery is present
-                    with dpg.group(horizontal=True):
-                        dpg.add_spacer(width=10)
-                        dpg.add_text(default_value='Save the Node State to directory:')
+                # Create the savenodestate input
+                dpg.add_spacer(height=10)
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_text(default_value='Save the Node State to directory:')
 
-                    with dpg.group(horizontal=True):
-                        dpg.add_spacer(width=10)
-                        dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
-                                           hint='The path where the Node State for this worker process will be saved',
-                                           tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
+                                       hint='The path where the Node State for this worker process will be saved',
+                                       tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+
+                # Create the pin to CPU input
+                dpg.add_spacer(height=10)
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_text(default_value='Choose a specific CPU to pin the Com and Worker Processes')
+
+                with dpg.group(horizontal=True):
+                    dpg.add_spacer(width=10)
+                    dpg.add_combo(items=self.possible_cpus_to_pin,  width=140, default_value=self.cpu_to_pin,
+                                  tag='cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index),
+                                  callback=self.update_cpu_to_pin)
 
     def update_verbosity(self, sender, data):
         self.com_verbosity = ''
         self.savenodestate_verbosity = ''
-        if importlib.util.find_spec('reliquery') is not None:
-            self.savenodestate_verbosity = dpg.get_value('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+        self.savenodestate_verbosity = dpg.get_value('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
         self.com_verbosity = dpg.get_value('verb#{}#{}'.format(self.operation.name, self.node_index))
         self.verbose = '{}||{}'.format(self.com_verbosity, self.savenodestate_verbosity)
+
+    def update_cpu_to_pin(self):
+        self.cpu_to_pin = dpg.get_value('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index))
 
     def get_ssh_server_names_and_ids(self):
         ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
@@ -372,9 +395,11 @@ class Node:
         arguments_list.append(self.ssh_local_server.split(' ')[0])  # pass only the ID part of the 'ID name' string
         arguments_list.append(self.ssh_remote_server.split(' ')[0])
         arguments_list.append(self.worker_executable)
+        arguments_list.append(self.cpu_to_pin)
 
         kwargs = {'start_new_session': True} if os.name == 'posix' else \
         {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+
         self.process = subprocess.Popen(arguments_list, **kwargs)
 
         print('Started COM {} process with PID = {}'.format(self.name, self.process.pid))

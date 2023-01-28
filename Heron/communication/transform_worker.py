@@ -6,6 +6,8 @@ import os
 import signal
 import zmq
 import numpy as np
+import psutil
+
 from Heron import constants as ct, general_utils as gu
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket

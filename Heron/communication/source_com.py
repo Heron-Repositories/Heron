@@ -5,6 +5,7 @@ import zmq
 import time
 import threading
 import numpy as np
+import psutil
 
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.socket_for_serialization import Socket
@@ -14,7 +15,7 @@ from Heron.communication.ssh_com import SSHCom
 
 class SourceCom:
     def __init__(self, sending_topics, parameters_topic, port, worker_exec, verbose='||',
-                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None):
+                 ssh_local_server_id='None', ssh_remote_server_id='None', outputs=None, cpu_to_pin='Any'):
         self.sending_topics = sending_topics
         self.parameters_topic = parameters_topic
         self.pull_data_port = port
@@ -29,6 +30,9 @@ class SourceCom:
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.outputs = outputs
         self.port_pub = ct.DATA_FORWARDER_SUBMIT_PORT
+        self.cpu_to_pin = cpu_to_pin
+        if cpu_to_pin != 'Any':
+            gu.pin_process_to_core(cpu_to_pin)
 
         self.context = None
         self.socket_pub_data = None
@@ -43,7 +47,7 @@ class SourceCom:
             try:
                 self.verbose = int(self.verbose)
             except:
-                log_file_name =  gu.add_timestamp_to_filename(self.verbose, datetime.now())
+                log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
                 self.logger = gu.setup_logger('Source', log_file_name)
                 self.logger.info('Index of data packet : Computer Time Data Out')
                 self.verbose = False

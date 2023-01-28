@@ -5,6 +5,8 @@ import zmq
 import os
 import signal
 import pickle
+import psutil
+
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom

@@ -160,7 +160,6 @@ class SSHCom:
                                 int(self.remote_server_info['Port']),
                                 self.remote_server_info['username'],
                                 self.remote_server_info['password'])
-            #print(self.list_to_string(arguments_list))
             stdin, self.stdout, self.stderr = self.client.exec_command(self.list_to_string(arguments_list))
             stderr_thread = threading.Thread(target=self.remote_stderr_thread, daemon=True)
             stdout_thread = threading.Thread(target=self.remote_stdout_thread, daemon=True)
