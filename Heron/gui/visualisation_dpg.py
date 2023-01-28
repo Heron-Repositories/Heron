@@ -42,6 +42,7 @@ class VisualisationDPG:
 
         self.visualiser_showing = False
         self.data = None
+        self.number_of_lines_in_a_plot = 1
 
         self.dpg_ids = {}
         self.data_shape = None
@@ -125,34 +126,36 @@ class VisualisationDPG:
         Formats the self.data (assuming it is a 1D or 2D array) and puts them to a single plot window of a DPG window
         :return: Nothing
         """
-
         if self.buffer == -1 or self.buffer > self.data.shape[-1]:
             length_to_show = self.data.shape[-1]
         else:
             length_to_show = self.buffer
 
-        if len(self.data.shape) > 1:
-            number_of_lines = self.data.shape[0]
-            if not self.initialised_plots:
-                for n in np.arange(0, number_of_lines):
-                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show).tolist(),
-                                                                                 self.data[n, -length_to_show:],
+        if not self.initialised_plots:
+            if len(self.data.shape) > 1:
+                self.number_of_lines_in_a_plot = self.data.shape[0]
+                for n in np.arange(0, self.number_of_lines_in_a_plot):
+                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(x=list(np.arange(length_to_show)),
+                                                                                 y=list(self.data[n, -length_to_show:]),
+                                                                                 label='Plot line {}'.format(n),
                                                                                  parent=self.dpg_ids['y_axis'])
-        else:
-            number_of_lines = 1
-            if not self.initialised_plots:
-                for n in np.arange(0, number_of_lines):
-                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show).tolist(),
-                                                                                 self.data[-length_to_show:],
+            else:
+                self.number_of_lines_in_a_plot = 1
+                for n in np.arange(0, self.number_of_lines_in_a_plot):
+                    self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(x=list(np.arange(length_to_show)),
+                                                                                 y=list(self.data[-length_to_show:]),
+                                                                                 label='Plot line {}'.format(n),
                                                                                  parent=self.dpg_ids['y_axis'])
 
             self.initialised_plots = True
 
-        if number_of_lines > 1:
-            for n in np.arange(number_of_lines):
-                dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n, -length_to_show:]])
+        if self.number_of_lines_in_a_plot > 1:
+            for n in np.arange(self.number_of_lines_in_a_plot):
+                dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [list(np.arange(length_to_show)),
+                                                                       list(self.data[n, -length_to_show:])])
         else:
-            dpg.set_value(self.dpg_ids['Plot line {}'.format(0)], [np.arange(length_to_show), self.data[-length_to_show:]])
+            dpg.set_value(self.dpg_ids['Plot line {}'.format(0)], [list(np.arange(length_to_show)),
+                                                                   list(self.data[-length_to_show:])])
         dpg.fit_axis_data(self.dpg_ids['x_axis'])
 
     def _show_2d_plot(self):
@@ -190,13 +193,14 @@ class VisualisationDPG:
                 self.dpg_ids['y_axis {}'.format(n)] = \
                     dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_labels[n], parent=self.dpg_ids[plot_title[n]])
 
-                self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(np.arange(length_to_show),
-                                                                             self.data[n, -length_to_show:],
+                self.dpg_ids['Plot line {}'.format(n)] = dpg.add_line_series(list(np.arange(length_to_show)),
+                                                                             list(self.data[n, -length_to_show:]),
                                                                              parent=self.dpg_ids['y_axis {}'.format(n)])
             self.initialised_plots = True
 
         for n in np.arange(number_of_lines):
-            dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [np.arange(length_to_show), self.data[n, -length_to_show:]])
+            dpg.set_value(self.dpg_ids['Plot line {}'.format(n)], [list(np.arange(length_to_show)),
+                                                                   list(self.data[n, -length_to_show:])])
 
     def _update_dpg_gui(self):
         """
@@ -210,7 +214,6 @@ class VisualisationDPG:
                 if self.visualisation_type == 'Single Pane Plot':
                     self._show_1d_plot()
                 if self.visualisation_type == 'Multi Pane Plot':
-                    print('UPDATE 2D')
                     self._show_2d_plot()
             except Exception as e:
                 print(e)
@@ -333,7 +336,6 @@ class VisualisationDPG:
 
         if type(self.data) == dict and self.visualisation_type != 'Value':
             print('From Visualiser {}. A dict can be visualised only by a Value Visualiser'.format(self.window_name))
-
         try:
             if self.visualisation_type == 'Image':
                 self._show_image()
