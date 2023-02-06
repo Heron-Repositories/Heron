@@ -19,8 +19,7 @@ setup(
                       'h5py',
                       'tornado',
                       'pynput',
-                      'serial',
-                      'reliquery'
+                      'serial'
                       ],
 
     classifiers=[
