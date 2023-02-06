@@ -19,7 +19,7 @@ setup(
                       'h5py',
                       'tornado',
                       'pynput',
-                      'serial',
+                      'pyserial',
                       'psutil'
                       ],
 
