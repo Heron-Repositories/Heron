@@ -8,6 +8,8 @@ import math
 from struct import *
 import logging
 import psutil
+import json
+from pathlib import Path
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
@@ -143,6 +145,23 @@ def pin_process_to_core(affinity):
     aff = proc.cpu_affinity()
     print(f'Affinity after: {aff}')
 
+
+def get_ssh_info_file():
+    ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), 'communication',
+                                 'ssh_info.json')
+    if not os.path.exists(ssh_info_file):
+        with open(ssh_info_file, 'w+') as f:
+            json.dump({"0": {
+                "Name": "localhost",
+                "IP": "192.168.126.1",
+                "Port": 22,
+                "username": "user",
+                "password": "None"
+            }}, f, indent=4)
+    with open(ssh_info_file) as f:
+        ssh_info = json.load(f)
+
+    return ssh_info
 
 def parse_arguments_to_com(args):
     """
