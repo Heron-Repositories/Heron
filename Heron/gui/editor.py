@@ -31,6 +31,11 @@ forwarders: subprocess.Popen
 node_selector: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
+node_editor = None
+start_graph_button_id = None
+end_graph_button_id = None
+node_editor_window = None
+
 
 def generate_node_tree():
     """
@@ -86,6 +91,8 @@ def on_add_node(sender, data):
     :param data: Not used
     :return: Nothing
     """
+    global node_editor
+
     sender_name = dpg.get_item_label(sender)
     # Get corresponding operation
     operation = None
@@ -261,6 +268,8 @@ def on_end_graph(sender, data):
 
 
 def on_del_pressed(sender, key_value):
+    global node_editor
+
     indices_to_remove = []
     for node in dpg.get_selected_nodes(node_editor=node_editor):
         node_name = dpg.get_item_label(node)
@@ -286,6 +295,9 @@ def update_control_graph_buttons(is_graph_running):
     :param is_graph_running: Is the graph running bool
     :return: Nothing
     """
+    global start_graph_button_id
+    global end_graph_button_id
+
     with dpg.theme() as theme_active:
         with dpg.theme_component(0):
             dpg.add_theme_color(dpg.mvThemeCol_Button, [50, 50, 180, 255], category=dpg.mvThemeCat_Core)
@@ -349,6 +361,8 @@ def save_graph():
 
 
 def get_attribute_id_from_label(label):
+    global node_editor
+
     all_editors_children = dpg.get_item_children(node_editor, 1)
     for node_id in all_editors_children:
         all_nodes_childern = dpg.get_item_children(node_id, slot=1)
@@ -356,6 +370,69 @@ def get_attribute_id_from_label(label):
             child_label = dpg.get_item_label(child_id)
             if child_label == label:
                 return child_id
+
+
+def do_the_loading_of_json_file(sender, app_data, user_data):
+    global nodes_list
+    global last_used_port
+    global port_generator
+    global links_dict
+    global node_editor
+
+    load_file = app_data['file_path_name']
+
+    with open(load_file, 'r') as file:
+        raw_dict = json.load(file)
+        nodes_list = []
+
+        for key in raw_dict.keys():
+            if key != 'links':
+                value = raw_dict[key]
+                n = Node(name=value['name'], parent=node_editor)
+                op_dict = value['operation']
+                n.operation = op_list.create_operation_from_dictionary(op_dict)
+                n.node_index = value['node_index']
+                n.process = value['process']
+                n.topics_out = value['topics_out']
+                n.topics_in = value['topics_in']
+                n.starting_port = value['starting_port']
+                n.num_of_inputs = value['num_of_inputs']
+                n.num_of_outputs = value['num_of_outputs']
+                n.coordinates = value['coordinates']
+                n.node_parameters = value['node_parameters']
+                n.node_parameters_combos_items = value['node_parameters_combos_items']
+                n.ssh_local_server = value['ssh_local_server']
+                n.ssh_remote_server = value['ssh_remote_server']
+                try:
+                    n.savenodestate_verbosity = value['savenodestate_verbosity']
+                    n.com_verbosity = value['com_verbosity']
+                    n.verbose = '{}||{}'.format(n.com_verbosity, n.savenodestate_verbosity)
+                    n.cpu_to_pin = value['cpu_to_pin']
+                except:
+                    n.verbose = value['verbose']
+                n.context = value['context']
+                n.socket_pub_parameters = value['socket_pub_parameters']
+                n.socket_sub_proof_of_life = value['socket_sub_proof_of_life']
+                n.worker_executable = value['worker_executable']
+                n.spawn_node_on_editor()
+
+                nodes_list.append(n)
+
+                if int(n.starting_port) > last_used_port:
+                    last_used_port = int(n.starting_port)
+
+            elif key == 'links':
+                links_dict = raw_dict[key]
+
+                for l1_name in links_dict:
+                    l1 = get_attribute_id_from_label(l1_name)
+                    for l2_name in copy.copy(links_dict[l1_name]):
+                        l2 = get_attribute_id_from_label(l2_name)
+                        on_link(node_editor, [l1, l2])
+                        #dpg.add_node_link(l1, l2, parent=node_editor)
+
+    last_used_port = last_used_port + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
+    port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 
 
 def load_graph():
@@ -366,68 +443,7 @@ def load_graph():
 
     clear_editor()
 
-    def on_file_select(sender, app_data, user_data):
-        global nodes_list
-        global last_used_port
-        global port_generator
-        global links_dict
-
-        load_file = app_data['file_path_name']
-
-        with open(load_file, 'r') as file:
-            raw_dict = json.load(file)
-            nodes_list = []
-
-            for key in raw_dict.keys():
-                if key != 'links':
-                    value = raw_dict[key]
-                    n = Node(name=value['name'], parent=node_editor)
-                    op_dict = value['operation']
-                    n.operation = op_list.create_operation_from_dictionary(op_dict)
-                    n.node_index = value['node_index']
-                    n.process = value['process']
-                    n.topics_out = value['topics_out']
-                    n.topics_in = value['topics_in']
-                    n.starting_port = value['starting_port']
-                    n.num_of_inputs = value['num_of_inputs']
-                    n.num_of_outputs = value['num_of_outputs']
-                    n.coordinates = value['coordinates']
-                    n.node_parameters = value['node_parameters']
-                    n.node_parameters_combos_items = value['node_parameters_combos_items']
-                    n.ssh_local_server = value['ssh_local_server']
-                    n.ssh_remote_server = value['ssh_remote_server']
-                    try:
-                        n.savenodestate_verbosity = value['savenodestate_verbosity']
-                        n.com_verbosity = value['com_verbosity']
-                        n.verbose = '{}||{}'.format(n.com_verbosity, n.savenodestate_verbosity)
-                        n.cpu_to_pin = value['cpu_to_pin']
-                    except:
-                        n.verbose = value['verbose']
-                    n.context = value['context']
-                    n.socket_pub_parameters = value['socket_pub_parameters']
-                    n.socket_sub_proof_of_life = value['socket_sub_proof_of_life']
-                    n.worker_executable = value['worker_executable']
-                    n.spawn_node_on_editor()
-
-                    nodes_list.append(n)
-
-                    if int(n.starting_port) > last_used_port:
-                        last_used_port = int(n.starting_port)
-
-                elif key == 'links':
-                    links_dict = raw_dict[key]
-
-                    for l1_name in links_dict:
-                        l1 = get_attribute_id_from_label(l1_name)
-                        for l2_name in copy.copy(links_dict[l1_name]):
-                            l2 = get_attribute_id_from_label(l2_name)
-                            on_link(node_editor, [l1, l2])
-                            #dpg.add_node_link(l1, l2, parent=node_editor)
-
-        last_used_port = last_used_port + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
-        port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
-
-    file_dialog = dpg.add_file_dialog(callback=on_file_select, directory_selector=False, height=500)
+    file_dialog = dpg.add_file_dialog(callback=do_the_loading_of_json_file, directory_selector=False, height=500)
     dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
 
 
@@ -438,6 +454,8 @@ def clear_editor():
     :return: Nothing
     """
     global nodes_list
+    global node_editor
+
     if dpg.get_item_children(node_editor, slot=1):
         for n in dpg.get_item_children(node_editor, slot=1):
             dpg.delete_item(n)
@@ -545,6 +563,8 @@ def on_drag(sender, data, user_data):
     """
     global panel_coordinates
     global mouse_dragging_deltas
+    global node_editor
+    global node_editor_window
 
     data = np.array(data)
 
@@ -606,62 +626,77 @@ def create_node_selector_window():
         return node_selector
 
 
-dpg.create_context()
-dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
-#icon_path = os.path.join(heron_path, 'resources', 'Aelopile.ico')
-#dpg.set_viewport_small_icon(icon_path)
+def run(load_json_file=None):
+    global node_editor
+    global start_graph_button_id
+    global end_graph_button_id
+    global node_editor_window
 
-with dpg.font_registry():
-    # add font (set as default for entire app)
-    default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
+    dpg.create_context()
+    dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
 
-with dpg.window(width=1620, height=1000, pos=[0, 0]) as main_window:
-    dpg.set_primary_window(main_window, True)
-    # The Start Graph button that starts all processes
-    with dpg.group(horizontal=True):
-        start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
-        end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
-    update_control_graph_buttons(False)
+    with dpg.font_registry():
+        # add font (set as default for entire app)
+        default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
 
-    dpg.bind_font(default_font)
+    with dpg.window(width=1620, height=1000, pos=[0, 0]) as main_window:
+        dpg.set_primary_window(main_window, True)
+        # The Start Graph button that starts all processes
+        with dpg.group(horizontal=True):
+            start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
+            end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
+        update_control_graph_buttons(False)
 
-    with dpg.menu_bar(label='Menu Bar'):
-        with dpg.menu(label='File'):
-            dpg.add_menu_item(label='New', callback=clear_editor)
-            dpg.add_menu_item(label='Save', callback=save_graph)
-            dpg.add_menu_item(label='Load', callback=load_graph)
-        with dpg.menu(label='Local Network') as menu:
-            ssh_info_editor.set_parent_id(menu)
-            dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
-        with dpg.menu(label='Operations'):
-            dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
-                              callback=add_new_symbolic_link_node_folder)
-            dpg.add_menu_item(label='Download Operations from the Heron-Repositories page',
-                              callback=view_operations_repos)
+        dpg.bind_font(default_font)
+
+        with dpg.menu_bar(label='Menu Bar'):
+            with dpg.menu(label='File'):
+                dpg.add_menu_item(label='New', callback=clear_editor)
+                dpg.add_menu_item(label='Save', callback=save_graph)
+                dpg.add_menu_item(label='Load', callback=load_graph)
+            with dpg.menu(label='Local Network') as menu:
+                ssh_info_editor.set_parent_id(menu)
+                dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
+            with dpg.menu(label='Operations'):
+                dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
+                                  callback=add_new_symbolic_link_node_folder)
+                dpg.add_menu_item(label='Download Operations from the Heron-Repositories page',
+                                  callback=view_operations_repos)
+
+    _ = create_node_selector_window()
+
+    with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
+        # The node editor
+        with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
+                             width=1220, height=dpg.get_item_height(main_window) - 100) as node_editor:
+            dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
+
+    # dpg.show_debug()
+    # dpg.show_logger()
+    # dpg.show_documentation()
+    # dpg.show_style_editor()
+
+    # Button and mouse callback registers
+    with dpg.handler_registry():
+        dpg.add_key_press_handler(key=46, callback=on_del_pressed)
+        dpg.add_mouse_drag_handler(callback=on_drag)
+        dpg.add_mouse_release_handler(callback=on_mouse_release)
+
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+
+    if load_json_file is not None:
+        app_data = {'file_path_name': load_json_file}
+        do_the_loading_of_json_file(sender=None, app_data=app_data, user_data=None)
+
+    dpg.start_dearpygui()
+    dpg.destroy_context()
 
 
-node_selector = create_node_selector_window()
+if __name__ == "__main__":
+    args = sys.argv
+    json_file_to_load = None
+    if len(args) > 1:
+        json_file_to_load = args[1]
 
-
-with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
-    # The node editor
-    with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
-                         width=1220, height=dpg.get_item_height(main_window) - 100) as node_editor:
-        dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
-
-# dpg.show_debug()
-# dpg.show_logger()
-# dpg.show_documentation()
-# dpg.show_style_editor()
-
-
-# Button and mouse callback registers
-with dpg.handler_registry():
-    dpg.add_key_press_handler(key=46, callback=on_del_pressed)
-    dpg.add_mouse_drag_handler(callback=on_drag)
-    dpg.add_mouse_release_handler(callback=on_mouse_release)
-
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+    run(load_json_file=json_file_to_load)
