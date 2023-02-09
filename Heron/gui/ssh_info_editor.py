@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import json
 import dearpygui.dearpygui as dpg
+from Heron import general_utils as gu
 
 
 class Table:
@@ -17,19 +18,7 @@ class Table:
         self.column_ids = []
         self.rows_ids = {}
 
-        ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
-                                     'ssh_info.json')
-        if not os.path.exists(ssh_info_file):
-            with open(ssh_info_file, 'w+') as f:
-                json.dump({"0": {
-                                "Name": "localhost",
-                                "IP": "192.168.126.1",
-                                "Port": 22,
-                                "username": "user",
-                                "password": "None"
-                            }}, f, indent=4)
-        with open(ssh_info_file) as f:
-            self.ssh_info = json.load(f)
+        self.ssh_info = gu.get_ssh_info_file()
 
         if header is not None:
             self.add_header(self.header)

@@ -3,12 +3,11 @@ import logging
 import signal
 import platform
 import paramiko
-import json
 import os
-from pathlib import Path
 import subprocess
 import threading
 import zmq.ssh
+from Heron import general_utils as gu
 
 
 class SSHCom:
@@ -46,9 +45,7 @@ class SSHCom:
         :param id: A string of an int that represents the unique id of the ssh_info.json server entry
         :return: The dict that carries the info of the specified server (IP, port, username and password)
         """
-        ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))), 'ssh_info.json')
-        with open(ssh_info_file) as f:
-            ssh_info = json.load(f)
+        ssh_info = gu.get_ssh_info_file()
 
         result = {}
         if id != 'None':

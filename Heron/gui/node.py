@@ -3,8 +3,6 @@ import threading
 import platform
 import signal
 import os
-from pathlib import Path
-import json
 import subprocess
 import zmq
 import copy
@@ -345,10 +343,8 @@ class Node:
         self.cpu_to_pin = dpg.get_value('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index))
 
     def get_ssh_server_names_and_ids(self):
-        ssh_info_file = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'communication',
-                                     'ssh_info.json')
-        with open(ssh_info_file) as f:
-            ssh_info = json.load(f)
+        ssh_info = gu.get_ssh_info_file()
+
         self.ssh_server_id_and_names = ['None']
         for id in ssh_info:
             self.ssh_server_id_and_names.append(id + ' ' + ssh_info[id]['Name'])

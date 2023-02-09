@@ -10,17 +10,17 @@ setup(
     license='MIT',
     keywords=['Scientific', 'Cluster', 'Experiments'],
     packages=['Heron'],
-    install_requires=['pyzmq>=20.x',
+    install_requires=['pyzmq>=20.0',
                       'numpy',
-                      'dearpygui>=1.2',
+                      'dearpygui >= 1.2',
                       'paramiko',
-                      'opencv-python>=4.5'
+                      'opencv-python>=4.5',
                       'pandas',
                       'h5py',
                       'tornado',
                       'pynput',
-                      'serial',
-                      'reliquery'
+                      'pyserial',
+                      'psutil'
                       ],
 
     classifiers=[
