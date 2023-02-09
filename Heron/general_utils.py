@@ -18,11 +18,11 @@ from Heron.communication.sink_com import SinkCom
 from Heron.communication.sink_worker import SinkWorker
 
 
-def convertToNumber (s):
+def convert_to_number (s):
     return int.from_bytes(s.encode(), 'little')
 
 
-def convertFromNumber (n):
+def convert_from_number (n):
     return n.to_bytes(math.ceil(n.bit_length() / 8), 'little').decode()
 
 
@@ -138,12 +138,11 @@ def add_timestamp_to_filename(file_name, datetime):
 def pin_process_to_core(affinity):
     affinity = [int(affinity)]
     proc = psutil.Process()  # get self pid
-    print(f'PID: {proc.pid}')
-    aff = proc.cpu_affinity()
-    print(f'Affinity before: {aff}')
+    aff_before = proc.cpu_affinity()
     proc.cpu_affinity(affinity)
-    aff = proc.cpu_affinity()
-    print(f'Affinity after: {aff}')
+    aff_after = proc.cpu_affinity()
+    print('Setting CPU affinity of Com process with PID: {} (and its Worker process) from {} to {}'
+          .format(proc.pid, aff_before, aff_after))
 
 
 def get_ssh_info_file():
