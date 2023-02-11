@@ -601,6 +601,8 @@ def on_mouse_release(sender, app_data, user_data):
 
 
 def create_node_selector_window():
+    global node_selector
+
     with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
         # Create the window of the Node selector
 
