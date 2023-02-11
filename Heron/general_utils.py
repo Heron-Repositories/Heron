@@ -9,6 +9,7 @@ from struct import *
 import logging
 import psutil
 import json
+import numpy as np
 from pathlib import Path
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
@@ -24,6 +25,18 @@ def convert_to_number (s):
 
 def convert_from_number (n):
     return n.to_bytes(math.ceil(n.bit_length() / 8), 'little').decode()
+
+
+def base10_to_base256(number, normalise=False):
+    pixels = np.array([0, 0, 0])
+    i = 0
+    while number > 256:
+        pixels[i] = (number % 255)
+        number = int(number / 255)
+        i += 1
+    pixels[i] = number
+    pixels = pixels / 255 if normalise else pixels
+    return pixels
 
 
 def full_split_path(path):
