@@ -2,9 +2,11 @@
 
 import os
 import threading
+import time
+
 import pandas as pd
 from datetime import datetime
-from Heron import constants as ct
+from Heron import constants as ct, general_utils as gu
 
 
 
@@ -36,7 +38,8 @@ class SaveNodeState():
 
         self.parameters_pandasdf_exists = False
         self.substate_pandasdf_exists = False
-        self.temp_substate_pandasdf = None
+        self.substate_pandasdf_new_data = None
+        self.temp_substate_list = []
         self.parameters_pandasdf: pd.DataFrame
         self.substate_pandasdf: pd.DataFrame
 
@@ -44,6 +47,8 @@ class SaveNodeState():
 
         if num_of_iters is not None:
             self.num_of_iters = num_of_iters
+
+        self.prev_time = 0
 
     def create_the_pandasdf(self, type, **variables):
         """
@@ -114,6 +119,7 @@ class SaveNodeState():
 
             self.save_current_df('Parameters')
 
+    # TODO: Rewrite the doc
     def update_the_substate_pandasdf(self, worker_index, **variables):
         """
         Updates the Substate pandasdf of the SaveNodeState. It first checks to see if the Substate pandadf exist and if it
@@ -137,25 +143,35 @@ class SaveNodeState():
 
             variables['DateTime'] = datetime.now()
             variables['WorkerIndex'] = worker_index
+            self.substate_pandasdf_add_new_line(worker_index, variables)
 
-            update_thread = threading.Thread(target=self.update_the_substate_pandasdf_thread,
-                                             args=(worker_index, variables))
-            update_thread.start()
-
-    def update_the_substate_pandasdf_thread(self, worker_index, variables):
+    def substate_pandasdf_add_new_line(self, worker_index, variables):
         """
-        The thread spawned to do the relic substate update of the pandasdf as described in the
-        update_the_substate_pandasdf function (which is calling this thread)
-        :param worker_index: The index of the worker function iteration
-        :param variables: The variables saved in the dataframe passed as a dict
+
+        :param worker_index:
+        :param variables:
         :return:
         """
-        row = pd.DataFrame([variables])
-        self.substate_pandasdf = pd.concat([self.substate_pandasdf, row], ignore_index=True)
-        self.substate_pandasdf.reset_index(drop=True, inplace=True)
+        self.substate_pandasdf_new_data = None
+
+        variables['DateTime'] = datetime.now()
+        variables['WorkerIndex'] = worker_index
+
+        new_variables = {'DateTime': datetime.now(), 'WorkerIndex': worker_index}
+        for v in variables:
+            new_variables[v] = variables[v]
+
+        self.temp_substate_list.append(list(new_variables.values()))
 
         if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
+            rows = pd.DataFrame(self.temp_substate_list, columns=self.substate_pandasdf.columns)
+            self.substate_pandasdf = pd.concat([self.substate_pandasdf, rows], ignore_index=True)
+            self.substate_pandasdf.reset_index(drop=True, inplace=True)
             self.save_current_df('Substate')
 
+
     def save_substate_at_death(self):
+        rows = pd.DataFrame(self.temp_substate_list, columns=self.substate_pandasdf.columns)
+        self.substate_pandasdf = pd.concat([self.substate_pandasdf, rows], ignore_index=True)
+        self.substate_pandasdf.reset_index(drop=True, inplace=True)
         self.save_current_df('Substate')
