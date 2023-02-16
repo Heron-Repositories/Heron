@@ -50,7 +50,7 @@ allowing the input of extra information regarding the Node. Here is where the us
 #. Where to save the Relic if the worker script is implementing one
 #. Which CPUs to run the Com and Worker processes of the Node
 
-For points 1 and 2 see :doc:`lan_use`, for point 3 see :doc:`node_types` and :doc:`debugging` and for point 4
+For points 1 and 2 see :doc:`lan_use`, for point 3 see :doc:`node_types` and :doc:`debugging`, for point 4 and for point 4
 see :doc:`saving_state`.
 
 
