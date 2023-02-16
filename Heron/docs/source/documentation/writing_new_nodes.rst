@@ -277,7 +277,7 @@ The worker function fo the Transform and Sink Nodes get passed two or three argu
 it with either two or three arguments). The two arguments that get always passed are the parameters (as they are
 currently displayed on the Node's GUI) and that new data that are responsible for calling the worker function in the
 first place. The third (optional to implement) argument is a function that allows saving in the Save State System anything
-the developer wants (see :doc:`save_node_state` for a description of the use of this argument).
+the developer wants (see :doc:`saving_state` for a description of the use of this argument).
 
 The parameters is a list of the current parameter values.
 

@@ -50,7 +50,7 @@ allowing the input of extra information regarding the Node. Here is where the us
 #. Where to save the Relic if the worker script is implementing one
 
 For points 1 and 2 see :doc:`lan_use`, for point 3 see :doc:`node_types` and :doc:`debugging` and for point 4
-see :doc:`the_relic_system`.
+see :doc:`saving_state`.
 
 
 The Graph Control Buttons and the Nodes' life cycle

@@ -104,7 +104,7 @@ Practically one needs to put in this entry box the same command one would need t
 the base directory of the WPM in order to run the worker script.
 
 The other two entries in the secondary window are by default empty and are used for debugging and data saving purposes
-(see :doc:`debugging` and :doc:`the_relic_system`). The important detail in the case of running a Node in a WPM is
+(see :doc:`debugging` and :doc:`saving_state`). The important detail in the case of running a Node in a WPM is
 that the log file in the *Log File or Verbosity Level* entry box needs to be a file in the GUIM because it is generated
 by the com process (which always runs on the GUIM). On the other hand the path where the Relic for this Node is going
 to be saved needs to be a path in the WPM.
