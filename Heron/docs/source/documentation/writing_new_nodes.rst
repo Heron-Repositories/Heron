@@ -71,6 +71,9 @@ for example a Transform Node with parameters, two inputs and one output would ha
      NodeAttributeNames = ['Parameters', 'Data A In', 'Data B In', 'Transformed Data Out']
 
 
+If a string of a NodeAttributeName also has the word 'Dict' in it (e.g. 'Transformed Data Out Dict') then the Node's GUI
+will change the colour of that Input or Output to show to users that this Input is expecting a dictionary or this Output
+is sending out a dictionary (instead of a numpy array).
 As mentioned above the type of each Attribute can be 'Static', 'Input' or 'Output'. These are defined in the
 NodeAttributeType entry again as a list of strings (following the same order as in the NodeAttributeNames list).
 So for the above example the types would be defined as
@@ -262,7 +265,8 @@ of its infinite loop to the com process of the Node it needs to call the followi
 
     worker_object.send_data_to_com(result)
 
-where result is what the Node needs to send on and is always a numpy array of arbitrary dimensions and any type allowed.
+where result is what the Node needs to send on and can be either a numpy array of arbitrary dimensions and type or a
+json compliant dictionary (i.e. a dictionary that can be saved into a json file without errors).
 
 A current limitation of Heron is that Source Nodes cannot have more that one output (the way Transforms and Sinks do).
 
@@ -272,8 +276,8 @@ Transform and Sinks
 The worker function fo the Transform and Sink Nodes get passed two or three arguments (i.e. the developer can implement
 it with either two or three arguments). The two arguments that get always passed are the parameters (as they are
 currently displayed on the Node's GUI) and that new data that are responsible for calling the worker function in the
-first place. The third (optional to implement) argument is a function that allows saving in the Relic system anything
-the developer wants (see :doc:`the_relic_system` for a description of the use of this argument).
+first place. The third (optional to implement) argument is a function that allows saving in the Save State System anything
+the developer wants (see :doc:`save_node_state` for a description of the use of this argument).
 
 The parameters is a list of the current parameter values.
 
@@ -297,7 +301,7 @@ reconstruction. That is achieved with either the
 
 .. code-block:: python
 
-    message = Socket.reconstruct_array_from_bytes_message(message)
+    message = Socket.reconstruct_data_from_bytes_message(message)
 
 or
 
@@ -309,31 +313,33 @@ functions of the Socket class (from Heron.communication.socket_for_serialization
 
 The reconstruct_array_from_bytes_message_cv2correction function is used to correct an OpenCV bug that breaks the library
 if the incoming numpy array has signed data. So use it when dealing with images, or when you want to make sure for
-some other reason that the numpy array you operate on has unsigned data.
+some other reason that the numpy array you operate on has unsigned data. The reconstruct_data_from_bytes_message will
+work with both numpy arrays of arbitrary type and with json compliant dictionaries.
 
-Once the worker function has the topic and the numpy array coming into the Node then it can do the work required.
+Once the worker function has the topic and the numpy array or dictionary coming into the Node then it can do the work
+required.
 
 
 The Transform Nodes also have output. In contrast to the Source Nodes, the worker function of a Transform creates the
-Node's output simpy by returning a list of numpy arrays. The list must be as long as the number of outputs defined
-for the Node (this is done in the com script as shown above). The order of the numpy arrays is the same as the order
-of the outputs defined in the com script. If a worker function needs to output nothing to one or more of its outputs
-then it needs to pass the ct.IGNORE string (as defined in the constants script of Heron) but again as a numpy array:
-np.array([ct.IGNORE]). So for example a Transform Node with two outputs that should return the array my_array on the
-first and  nothing on the second would have a return statement that looks like this:
+Node's output simpy by returning a list of numpy arrays and or dictionaries. The list must be as long as the number of
+outputs defined for the Node (this is done in the com script as shown above). The order of the numpy arrays / dictionaries
+is the same as the order of the outputs defined in the com script. If a worker function needs to output nothing to one
+or more of its outputs then it needs to pass the ct.IGNORE string (as defined in the constants script of Heron) but
+needs to wrap it in a numpy array: np.array([ct.IGNORE]). So for example a Transform Node with two outputs that should
+return the array my_array on the first and nothing on the second would have a return statement that looks like this:
 
 .. code-block:: python
 
     return [my_array, np.array([ct.IGNORE])]
 
-If the Node has a single output then the numpy array returned still needs to be put in a list:
+If the Node has a single output then the numpy array or dictionary returned still needs to be put in a list:
 
 .. code-block:: python
 
     return [my_array]
 
 There are two more elements of Node scripting, the :doc:`in Node Visualisation API <visualisation>` and the
-:doc:`Relic system for saving state <the_relic_system>` which are described in their own documentation.
+:doc:`Save State System for saving state <saving_state>` which are described in their own documentation.
 
 The end of life function
 ^^^^^^^^^^^^^^^^^^^^^^^^
