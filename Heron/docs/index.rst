@@ -21,7 +21,7 @@ Heron's documentation!
     source/documentation/adding_repos
     source/documentation/writing_new_nodes
     source/documentation/visualisation
-    source/documentation/the_relic_system
+    source/documentation/saving_state
     source/documentation/debugging
 
 .. toctree::
