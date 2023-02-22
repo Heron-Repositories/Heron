@@ -26,7 +26,7 @@ Heron's documentation!
     documentation/adding_repos.rst
     documentation/writing_new_nodes.rst
     documentation/visualisation.rst
-    documentation/the_relic_system.rst
+    documentation/saving_state.rst
     documentation/debugging.rst
 
 .. toctree::
