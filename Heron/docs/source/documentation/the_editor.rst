@@ -48,9 +48,10 @@ allowing the input of extra information regarding the Node. Here is where the us
 #. Which worker script to call
 #. Where to save log info that comes from the com script of the Node
 #. Where to save the Relic if the worker script is implementing one
+#. Which CPUs to run the Com and Worker processes of the Node
 
-For points 1 and 2 see :doc:`lan_use`, for point 3 see :doc:`node_types` and :doc:`debugging` and for point 4
-see :doc:`the_relic_system`.
+For points 1 and 2 see :doc:`lan_use`, for point 3 see :doc:`node_types` and :doc:`debugging`, for point 4 and for point 4
+see :doc:`saving_state`.
 
 
 The Graph Control Buttons and the Nodes' life cycle
