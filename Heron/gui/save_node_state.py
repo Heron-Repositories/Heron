@@ -168,6 +168,7 @@ class SaveNodeState():
             self.substate_pandasdf = pd.concat([self.substate_pandasdf, rows], ignore_index=True)
             self.substate_pandasdf.reset_index(drop=True, inplace=True)
             self.save_current_df('Substate')
+            self.temp_substate_list = []
 
 
     def save_substate_at_death(self):
