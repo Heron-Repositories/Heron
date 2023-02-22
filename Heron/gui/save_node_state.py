@@ -1,5 +1,5 @@
 
-
+import copy
 import os
 import threading
 import time
@@ -40,6 +40,7 @@ class SaveNodeState():
         self.substate_pandasdf_exists = False
         self.substate_pandasdf_new_data = None
         self.temp_substate_list = []
+        self.temp_substate_list_to_save = []
         self.parameters_pandasdf: pd.DataFrame
         self.substate_pandasdf: pd.DataFrame
 
@@ -143,9 +144,15 @@ class SaveNodeState():
 
             variables['DateTime'] = datetime.now()
             variables['WorkerIndex'] = worker_index
-            self.substate_pandasdf_add_new_line(worker_index, variables)
+            self.add_new_line_to_temp_array(worker_index, variables)
 
-    def substate_pandasdf_add_new_line(self, worker_index, variables):
+            if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
+                print(1, len(self.temp_substate_list), len(self.temp_substate_list_to_save), time.time())
+                save_thread = threading.Thread(group=None, target=self.save_to_pandas_df)
+                save_thread.start()
+                print(2, len(self.temp_substate_list), len(self.temp_substate_list_to_save), time.time())
+
+    def add_new_line_to_temp_array(self, worker_index, variables):
         """
 
         :param worker_index:
@@ -163,13 +170,14 @@ class SaveNodeState():
 
         self.temp_substate_list.append(list(new_variables.values()))
 
-        if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
-            rows = pd.DataFrame(self.temp_substate_list, columns=self.substate_pandasdf.columns)
-            self.substate_pandasdf = pd.concat([self.substate_pandasdf, rows], ignore_index=True)
-            self.substate_pandasdf.reset_index(drop=True, inplace=True)
-            self.save_current_df('Substate')
-            self.temp_substate_list = []
-
+    def save_to_pandas_df(self):
+        self.temp_substate_list_to_save = copy.deepcopy(self.temp_substate_list)
+        self.temp_substate_list = []
+        rows = pd.DataFrame(self.temp_substate_list_to_save, columns=self.substate_pandasdf.columns)
+        self.substate_pandasdf = pd.concat([self.substate_pandasdf, rows], ignore_index=True)
+        self.substate_pandasdf.reset_index(drop=True, inplace=True)
+        self.save_current_df('Substate')
+        self.temp_substate_list_to_save = []
 
     def save_substate_at_death(self):
         rows = pd.DataFrame(self.temp_substate_list, columns=self.substate_pandasdf.columns)
