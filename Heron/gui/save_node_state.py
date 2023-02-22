@@ -147,10 +147,8 @@ class SaveNodeState():
             self.add_new_line_to_temp_array(worker_index, variables)
 
             if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
-                print(1, len(self.temp_substate_list), len(self.temp_substate_list_to_save), time.time())
-                save_thread = threading.Thread(group=None, target=self.save_to_pandas_df)
+                save_thread = threading.Thread(group=None, target=self.save_substate_to_pandas_df)
                 save_thread.start()
-                print(2, len(self.temp_substate_list), len(self.temp_substate_list_to_save), time.time())
 
     def add_new_line_to_temp_array(self, worker_index, variables):
         """
@@ -170,7 +168,7 @@ class SaveNodeState():
 
         self.temp_substate_list.append(list(new_variables.values()))
 
-    def save_to_pandas_df(self):
+    def save_substate_to_pandas_df(self):
         self.temp_substate_list_to_save = copy.deepcopy(self.temp_substate_list)
         self.temp_substate_list = []
         rows = pd.DataFrame(self.temp_substate_list_to_save, columns=self.substate_pandasdf.columns)
