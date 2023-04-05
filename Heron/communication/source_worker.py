@@ -1,11 +1,10 @@
-
+import sys
 import time
 import threading
 import zmq
 import os
 import signal
 import pickle
-import psutil
 
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
@@ -215,7 +214,7 @@ class SourceWorker:
         self.thread_proof_of_life.start()
 
     def on_kill(self, pid):
-        print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
+        _ = sys.stdout.write("\033[91m" + 'Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid) + "\033[0m")
 
         if self.heron_savenodestate is not None and self.heron_savenodestate.substate_pandasdf_exists:
             self.heron_savenodestate.save_substate_at_death()

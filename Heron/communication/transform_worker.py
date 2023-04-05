@@ -6,7 +6,7 @@ import os
 import signal
 import zmq
 import numpy as np
-import psutil
+import sys
 
 from Heron import constants as ct, general_utils as gu
 from zmq.eventloop import ioloop, zmqstream
@@ -264,7 +264,7 @@ class TransformWorker:
         print('!!! WORKER {} HAS STOPPED'.format(self.parameters_topic))
 
     def on_kill(self, pid):
-        print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
+        _ = sys.stdout.write("\033[91m" + 'Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid) + "\033[0m")
 
         if self.heron_savenodestate is not None and self.heron_savenodestate.substate_pandasdf_exists:
             self.heron_savenodestate.save_substate_at_death()
