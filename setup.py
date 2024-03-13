@@ -21,7 +21,8 @@ setup(
                       'tornado',
                       'pynput',
                       'pyserial',
-                      'psutil'
+                      'psutil',
+                      'sphinx_rtd_theme'
                       ],
 
     classifiers=[
