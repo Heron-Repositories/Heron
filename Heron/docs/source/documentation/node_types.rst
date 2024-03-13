@@ -165,8 +165,14 @@ defined in the 0MQ protocol. Dashed line arrows represent data passing within a 
 process.
 
 
+Choosing the CPU
+_________________
 
+Heron allows the user to choose the CPU a worker process of a Node will run on. The default is to allow the system to choose.
+This is not best practice though and often not constraining the worker process to a specific CPU will lead to increased
+overall resource usage and more importantly (at least in Windows) will also lead to a large amount of dropped packets.
 
+:Warning: **Best Practice is to set the CPU for all your Nodes. This stops OS induced packet dropping.**
 
 
 
