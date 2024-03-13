@@ -13,7 +13,7 @@ build:
 
 python:
   install:
-    - requirements: Heron/Heron/docs/requirements.txt
+    - requirements: rtd_requirements.txt
 
 # Build documentation in the docs/source directory with Sphinx
 sphinx:
