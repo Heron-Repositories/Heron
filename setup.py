@@ -6,7 +6,7 @@ setup(
     description='A python framework for experimental pipelines',
     url='https://github.com/Heron-Repositories/Heron',
     author='George Dimitriadis',
-    author_email = 'gdimitri@hotmail.com',
+    author_email='gdimitri@hotmail.com',
     license='MIT',
     keywords=['Scientific', 'Cluster', 'Experiments'],
     packages=['Heron'],
@@ -21,9 +21,7 @@ setup(
                       'tornado',
                       'pynput',
                       'pyserial',
-                      'psutil',
-                      'sphinx_rtd_theme'
-                      ],
+                      'psutil'],
 
     classifiers=[
         'Development Status :: 3 - Alpha',

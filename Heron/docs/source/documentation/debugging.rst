@@ -19,7 +19,7 @@ ___________________
 
 If the worker process is running on a different machine then neither the debugger will see it nor any print
 statements will pass their output to the main machine and Heron's command line window. In order to solve this (and to
-also keep a general eye on Heron's overall performance) Heron has implemented two levels of Python's logging.
+also keep a general eye on Heron's overall performance) Heron has implemented two levels of Python logging.
 
 The com process's verbosity and log
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,3 +84,14 @@ can use to log information. Use this as follows:
 Of course if the worker script is meant to run on a different machine the full_path_log_file_name must make sense for the
 machine that it runs on since the logger is not designed to pass its messages to different machines.
 
+Hanging processes
+_________________
+When Heron crashes all processes should receive a kill command and stop themselves after HEARTBEAT_RATE *
+HEARTBEATS_TO_DEATH seconds (these variables are defined in the constants.py file). The same goes for a process that
+crashed because there was a bug in its code. If the error itself doesn't kill the process but makes it unresponsive
+then it will kill itself after the above specified amount of time.
+
+Yet, sometimes, some process does not kill themselves. This happens very rarely but it is possible. When that happens,
+restarting the Graph (even from a new Heron GUI) will throw an error claiming that the sockets required for communication
+are not available. The only way to stop such a process is to access it and kill it manually from whatever window the OS
+provides. For example in Windows this can be done from TaskManager while from Linux with the top command.
