@@ -39,3 +39,7 @@ dynamic = ["version"]
 
 [project.scripts]
 Heron = "Heron.gui.editor:run"
+
+[project.urls]
+Homepage = "https://github.com/Heron-Repositories/Heron/tree/main"
+Documentation = "https://heron-42ad.readthedocs.io/en/latest/index.html"
