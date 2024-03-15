@@ -3,7 +3,8 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Heron"
+name = "Heron-42ad"
+version = "0.7.1"
 authors = [
     {name = "George Dimitriadis", email = "gdimitri@hotmail.com"},
 ]
@@ -34,7 +35,6 @@ dependencies = ['pyzmq>=20.0',
                   'pyserial',
                   'psutil',
 ]
-dynamic = ["version"]
 
 [project.scripts]
 Heron = "Heron.gui.editor:run"

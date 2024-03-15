@@ -214,7 +214,7 @@ class SourceWorker:
         self.thread_proof_of_life.start()
 
     def on_kill(self, pid):
-        _ = sys.stdout.write("\033[91m" + 'Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid) + "\033[0m")
+        print('Killing {} {} with pid {}'.format(self.node_name, self.node_index, pid))
 
         if self.heron_savenodestate is not None and self.heron_savenodestate.substate_pandasdf_exists:
             self.heron_savenodestate.save_substate_at_death()

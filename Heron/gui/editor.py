@@ -9,9 +9,6 @@ import numpy as np
 import json
 import copy
 import sys
-import ctypes
-kernel32 = ctypes.windll.kernel32
-kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
