@@ -5,6 +5,21 @@ Installation & Startup
 Installation
 ------------
 
+The standard way
+^^^^^^^^^^^^^^^^^
+
+Heron can be installed as a pip package. Just do:
+
+.. code-block:: python
+
+       python -m pip install heron-42ad
+
+(or whatever python command you use in your system - python3, py, etc.) in any python environment you want.
+This will install all the required libraries and Heron itself and give you a fully
+working system.
+
+At some point we also plan to release a conda package, but currently this is lower on the priority list.
+
 The hardcore way (as of |today|)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -85,19 +100,6 @@ or (but not both!)
 
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
-The standard way
-^^^^^^^^^^^^^^^^^
-
-Heron can also be installed as a pip package. Just do:
-
-.. code-block:: python
-
-       pip install heron-42ad
-
-in any python environment you want. This will install all the required libraries and Heron itself and give you a fully
-working system.
-
-At some point we also plan to release a conda package, but currently this is lower on the priority list.
 
 OS Compatibility
 ^^^^^^^^^^^^^^^^^
