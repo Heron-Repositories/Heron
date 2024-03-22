@@ -166,6 +166,17 @@ with each other and still be used in the same pipeline (again see :doc:`lan_use`
 
 Startup
 -------
+
+After pip install
+^^^^^^^^^^^^^^^^^^
+If you install Heron through pip then you will get a Heron command to start the GUI. On a command line terminal with
+the correct environment activated just issue the command
+
+.. code-block:: bash
+    Heron
+
+and the GUI will start.
+
 After manual install
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -186,14 +197,7 @@ command line. So if for example you have set up a conda environment called base 
 
 If you are on Linux the assumption is you do not need this manual to set up a bash file.
 
-After pip install
-^^^^^^^^^^^^^^^^^^
-If you install Heron through pip then you will get a Heron command to start the GUI. On a command line terminal with
-the correct environment activated just issue the command
-.. code-block:: bash
-    Heron
 
-and the GUI will start.
 
 
 
