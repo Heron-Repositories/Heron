@@ -140,10 +140,10 @@ DearPyGui 2.0) so your mileage may vary.
 Once DearPyGui is up and running then Heron can be installed either through a pip command or by installing the individual
 requirements and then downloading Heron from its github page.
 
-Once up and running, Heron might complain that it cannot find the /home/$USER/.ssh/known_hosts file. If this is the case
+Once up and running, Heron might complain that it cannot find the /$HOME/.ssh/known_hosts file. If this is the case
 then you will need to make an empty known_hosts in the directory Heron is looking for it. This will not bother your
 standard ssh installation. If you are planning on using the Heron GUI running on Raspberry Pi to run graphs that connect
-to Nodes on other machines tnen you need to setup your ssh so that the known_hosts file resides in /home/$USER/.ssh.
+to Nodes on other machines then you need to setup your ssh so that the known_hosts file resides in /$HOME/.ssh.
 
 
 
@@ -189,7 +189,11 @@ If you are on Linux the assumption is you do not need this manual to set up a ba
 After pip install
 ^^^^^^^^^^^^^^^^^^
 If you install Heron through pip then you will get a Heron command to start the GUI. On a command line terminal with
-the correct environment activated just issue the command Heron and the GUI will start.
+the correct environment activated just issue the command
+.. code-block:: bash
+    Heron
+
+and the GUI will start.
 
 
 
