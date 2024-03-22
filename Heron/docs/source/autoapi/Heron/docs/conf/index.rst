@@ -28,7 +28,7 @@ Module Contents
    
 
 .. py:data:: templates_path
-   :annotation: = ['source/_templates']
+   :annotation: = []
 
    
 
@@ -43,7 +43,7 @@ Module Contents
    
 
 .. py:data:: html_static_path
-   :annotation: = ['source/_static']
+   :annotation: = []
 
    
 

@@ -28,11 +28,12 @@ Heron's needs. The minimal environment for Heron to start its GUI and also use a
 5. h5py
 6. tornado
 7. pynput
-8. serial
+8. pyserial
 9. dearpygui > 1.2
 10. opencv >= 4.x
+11. psutil
 
-All of the above, except dearpygui and opencv, can be installed through conda (pynput and serial are in the conda-forge).
+All of the above, except dearpygui and opencv, can be installed through conda (pynput and pyserial are in the conda-forge).
 So once you set up conda (either miniconda or anaconda) you can do:
 
 .. code-block:: python
@@ -60,18 +61,6 @@ If the environment you are setting up is for a machine that will not call Heron'
 Also check which Nodes you will need to use in this machine and figure out their imports. The absolutely necessary
 packages for Heron to run on a non GUI machine are numpy, pandas, pyzmq, paramiko and tornado.
 
-OpenSSH
-"""""""
-If you are on Windows you will not necessarily have openssh up and running. Heron requires this to work properly
-irrespective of whether you are going to use the LAN functionality of Heron or not. Here is what Microsoft
-`has to say about this. <https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse>`_
-
-You will need both the client and the server. To check that everything has worked properly go to where openssh has generated
-the .ssh folder (check out your user folder) and see if there is a folder in there called known_hosts. If that exists
-then Heron will not complain.
-Also after you have set the whole thing up test it out by sshing somewhere from your Windows machine and from somewhere
-to your Windows machine (making sure both server and client are working).
-
 Tornado
 """""""
 After you have installed everything there is a possibility that pyzmq will issue a warning regarding tornado every time
@@ -96,14 +85,65 @@ or (but not both!)
 
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
-The standard ways
+The standard way
 ^^^^^^^^^^^^^^^^^
 
-Heron will, in the near future, also be available as a pip package.
-The pip install will have as requirements everything mentioned above except openCV.
+Heron can also be installed as a pip package. Just do:
+
+.. code-block:: python
+
+       pip install heron-42ad
+
+in any python environment you want. This will install all the required libraries and Heron itself and give you a fully
+working system.
+
+At some point we also plan to release a conda package, but currently this is lower on the priority list.
+
+OS Compatibility
+^^^^^^^^^^^^^^^^^
+Heron runs on all systems that its libraries can run on. That means Windows, MacOS, Linux and ARM based systems.
+It has been tested on Windows (10 and 11), MacOS, Linux (Ubuntu 20.04.6, x64) and Raspberry Pi 4 (Debian GNU/Linux 12
+(bookworm), aarch64).
+
+Specific OS issues are:
+
+Windows - OpenSSH
+""""""""""""""""""
+If you are on Windows you will not necessarily have openssh up and running. Heron requires this to work properly
+irrespective of whether you are going to use the LAN functionality of Heron or not. Here is what Microsoft
+`has to say about this. <https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse>`_
+
+You will need both the client and the server. To check that everything has worked properly go to where openssh has generated
+the .ssh folder (check out your user folder) and see if there is a folder in there called known_hosts. If that exists
+then Heron will not complain.
+Also after you have set the whole thing up test it out by sshing somewhere from your Windows machine and from somewhere
+to your Windows machine (making sure both server and client are working).
+
+Linux (both x86 and ARM)
+""""""""""""""""""""""""
+If you install Heron using pip on a machine running Linux (either a PC or a Raspberry Pi) you will need to give executable
+privileges to the python scripts in Heron. Go into the top Heron directory and do::
+    $ sudo chmod -R 700 ./Heron
+
+The 700 will give you (the user) the minimum required privileges. Other, more permissive privilege combinations are also
+fine.
+
+Raspberry Pi
+"""""""""""""
+Installing on Raspberry pi (again at the time of writing this - March 2024) is a little bit trickier. All Heron required
+libraries except DearPyGui will install with a simple pip. DearPyGui needs to be compiled. Follow the instructions
+`here <https://github.com/hoffstadt/DearPyGui/issues/1741>`_. Things are still a little experimental (at least until
+DearPyGui 2.0) so your mileage may vary.
+
+Once DearPyGui is up and running then Heron can be installed either through a pip command or by installing the individual
+requirements and then downloading Heron from its github page.
+
+Once up and running, Heron might complain that it cannot find the /home/$USER/.ssh/known_hosts file. If this is the case
+then you will need to make an empty known_hosts in the directory Heron is looking for it. This will not bother your
+standard ssh installation. If you are planning on using the Heron GUI running on Raspberry Pi to run graphs that connect
+to Nodes on other machines tnen you need to setup your ssh so that the known_hosts file resides in /home/$USER/.ssh.
 
 
-At some point after that a conda package will be released, but currently this is lower on the priority list.
 
 Node requirements
 ^^^^^^^^^^^^^^^^^
@@ -124,6 +164,8 @@ with each other and still be used in the same pipeline (again see :doc:`lan_use`
 
 Startup
 -------
+After manual install
+^^^^^^^^^^^^^^^^^^^^^
 
 Heron's GUI is just a Python script so the way to run it is by calling in a command line the following code
 
@@ -141,6 +183,11 @@ command line. So if for example you have set up a conda environment called base 
     python directory_path_to_Heron\Heron\gui\editor.py
 
 If you are on Linux the assumption is you do not need this manual to set up a bash file.
+
+After pip install
+^^^^^^^^^^^^^^^^^^
+If you install Heron through pip then you will get a Heron command to start the GUI. On a command line terminal with
+the correct environment activated just issue the command Heron and the GUI will start.
 
 
 
