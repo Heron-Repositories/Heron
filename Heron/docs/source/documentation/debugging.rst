@@ -91,7 +91,7 @@ HEARTBEATS_TO_DEATH seconds (these variables are defined in the constants.py fil
 crashed because there was a bug in its code. If the error itself doesn't kill the process but makes it unresponsive
 then it will kill itself after the above specified amount of time.
 
-Yet, sometimes, some process does not kill themselves. This happens very rarely but it is possible. When that happens,
+Yet, sometimes, some process do not kill themselves. This happens very rarely but it is possible. When that happens,
 restarting the Graph (even from a new Heron GUI) will throw an error claiming that the sockets required for communication
-are not available. The only way to stop such a process is to access it and kill it manually from whatever window the OS
+are not available. The only way to stop such a process is to access it and kill it manually in whatever the OS
 provides. For example in Windows this can be done from TaskManager while from Linux with the top command.

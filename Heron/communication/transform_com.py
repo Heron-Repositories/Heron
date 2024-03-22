@@ -148,7 +148,7 @@ class TransformCom:
         :return: Nothing
         """
 
-        if 'python' in self.worker_exec or '.py' not in self.worker_exec:
+        if ('python' in self.worker_exec and os.sep+'python' not in self.worker_exec) or '.py' not in self.worker_exec:
             arguments_list = [self.worker_exec]
         else:
             arguments_list = ['python']
