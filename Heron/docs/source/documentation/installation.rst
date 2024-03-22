@@ -173,6 +173,7 @@ If you install Heron through pip then you will get a Heron command to start the 
 the correct environment activated just issue the command
 
 .. code-block:: bash
+
     Heron
 
 and the GUI will start.
