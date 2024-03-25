@@ -180,7 +180,7 @@ class SinkCom:
         # this while throws all past messages away.
         while prev_topic:
             topic = prev_topic
-            data_index = prev_data_index
+            data_index = int(prev_data_index[2:-1])
             data_time = prev_data_time
             messagedata = prev_messagedata
             try:
@@ -203,6 +203,7 @@ class SinkCom:
         publishes the transformed link to the link forwarder with this nodes' topic
         :return: Nothing
         """
+        previous_data_index = -1
         while self.all_loops_running:
             t1 = time.perf_counter()
 
@@ -237,8 +238,10 @@ class SinkCom:
                     print("---Time to Transport link from previous com to worker_exec = {} ms".format((t2 - t1) * 1000))
                     print("---Time to to finish with the worker_exec = {} ms".format((t3 - t2) * 1000))
                     print('=============================')
-                if self.logger:
+
+                if self.logger and previous_data_index != data_index:
                     self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
+                    previous_data_index = data_index
 
                 self.index += 1
             except:
