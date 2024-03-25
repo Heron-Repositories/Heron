@@ -18,6 +18,11 @@ Heron can be installed as a pip package. Just do:
 This will install all the required libraries and Heron itself and give you a fully
 working system.
 
+.. note::
+    Heron is not a install and forget type of software. As a user you will have to develop your own Nodes in the form
+    of git repositories and link their code to Heron. So knowledge of where your system has deposited Heron (and more
+    importantly it's Operations folder where the Nodes code resides) will be beneficial.
+
 At some point we also plan to release a conda package, but currently this is lower on the priority list.
 
 The hardcore way (as of |today|)

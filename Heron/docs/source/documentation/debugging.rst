@@ -39,7 +39,10 @@ output some basic info to that file every time it processes a message. This info
 in the current Node (i.e. how many messages this Node has processed), the time the com process finishes processing the
 message and if the message is coming from an upstream Node also the index of the message in that Node and the topic of
 the message (i.e. the string that tells which Node and which output the message came from and which input the message
-has arrived into this Node). These log files are very useful to be able to track messages across Nodes.
+has arrived into this Node).
+.. note::
+    These log files are very useful to be able to track messages across Nodes. How they can be used to time match packets
+    across processes is further described in the :doc:`synchronisation` section.
 
 The global and local log files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

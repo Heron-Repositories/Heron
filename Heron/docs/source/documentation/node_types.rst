@@ -172,7 +172,12 @@ Heron allows the user to choose the CPU a worker process of a Node will run on. 
 This is not best practice though and often not constraining the worker process to a specific CPU will lead to increased
 overall resource usage and more importantly (at least in Windows) will also lead to a large amount of dropped packets.
 
-:Warning: **Best Practice is to set the CPU for all your Nodes. This stops OS induced packet dropping.**
+.. warning::
+    If a Node seems to be dropping packages in either sending and receiving them, one of the first possible things to
+    try (before much heavier code optimisation) is to lock the CPU the node runs in to a specific core. This often
+    mitigates the problem, especially in Nodes that receive packages (Transforms, Sinks and Nodes that are running
+    non Python code as a separate process). CPU locking though is not a panacea when it comes to package dropping and
+    in certain cases might result in an increase of package dropping, so test your system and use appropriately.
 
 
 
