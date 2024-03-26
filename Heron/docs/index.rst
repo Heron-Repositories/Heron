@@ -22,6 +22,7 @@ Heron's documentation!
     source/documentation/writing_new_nodes
     source/documentation/visualisation
     source/documentation/saving_state
+    source/documentation/synchronisation.rst
     source/documentation/debugging
 
 .. toctree::
