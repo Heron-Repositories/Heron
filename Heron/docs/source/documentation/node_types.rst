@@ -88,9 +88,25 @@ see :doc:`writing_new_nodes`).
 
 Heron will call the worker_function of a Node if there are new data in AND the previous call has returned. If any new
 data arrive at the Node's input and the worker_function from the previous call is still running then Heron will drop
-the new data which will be lost. **IMPORTANT:** *Heron has no buffer to hold any messages that come into a Node that is
-still processing its previous message.* It is up to the user to verify that no important messages are lost. For that
-Heron offers a number of debugging tools (see :doc:`debugging`).
+the new data which will be lost.
+
+.. warning::
+    Heron has no buffer to hold any messages that come into a Node that is
+    still processing its previous message. This is by design.
+
+The logic behind the no-buffer feature is because in Heron's use cases there is no situation where a Node would receive
+large amounts of data in bursts while very little data during the rest of the time (in which case a buffer would make sense).
+Nodes in most experiments will either be data intensive but with a constant or near constant data receiving speed (e.g. cameras)
+or will have variable data load reception but always with small data loads (e.g. buttons). The second case is not an issue
+and the first case cannot be dealt with a buffer but with the appropriate code design, since buffering data coming in a
+Node too slow for its input will just postpone the inevitable crash.
+
+This design approach though means that Nodes can and will drop incoming packets silently. This is why Heron does not rely on
+packet order to tell which incoming packet in a Node corresponds to a Node's state change or outgoing packet.
+To achieve this important time matching functionality Heron offers a number of debugging (see :doc:`debugging`) and
+saving (see :doc:`saving_state`) tools that allow the user to know exactly which incoming packets never reached the Node
+and which generated packets were dropped by the next Node in the pipeline. This is described in more detail in
+:doc:`synchronisation`.
 
 The above fully defines what a Node does during an active Graph. Once the *Stop Graph* button has been pressed (or Heron
 is closed down) then all processes (the three forwarders and the com and worker processes for all Nodes) are killed
@@ -165,8 +181,8 @@ defined in the 0MQ protocol. Dashed line arrows represent data passing within a 
 process.
 
 
-Choosing the CPU
-_________________
+Choosing the CPU core
+_____________________
 
 Heron allows the user to choose the CPU a worker process of a Node will run on. The default is to allow the system to choose.
 This is not best practice though and often not constraining the worker process to a specific CPU will lead to increased
