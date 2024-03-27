@@ -6,6 +6,7 @@ import threading
 import zmq
 import os
 import psutil
+import numpy as np
 
 from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
@@ -24,7 +25,7 @@ class SinkCom:
         self.push_heartbeat_port = str(int(self.push_data_port) + 2)
         self.worker_exec = worker_exec
         self.verbose = verbose
-        self.verbose, self.relic = self.define_verbosity_and_relic(verbose)
+        self.verbose, self.savestatedir = self.define_verbosity_and_savestatedir(verbose)
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
         self.cpu_to_pin = cpu_to_pin
@@ -97,22 +98,22 @@ class SinkCom:
         self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.push_heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
-    def define_verbosity_and_relic(self, verbosity_string):
+    def define_verbosity_and_savestatedir(self, verbosity_string):
         """
         Splits the string that comes from the Node as verbosity_string into the string (or int) for the logging/printing
-        (self.verbose) and the string that carries the path where the relic is to be saved. The self.relic is then
+        (self.verbose) and the string that carries the path where the state is to be saved. The self.savestatedir is then
         passed to the worker process
-        :param verbosity_string: The string with syntax verbosity||relic
-        :return: (int)str vebrose, str relic
+        :param verbosity_string: The string with syntax verbosity||savestate_dir
+        :return: (int)str vebrose, str savestatedir
         """
         if verbosity_string != '':
-            verbosity, relic = verbosity_string.split('||')
-            if relic == '':
-                relic = '_'
+            verbosity, savestate_dir = verbosity_string.split('||')
+            if savestate_dir == '':
+                resavestate_dirlic = '_'
             if verbosity == '':
-                return 0, relic
+                return 0, savestate_dir
             else:
-                return verbosity, relic
+                return verbosity, savestate_dir
         else:
             return 0, ''
 
@@ -142,10 +143,11 @@ class SinkCom:
         :return: Nothing
         """
 
-        if ('python' in self.worker_exec and os.sep+'python' not in self.worker_exec) or '.py' not in self.worker_exec:
+        if np.any([i in self.worker_exec for i in ct.PYTHON_EXES]) or '.py' not in self.worker_exec:
             arguments_list = [self.worker_exec]
         else:
-            arguments_list = ['python']
+            python_exe = psutil.Process(os.getpid()).name()
+            arguments_list = [python_exe]
             arguments_list.append(self.worker_exec)
 
         arguments_list.append(str(self.push_data_port))
@@ -154,7 +156,7 @@ class SinkCom:
         for i in range(len(self.receiving_topics)):
             arguments_list.append(self.receiving_topics[i])
         arguments_list.append(str(0))
-        arguments_list.append(str(self.relic))
+        arguments_list.append(str(self.savestatedir))
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
         worker_pid = self.ssh_com.start_process(arguments_list)
@@ -180,7 +182,7 @@ class SinkCom:
         # this while throws all past messages away.
         while prev_topic:
             topic = prev_topic
-            data_index = int(prev_data_index[2:-1])
+            data_index = int(prev_data_index)
             data_time = prev_data_time
             messagedata = prev_messagedata
             try:
@@ -219,7 +221,6 @@ class SinkCom:
                 if self.socket_sub_data in sockets_in and sockets_in[self.socket_sub_data] == zmq.POLLIN:
                     topic, data_index, data_time, messagedata = self.get_sub_data()
                     sockets_in = dict(self.poller.poll(timeout=1))
-
                     if self.verbose:
                         print("oooo Sink from {}, data_index {} at time {} s oooo"
                               .format(topic, data_index, data_time))
@@ -229,21 +230,21 @@ class SinkCom:
                     self.socket_push_data.send_data(messagedata, copy=False)
                     t2 = time.perf_counter()
 
-                # Get the end of worker function link (wait for the socket_pull_data to get some link from the worker_exec)
-                sockets_in = dict(self.poller.poll(timeout=None))
-                self.socket_pull_data.recv()
-                t3 = time.perf_counter()
+                    # Get the end of worker function link (wait for the socket_pull_data to get some link from the worker_exec)
+                    sockets_in = dict(self.poller.poll(timeout=None))
+                    self.socket_pull_data.recv()
+                    t3 = time.perf_counter()
 
-                if self.verbose:
-                    print("---Time to Transport link from previous com to worker_exec = {} ms".format((t2 - t1) * 1000))
-                    print("---Time to to finish with the worker_exec = {} ms".format((t3 - t2) * 1000))
-                    print('=============================')
+                    if self.verbose:
+                        print("---Time to Transport link from previous com to worker_exec = {} ms".format((t2 - t1) * 1000))
+                        print("---Time to to finish with the worker_exec = {} ms".format((t3 - t2) * 1000))
+                        print('=============================')
 
-                if self.logger and previous_data_index != data_index:
-                    self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
-                    previous_data_index = data_index
+                    if self.logger and previous_data_index != data_index:
+                        self.logger.info('{} : {} : {} : {}'.format(self.index, data_index, topic, datetime.now()))
+                        previous_data_index = data_index
 
-                self.index += 1
+                    self.index += 1
             except:
                 pass
 

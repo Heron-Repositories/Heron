@@ -24,7 +24,7 @@ class SourceCom:
         self.index = 0
         self.time = int(1000000 * time.perf_counter())
         self.previous_time = self.time
-        self.verbose, self.relic = self.define_verbosity_and_relic(verbose)
+        self.verbose, self.savestatedir = self.define_verbosity_and_savestatedir(verbose)
 
         self.all_loops_running = True
         self.ssh_com = SSHCom(self.worker_exec, ssh_local_server_id, ssh_remote_server_id)
@@ -82,22 +82,22 @@ class SourceCom:
         self.socket_push_heartbeat.bind(r'tcp://*:{}'.format(self.heartbeat_port))
         self.socket_push_heartbeat.set_hwm(1)
 
-    def define_verbosity_and_relic(self, verbosity_string):
+    def define_verbosity_and_savestatedir(self, verbosity_string):
         """
         Splits the string that comes from the Node as verbosity_string into the string (or int) for the logging/printing
-        (self.verbose) and the string that carries the path where the relic is to be saved. The self.relic is then
+        (self.verbose) and the string that carries the path where the state is to be saved. The self.savestatedir is then
         passed to the worker process
-        :param verbosity_string: The string with syntax verbosity||relic
-        :return: (int)str vebrose, str relic
+        :param verbosity_string: The string with syntax verbosity||savestate_dir
+        :return: (int)str vebrose, str savestate_dir
         """
         if verbosity_string != '':
-            verbosity, relic = verbosity_string.split('||')
-            if relic == '':
-                relic = '_'
+            verbosity, savestate_dir = verbosity_string.split('||')
+            if savestate_dir == '':
+                savestate_dir = '_'
             if verbosity == '':
-                return 0, relic
+                return 0, savestate_dir
             else:
-                return verbosity, relic
+                return verbosity, savestate_dir
         else:
             return 0, ''
 
@@ -185,17 +185,19 @@ class SourceCom:
         general_utilities.parse_arguments_to_worker
         :return: Nothing
         """
-        if ('python' in self.worker_exec and os.sep+'python' not in self.worker_exec) or '.py' not in self.worker_exec:
+
+        if np.any([i in self.worker_exec for i in ct.PYTHON_EXES]) or '.py' not in self.worker_exec:
             arguments_list = [self.worker_exec]
         else:
-            arguments_list = ['python']
+            python_exe = psutil.Process(os.getpid()).name()
+            arguments_list = [python_exe]
             arguments_list.append(self.worker_exec)
 
         arguments_list.append(str(self.pull_data_port))
         arguments_list.append(str(self.parameters_topic))
         arguments_list.append(str(0))
         arguments_list.append(str(len(self.sending_topics)))
-        arguments_list.append(self.relic)
+        arguments_list.append(self.savestatedir)
         arguments_list = self.ssh_com.add_local_server_info_to_arguments(arguments_list)
 
         worker_pid = self.ssh_com.start_process(arguments_list)

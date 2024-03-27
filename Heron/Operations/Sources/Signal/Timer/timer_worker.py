@@ -80,7 +80,7 @@ def initialise(_worker_object):
             delay_generator = gaussian
 
         running = True
-        # The main loop must start (running = True and wait a bit) before the relic is created
+        # The main loop must start (running = True and wait a bit) before the savestatedir is created
         gu.accurate_delay(0.1)
 
     except:
