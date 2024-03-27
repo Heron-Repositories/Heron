@@ -95,7 +95,7 @@ the new data which will be lost.
     still processing its previous message. This is by design.
 
 The logic behind the no-buffer feature is because in Heron's use cases there is no situation where a Node would receive
-large amounts of data in bursts while very little data during the rest of the time (in which case a buffer would make sense).
+large amounts of data in bursts and very little data during the rest of the time (in which case a buffer would make sense).
 Nodes in most experiments will either be data intensive but with a constant or near constant data receiving speed (e.g. cameras)
 or will have variable data load reception but always with small data loads (e.g. buttons). The second case is not an issue
 and the first case cannot be dealt with a buffer but with the appropriate code design, since buffering data coming in a
