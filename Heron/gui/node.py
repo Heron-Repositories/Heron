@@ -81,7 +81,13 @@ class Node:
         dpg.remove_alias('verb#{}#{}'.format(self.operation.name, self.node_index))
         if dpg.does_alias_exist('savenodestate#{}#{}'.format(self.operation.name, self.node_index)):
             dpg.remove_alias('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index))
+        alias = dpg.get_item_alias(self.id)
         dpg.delete_item(self.id)
+        if alias is not None:
+            dpg.remove_alias(alias)
+        self.id = None
 
     def get_numbers_of_inputs_and_outputs(self):
         for at in self.operation.attribute_types:

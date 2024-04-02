@@ -3,7 +3,7 @@ import signal
 import time
 import subprocess
 import os
-from os.path import dirname
+from os.path import dirname, join
 from pathlib import Path
 import numpy as np
 import json
@@ -14,6 +14,7 @@ sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
+from Heron.gui.fdialog import FileDialog
 from Heron import constants as ct
 from Heron.gui import ssh_info_editor
 import dearpygui.dearpygui as dpg
@@ -30,6 +31,7 @@ mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
 node_selector: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
+last_visited_directory = os.path.expanduser('~')
 
 node_editor = None
 start_graph_button_id = None
@@ -278,10 +280,11 @@ def on_del_pressed(sender, key_value):
                 indices_to_remove.append(i)
 
     for i in indices_to_remove:
-        node = nodes_list[i]
-        for link in node.links_list:
+        #node = nodes_list[i]
+        for link in nodes_list[i].links_list:
             delete_link(None, link)
         nodes_list[i].remove_from_editor()
+        nodes_list[i] = None
         del nodes_list[i]
 
     for link in dpg.get_selected_links(node_editor=node_editor):
@@ -318,46 +321,52 @@ def update_control_graph_buttons(is_graph_running):
         dpg.bind_item_theme(end_graph_button_id, theme_non_active)
 
 
+def on_save_file_selected(selected_dirs):
+    global links_dict
+    global last_visited_directory
+
+    def removekey(d, key):
+        r = copy.deepcopy(d)
+        del r[key]
+        return r
+
+    save_to = selected_dirs[0]
+    last_visited_directory = dirname(save_to)
+    node_dict = {}
+    for n in nodes_list:
+        n.socket_pub_parameters = None
+        n.socket_sub_proof_of_life = None
+        n.context = None
+        try:
+            n.operations_list = None  # This line is in a try to make saves before Heron 0.5.5 work
+        except:
+            pass
+        n = copy.deepcopy(n)
+        node_dict[n.name] = n.__dict__
+        node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
+
+    try:
+        node_dict = removekey(node_dict, 'links')
+    except:
+        pass
+
+    node_dict['links'] = links_dict
+
+    with open(save_to, 'w+') as file:
+        json.dump(node_dict, file, indent=4)
+
+
 def save_graph():
     """
     Saves the current graph
     :return: Nothing
     """
+    global last_visited_directory
 
-    def on_file_select(sender, app_data, user_data):
-        global links_dict
-
-        def removekey(d, key):
-            r = copy.deepcopy(d)
-            del r[key]
-            return r
-
-        save_to = app_data['file_path_name']
-        node_dict = {}
-        for n in nodes_list:
-            n.socket_pub_parameters = None
-            n.socket_sub_proof_of_life = None
-            n.context = None
-            try:
-                n.operations_list = None  # This line is in a try to make saves before Heron 0.5.5 work
-            except:
-                pass
-            n = copy.deepcopy(n)
-            node_dict[n.name] = n.__dict__
-            node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
-
-        try:
-            node_dict = removekey(node_dict, 'links')
-        except:
-            pass
-
-        node_dict['links'] = links_dict
-
-        with open(save_to, 'w+') as file:
-            json.dump(node_dict, file, indent=4)
-
-    file_dialog = dpg.add_file_dialog(callback=on_file_select, height=500)
-    dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
+    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
+                             show_hidden_files=True, multi_selection=False, tag='file_dialog',
+                             default_path=last_visited_directory, dirs_only=False, callback=on_save_file_selected)
+    file_dialog.show_file_dialog()
 
 
 def get_attribute_id_from_label(label):
@@ -372,14 +381,16 @@ def get_attribute_id_from_label(label):
                 return child_id
 
 
-def do_the_loading_of_json_file(sender, app_data, user_data):
+def do_the_loading_of_json_file(selected_files):
     global nodes_list
     global last_used_port
     global port_generator
     global links_dict
     global node_editor
+    global last_visited_directory
 
-    load_file = app_data['file_path_name']
+    load_file = selected_files[0]
+    last_visited_directory = dirname(load_file)
 
     with open(load_file, 'r') as file:
         raw_dict = json.load(file)
@@ -429,7 +440,6 @@ def do_the_loading_of_json_file(sender, app_data, user_data):
                     for l2_name in copy.copy(links_dict[l1_name]):
                         l2 = get_attribute_id_from_label(l2_name)
                         on_link(node_editor, [l1, l2])
-                        #dpg.add_node_link(l1, l2, parent=node_editor)
 
     last_used_port = last_used_port + ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE
     port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
@@ -440,11 +450,14 @@ def load_graph():
     Loads a saved graph
     :return: Nothing
     """
+    global last_visited_directory
 
     clear_editor()
 
-    file_dialog = dpg.add_file_dialog(callback=do_the_loading_of_json_file, directory_selector=False, height=500)
-    dpg.add_file_extension(".json", color=[255, 255, 255, 255], parent=file_dialog)
+    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
+                             show_hidden_files=True, multi_selection=False, tag='file_dialog',
+                             default_path=last_visited_directory, dirs_only=False, callback=do_the_loading_of_json_file)
+    file_dialog.show_file_dialog()
 
 
 # TODO: Add a UI asking the user if they are sure (and that all link will be lost)
@@ -478,12 +491,12 @@ def add_new_symbolic_link_node_folder():
 
     delete_error_popup_aliases()
 
-    def on_folder_select(sender, app_data, user_data):
+    def on_folder_select(selected_files):
         global node_selector
         global operations_list
 
         main_folders = ['Sources', 'Transforms', 'Sinks']
-        operations_directory = app_data['file_path_name']
+        operations_directory = dirname(selected_files[0])
 
         def create_error_window(error_text, spacer):
             with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
@@ -544,7 +557,10 @@ def add_new_symbolic_link_node_folder():
             Node.operations_list = operations_list
             node_selector = create_node_selector_window()
 
-    file_dialog = dpg.add_file_dialog(callback=on_folder_select, directory_selector=True, height=500)
+    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
+                             show_hidden_files=False, multi_selection=False, tag='file_dialog',
+                             default_path=os.path.expanduser('~'), dirs_only=True, callback=on_folder_select)
+    file_dialog.show_file_dialog()
 
 
 def view_operations_repos():
@@ -628,11 +644,65 @@ def create_node_selector_window():
         return node_selector
 
 
+def known_hosts_file_setup_check():
+    """
+    On launch checks if there is a known_hosts file where it is expected to be. If not it gives the user the option
+    to either create a new empty one where it is expected or choose another one.
+    :return: Nothing
+    """
+    known_hosts_file_path = ct.KNOWN_HOSTS_FILE
+
+    def on_press_known_hosts_buttons(sender, app_data, user_data):
+        dpg.delete_item('known_hosts_window')
+        if user_data:
+            with open(known_hosts_file_path, 'w') as f:
+                f.write('')
+        else:
+            def on_file_dialog_return(selected_files):
+                knownhost_filepath = selected_files[0]
+                constants_file = join(dirname(dirname(os.path.realpath(__file__))), 'constants.py')
+                constants_txt = '\n'
+                with open(constants_file, 'r') as f:
+                    lines = f.read().split('\n')
+                    for i, line in enumerate(lines):
+                        if 'KNOWN_HOSTS_FILE' in line:
+                            lines[i] = "KNOWN_HOSTS_FILE = r'{}'".format(knownhost_filepath)
+                    constants_txt = constants_txt.join(lines)
+                with open(constants_file, 'w') as f:
+                    f.write(constants_txt)
+                dpg.delete_item('known_hosts_window')
+
+            file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
+                                     show_hidden_files=True, multi_selection=False, tag='file_dialog',
+                                     default_path=last_visited_directory, dirs_only=False,
+                                     callback=on_file_dialog_return)
+            file_dialog.show_file_dialog()
+
+    try:
+        with open(known_hosts_file_path):
+            pass
+    except FileNotFoundError:
+        with dpg.window(label='WARNING: SSH known_hosts file not found!', tag='known_hosts_window', width=500, height=200,
+                        pos=[500, 200]):
+            dpg.add_text('No known_hosts file {} \n has been found.\n '.format(known_hosts_file_path) +
+                         'Either create a new empty known_hosts file in this folder\n'
+                         'or select another file.')
+
+            dpg.add_spacer(height=20)
+            dpg.add_separator()
+            dpg.add_spacer(height=20)
+
+            with dpg.group(horizontal=True, indent=30):
+                dpg.add_button(label='Add empty known_hosts file', user_data=True, callback=on_press_known_hosts_buttons)
+                dpg.add_button(label='Select a known_hosts file', user_data=False, callback=on_press_known_hosts_buttons)
+
+
 def run(load_json_file=None):
     global node_editor
     global start_graph_button_id
     global end_graph_button_id
     global node_editor_window
+    global file_dialog
 
     dpg.create_context()
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
@@ -684,6 +754,13 @@ def run(load_json_file=None):
         dpg.add_mouse_drag_handler(callback=on_drag)
         dpg.add_mouse_release_handler(callback=on_mouse_release)
 
+    '''
+    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
+                             show_hidden_files=True, multi_selection=False, tag='file_dialog',
+                             default_path=last_visited_directory, dirs_only=False, callback=lambda:None)
+    '''
+    known_hosts_file_setup_check()
+    
     dpg.setup_dearpygui()
     dpg.show_viewport()
 
