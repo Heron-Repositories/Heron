@@ -235,7 +235,6 @@ class FileDialog:
             self.img_app = "ico_app"
             self.img_iso = "ico_iso"
 
-
         # low-level functions
         def _get_all_drives():
             all_drives = psutil.disk_partitions()
@@ -315,13 +314,13 @@ class FileDialog:
                 if self.file_filter != ".*" and not len(file.split('.')) > 1:
                     file = file+self.file_filter
                 file_name = join(os.getcwd(), file)
-                make_new_file(file_name)
+                if not os.path.isfile(file_name):
+                    make_new_file(file_name)
                 self.selected_files = [file_name]
             if callback is None:
                 pass
             else:
                 self.callback(self.selected_files)
-            #reset_dir(default_path=self.default_path)
             self.selected_files.clear()
             self.__del__()
 
@@ -339,22 +338,26 @@ class FileDialog:
             # Single selection
             else:
                 #dpg.set_value(sender, False)
-                #current_time = time.time()
-                #if current_time - last_click_time < 0.5:  # adjust the time as needed
-                if user_data is not None and user_data[1] is not None:
-                    if os.path.isdir(user_data[1]):
-                        # print(f"Content:{dpg.get_item_label(sender)}, files: {user_data}")
-                        chdir(user_data[1])
-                        dpg.set_value("ex_search", "")
-                    elif os.path.isfile(user_data[1]):
-                        if not len(self.selected_files) > 1:
-                            self.selected_files.append(user_data[1])
-                            return_items()
-                            return user_data[1]
-                        else:
-                            return_items()
-                            return user_data[1]
-                #last_click_time = current_time
+                current_time = time.time()
+                if current_time - last_click_time < 0.5:  # Double click. Adjust the time as needed
+                    if user_data is not None and user_data[1] is not None:
+                        if os.path.isdir(user_data[1]):
+                            # print(f"Content:{dpg.get_item_label(sender)}, files: {user_data}")
+                            chdir(user_data[1])
+                            dpg.set_value("ex_search", "")
+                        elif os.path.isfile(user_data[1]):
+                            if not len(self.selected_files) > 1:
+                                self.selected_files.append(user_data[1])
+                                return_items()
+                                return user_data[1]
+                            else:
+                                return_items()
+                                return user_data[1]
+                else:  # Single click
+                    if user_data is not None and user_data[1] is not None:
+                        dpg.set_value('new_file_name', user_data[1])
+
+                last_click_time = current_time
 
         def _search():
             res = dpg.get_value("ex_search")
@@ -570,8 +573,7 @@ class FileDialog:
                     # 'special directory' that sends back to the prevorius directory
                     with dpg.table_row(parent="explorer"):
                         dpg.add_selectable(label="..", callback=_back, span_columns=True, height=self.selec_height)
-                        
-                        
+
                         # dir list
                         for _dir in dirs:
                             if not _is_hidden(_dir):
@@ -611,13 +613,9 @@ class FileDialog:
 
             internal()
 
-        def on_right_mouse_click(sender, app_data):
-            print('hello')
-
         def make_new_file(file_name):
             with open(file_name, 'w') as f:
                 f.write('')
-
 
         # main file dialog header
         with dpg.window(label="File dialog", tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
@@ -721,9 +719,6 @@ class FileDialog:
                 chdir(os.getcwd())
             else:
                 chdir(self.default_path)
-
-        with dpg.handler_registry():
-            dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Right, callback=on_right_mouse_click)
 
     # high-level functions
     def show_file_dialog(self):

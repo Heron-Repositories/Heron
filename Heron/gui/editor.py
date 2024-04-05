@@ -321,7 +321,7 @@ def update_control_graph_buttons(is_graph_running):
         dpg.bind_item_theme(end_graph_button_id, theme_non_active)
 
 
-def on_save_file_selected(selected_dirs):
+def on_save_file_selected(selected_files):
     global links_dict
     global last_visited_directory
 
@@ -330,7 +330,7 @@ def on_save_file_selected(selected_dirs):
         del r[key]
         return r
 
-    save_to = selected_dirs[0]
+    save_to = selected_files[0]
     last_visited_directory = dirname(save_to)
     node_dict = {}
     for n in nodes_list:
