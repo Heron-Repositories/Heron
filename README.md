@@ -30,7 +30,13 @@ More information on the parts of the Heron editor and its use see the Use paragr
 
 ## Installation
 
-Heron does not require any type of installation (and thus it has not yet been packaged into pip or conda - something that will happen in the future). Just download the repo, put it somewhere and then run the editor.py script found in the Heron/Heron/gui folder.
+One way is pip:
+
+```
+python -m pip install heron-42ad
+```
+
+Yet, Heron does not require any type of installation. One can just download the repo, put it somewhere and then run the editor.py script found in the Heron/Heron/gui folder.
 
 Important note. The whole of the Heron repo must be found in all the computers that run nodes in a pipeline. The editor will only run in one of the computers but the whole repo needs to be present in all computers (since this defines Heron's communication protocol). Any code that runs in a machine separate to the computer running the editor must be part of the Heron directory structure wrapped appropriately in the code that creates the Heron nodes.
 
@@ -40,7 +46,7 @@ The Heron repository comes installed with a small number of Nodes that are gener
 
 The library requirements of Heron are:
 
-python >=3.9
+python >=3.11
 
 pyzmq >= 22.x
 
@@ -63,7 +69,7 @@ pyserial
 h5py
 
 Unfortunately the in-Node visualisation capabilities and a good few Nodes (Visualiser, Cameras, OpenCV filters) repy on opencv = 4.x (3.x should work but not tested). Sorry about that! In the future there will be an effort to remove basic dependency on opencv but for now, it is what it is.
-At the time of writting (Feb. 2022) conda will not install opencv for python > 3.8, so if you are using python 3.9 or newer you have to install opencv through pip.
+At the time of writting (Feb. 2022) conda will not install opencv for python > 3.8, so if you are using python 3.11 or newer you have to install opencv through pip.
 
 If you use conda then dearpygui has to also be installed by pip (no conda packages yet). 
 
@@ -74,6 +80,7 @@ conda install pandas
 conda install tornado
 conda install pyzmq
 conda install paramiko
+conda install psutil
 
 pip install dearpygui
 pip install opencv-python
