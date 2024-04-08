@@ -175,7 +175,6 @@ def delete_link(sender, link):
     :return: Nothing
     """
     global links_dict
-
     link_conf = dpg.get_item_configuration(link)
     output_node = link_conf['user_data']['node_id_out']
     input_node = link_conf['user_data']['node_id_in']
@@ -183,7 +182,6 @@ def delete_link(sender, link):
     topic_in = link_conf['user_data']['topic_in'].replace(' ', '_')
 
     del links_dict[topic_out.split('-')[0]]
-
     topic_out = topic_out.replace(' ', '_')
 
     for n in nodes_list:
@@ -280,8 +278,8 @@ def on_del_pressed(sender, key_value):
                 indices_to_remove.append(i)
 
     for i in indices_to_remove:
-        #node = nodes_list[i]
-        for link in nodes_list[i].links_list:
+        links_to_be_deleted = copy.copy(nodes_list[i].links_list)
+        for link in links_to_be_deleted:
             delete_link(None, link)
         nodes_list[i].remove_from_editor()
         nodes_list[i] = None
@@ -325,11 +323,6 @@ def on_save_file_selected(selected_files):
     global links_dict
     global last_visited_directory
 
-    def removekey(d, key):
-        r = copy.deepcopy(d)
-        del r[key]
-        return r
-
     save_to = selected_files[0]
     last_visited_directory = dirname(save_to)
     node_dict = {}
@@ -344,11 +337,6 @@ def on_save_file_selected(selected_files):
         n = copy.deepcopy(n)
         node_dict[n.name] = n.__dict__
         node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
-
-    try:
-        node_dict = removekey(node_dict, 'links')
-    except:
-        pass
 
     node_dict['links'] = links_dict
 
@@ -743,6 +731,7 @@ def run(load_json_file=None):
                              width=1220, height=dpg.get_item_height(main_window) - 100) as node_editor:
             dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
 
+    # For Debugging purposes
     # dpg.show_debug()
     # dpg.show_logger()
     # dpg.show_documentation()
@@ -754,11 +743,7 @@ def run(load_json_file=None):
         dpg.add_mouse_drag_handler(callback=on_drag)
         dpg.add_mouse_release_handler(callback=on_mouse_release)
 
-    '''
-    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
-                             show_hidden_files=True, multi_selection=False, tag='file_dialog',
-                             default_path=last_visited_directory, dirs_only=False, callback=lambda:None)
-    '''
+    #  At start the editor checks if the known_hosts file can be found and if not warns the user
     known_hosts_file_setup_check()
     
     dpg.setup_dearpygui()
