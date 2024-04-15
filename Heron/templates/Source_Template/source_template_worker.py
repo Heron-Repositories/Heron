@@ -17,6 +17,7 @@ sys.path.insert(0, path.dirname(current_dir))
 import numpy as np
 from Heron.gui.visualisation_dpg import VisualisationDPG
 from Heron import general_utils as gu
+from Heron.communication.source_worker import SourceWorker
 # </editor-fold>
 
 
@@ -83,7 +84,7 @@ def initialise(worker_object):
 
 
 #  The worker_function of the Source Operation has access to the SourceWorker worker_object
-def work_function(worker_object):
+def work_function(worker_object: SourceWorker) -> None:
     global running
     global vis
     global global_var_1

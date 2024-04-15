@@ -28,7 +28,7 @@ Properties of the generated Node
 """
 BaseName = 'Source Template'  # The base name can have spaces.
 NodeAttributeNames = ['Parameters', 'Something Out 1']
-# The names of the output of the Node. Currently the Source Node supports only a single output. In the future it will
+# The names of the output of the Node. Currently, the Source Node supports only a single output. In the future it will
 # support multiple outputs.
 # If the Node has any parameters then the first name has to be Parameters. This is neither an input or an output but
 # provides space on the Node to show parameter widgets.

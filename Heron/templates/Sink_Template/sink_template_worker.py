@@ -6,6 +6,7 @@
 # package installation. Do not change.">
 import sys
 from os import path
+from typing import List, Union
 
 current_dir = path.dirname(path.abspath(__file__))
 while path.split(current_dir)[-1] != r'Heron':
@@ -18,6 +19,7 @@ import numpy as np
 from Heron.communication.socket_for_serialization import Socket
 from Heron.gui.visualisation_dpg import VisualisationDPG
 from Heron import general_utils as gu
+from Heron.communication.transform_worker import TransformWorker
 # </editor-fold>
 
 # <editor-fold desc="Global variables if required. Global variables operate obviously within the scope of the process
@@ -87,7 +89,9 @@ def initialise(_worker_object):
 # Graph pipeline is running.
 # The data is a list with two items. The first is the topic of the connection. If the Node has multiple Inputs then
 # the topic will tell you which Input the data packet arrived from.
-def work_function(data, parameters, savenodestate_update_substate_df):
+def work_function(data: List[Union[np.ndarray, dict]],
+                  parameters: List,
+                  savenodestate_update_substate_df: TransformWorker.savenodestate_update_substate_df) -> None:
     global global_var_1
     global global_var_2
     global global_var_3
