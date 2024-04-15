@@ -9,6 +9,7 @@ import time
 import psutil
 from glob import glob
 from os.path import dirname, join
+import shutil
 
 last_click_time = 0
 images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources', 'filedialog_images')
@@ -96,6 +97,7 @@ class FileDialog:
         afiwidth, afiheight, afichannels, afidata = dpg.load_image(join(images_path, "add_folder.png"))
         afwidth, afheight, afchannels, afdata = dpg.load_image(join(images_path, "add_file.png"))
         mfwidth, mfheight, mfchannels, mfdata = dpg.load_image(join(images_path, "mini_folder.png"))
+        mafwidth, mafheight, mafchannels, mafdata = dpg.load_image(join(images_path, "mini_add_folder.png"))
         fiwidth, fiheight, fichannels, fidata = dpg.load_image(join(images_path, "folder.png"))
         mdwidth, mdheight, mdchannels, mddata = dpg.load_image(join(images_path, "mini_document.png"))
         mewidth, meheight, mechannels, medata = dpg.load_image(join(images_path, "mini_error.png"))
@@ -131,6 +133,7 @@ class FileDialog:
         self.ico_add_folder = [afiwidth, afiheight, afidata]
         self.ico_add_file = [afwidth, afheight, afdata]
         self.ico_mini_folder = [mfwidth, mfheight, mfdata]
+        self.ico_mini_add_folder = [mafwidth, mafheight, mafdata]
         self.ico_folder = [fiwidth, fiheight, fidata]
         self.ico_mini_document = [mdwidth, mdheight, mddata]
         self.ico_mini_error = [mewidth, meheight, medata]
@@ -169,6 +172,7 @@ class FileDialog:
                 dpg.add_static_texture(width=self.ico_add_folder[0], height=self.ico_add_folder[1], default_value=self.ico_add_folder[2], tag="ico_add_folder")
                 dpg.add_static_texture(width=self.ico_add_file[0], height=self.ico_add_file[1], default_value=self.ico_add_file[2], tag="ico_add_file")
                 dpg.add_static_texture(width=self.ico_mini_folder[0], height=self.ico_mini_folder[1], default_value=self.ico_mini_folder[2], tag="ico_mini_folder")
+                dpg.add_static_texture(width=self.ico_mini_add_folder[0], height=self.ico_mini_add_folder[1], default_value=self.ico_mini_add_folder[2], tag="ico_mini_add_folder")
                 dpg.add_static_texture(width=self.ico_folder[0], height=self.ico_folder[1], default_value=self.ico_folder[2], tag="ico_folder")
                 dpg.add_static_texture(width=self.ico_mini_document[0], height=self.ico_mini_document[1], default_value=self.ico_mini_document[2], tag="ico_mini_document")
                 dpg.add_static_texture(width=self.ico_mini_error[0], height=self.ico_mini_error[1], default_value=self.ico_mini_error[2], tag="ico_mini_error")
@@ -205,6 +209,7 @@ class FileDialog:
             self.img_add_folder = "ico_add_folder"
             self.img_add_file = "ico_add_file"
             self.img_mini_folder = "ico_mini_folder"
+            self.img_mini_add_folder = "ico_mini_add_folder"
             self.img_folder = "ico_folder"
             self.img_mini_document = "ico_mini_document"
             self.img_mini_error = "ico_mini_error"
@@ -298,7 +303,8 @@ class FileDialog:
                     with dpg.window(label=title, no_close=True, modal=True) as modal_id:
                         dpg.add_text(message)
                         with dpg.group(horizontal=True):
-                            dpg.add_button(label="Ok", width=-1, user_data=(modal_id, True), callback=lambda: dpg.delete_item(modal_id))
+                            dpg.add_button(label="Ok", width=-1, user_data=(modal_id, True),
+                                           callback=lambda: dpg.delete_item(modal_id))
 
                 dpg.split_frame()
                 width = dpg.get_item_width(modal_id)
@@ -314,9 +320,11 @@ class FileDialog:
                 if self.file_filter != ".*" and not len(file.split('.')) > 1:
                     file = file+self.file_filter
                 file_name = join(os.getcwd(), file)
-                if not os.path.isfile(file_name):
+                if not os.path.isfile(file_name) and not os.path.isdir(file_name):
                     make_new_file(file_name)
                 self.selected_files = [file_name]
+            elif self.dirs_only:
+                self.selected_files = [os.getcwd()]
             if callback is None:
                 pass
             else:
@@ -355,7 +363,8 @@ class FileDialog:
                                 return user_data[1]
                 else:  # Single click
                     if user_data is not None and user_data[1] is not None:
-                        dpg.set_value('new_file_name', user_data[1])
+                        if not os.path.isdir(user_data[1]):
+                            dpg.set_value('new_file_name', user_data[1])
 
                 last_click_time = current_time
 
@@ -437,6 +446,8 @@ class FileDialog:
                         dpg.add_image(self.img_folder, parent=drag_payload)
                     elif item_type == "File":
                         dpg.add_image(self.img_document, parent=drag_payload)
+
+                dpg.bind_item_handler_registry(cell_name, 'widget_handler')
 
         def _makefile(item, callback, parent="explorer"):
             if self.file_filter == ".*" or item.endswith(self.file_filter):
@@ -531,6 +542,8 @@ class FileDialog:
                         elif item_type == "File":
                             dpg.add_image(self.img_document, parent=drag_payload)
 
+                    dpg.bind_item_handler_registry(cell_name, 'widget_handler')
+
         def _back(sender, app_data, user_data):
             global last_click_time
             if dpg.is_key_down(dpg.mvKey_Control):
@@ -558,7 +571,7 @@ class FileDialog:
             except PermissionError as e:
                 message_box("File dialog - PerimssionError", f"Cannot open the folder because is a system folder or the access is denied\n\nMore info:\n{e}")
         
-        def reset_dir(file_name_filter=None, default_path=self.default_path):
+        def reset_dir(file_name_filter=None, default_path=self.default_path, show_new_folder_input=False):
             def internal():
                 self.selected_files.clear()
                 try:
@@ -589,6 +602,17 @@ class FileDialog:
                                 else:
                                     _makedir(_dir, open_file)
 
+                    # Add the 'Add new folder' selectable or input text
+                    with dpg.table_row(parent="explorer"):
+                        with dpg.group(horizontal=True):
+                            kwargs_file = {'tint_color': [255, 255, 255, 255]}
+                            dpg.add_image(self.img_mini_add_folder, **kwargs_file)
+                            if show_new_folder_input:
+                                dpg.add_input_text(default_value='New Folder Name', user_data='input', on_enter=True,
+                                                   callback=make_new_dir, height=self.selec_height, tag='new folder name')
+                            else:
+                                dpg.add_selectable(label="Add New Folder", user_data='click', callback=make_new_dir,
+                                                   span_columns=True, height=self.selec_height)
                         # file list
                         if not self.dirs_only:
                             for file in files:
@@ -617,8 +641,38 @@ class FileDialog:
             with open(file_name, 'w') as f:
                 f.write('')
 
+        def make_new_dir(sender, app_data, user_data):
+            if user_data == 'click':
+                reset_dir(default_path=os.getcwd(), show_new_folder_input=True)
+            elif user_data == 'input':
+                new_dir = join(os.getcwd(), dpg.get_value('new folder name'))
+                os.mkdir(new_dir)
+                reset_dir(default_path=os.getcwd(), show_new_folder_input=False)
+
+        def delete_file_or_folder(sender, app_data, user_data):
+            file_or_folder = user_data[0]
+            if os.path.isfile(file_or_folder):
+                os.remove(user_data[0])
+            else:
+                shutil.rmtree(file_or_folder, ignore_errors=True)
+            reset_dir(default_path=os.getcwd())
+            dpg.delete_item(user_data[1])
+
+        def on_right_click_selectable(sender, app_data, user_data):
+            path_to_delete = dpg.get_item_user_data(app_data[1])[1]
+            name_to_delete = dpg.get_item_user_data(app_data[1])[0]
+            with dpg.window(label='Deleting', pos=[700, 300], height=120, width=480, show=True) as del_check:
+                dpg.add_text(default_value=f'Do you want to permanently delete {name_to_delete}?\n'
+                                           f'If {name_to_delete} is a folder this will permanently delete everything in it.')
+                with dpg.group(horizontal=True):
+                    dpg.add_button(label='Yes', callback=delete_file_or_folder, indent=150,
+                                   user_data=[path_to_delete, del_check])
+                    dpg.add_spacer(width=50)
+                    dpg.add_button(label='Cancel', callback=lambda: dpg.delete_item(del_check))
+
+
         # main file dialog header
-        with dpg.window(label="File dialog", tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
+        with dpg.window(label=self.title, tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
                         width=self.width, height=self.height, min_size=self.min_size, no_collapse=True, pos=(50, 50)):
             info_px = 110
 
@@ -720,7 +774,13 @@ class FileDialog:
             else:
                 chdir(self.default_path)
 
+        with dpg.item_handler_registry(tag="widget_handler"):
+            dpg.add_item_clicked_handler(button=dpg.mvMouseButton_Right, callback=on_right_click_selectable)
+
+
+
     # high-level functions
+
     def show_file_dialog(self):
         chdir(self.default_path)
         dpg.show_item(self.tag)
@@ -738,6 +798,7 @@ class FileDialog:
         dpg.remove_alias("ico_add_folder")
         dpg.remove_alias("ico_add_file")
         dpg.remove_alias("ico_mini_folder")
+        dpg.remove_alias("ico_mini_add_folder")
         dpg.remove_alias("ico_folder")
         dpg.remove_alias("ico_mini_document")
         dpg.remove_alias("ico_mini_error")
@@ -776,5 +837,10 @@ class FileDialog:
         dpg.remove_alias("ex_type")
         dpg.remove_alias("ex_size")
         dpg.remove_alias("new_file_name")
+        dpg.remove_alias("widget_handler")
+        try:
+            dpg.remove_alias('new folder name')
+        except:
+            pass
         dpg.remove_alias(self.tag + "_return")
         dpg.remove_alias(self.tag)
