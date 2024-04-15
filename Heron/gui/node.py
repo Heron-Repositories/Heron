@@ -4,6 +4,8 @@ import platform
 import signal
 import os
 import subprocess
+
+import numpy as np
 import zmq
 import copy
 import psutil
@@ -183,7 +185,7 @@ class Node:
 
             # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
             # the node
-            same_line_widget_ids = []
+            node_attributes_list = []
             for i, attr in enumerate(self.operation.attributes):
 
                 if 'Input' in self.operation.attribute_types[i]:
@@ -195,8 +197,9 @@ class Node:
 
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
 
-                with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type):
-                    if attribute_type == 1:
+                with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type)as at:
+                    node_attributes_list.append(at)
+                    if attribute_type == dpg.mvNode_Attr_Output:
                         dpg.add_spacer()
                     colour = [255, 255, 255, 255]
                     if 'Dict' in self.operation.attributes[i]:
@@ -238,6 +241,14 @@ class Node:
                             self.parameter_inputs_ids[parameter] = id
 
                     dpg.add_spacer(label='##Spacing##'+attribute_name, indent =3)
+
+            #  Move Output attribute labels to the right of the Node
+            dpg.split_frame()
+            node_width = dpg.get_item_rect_size(self.id)[0]
+            for i, at in enumerate(node_attributes_list):
+                if 'Output' in self.operation.attribute_types[i]:
+                    string_size = len(dpg.get_item_label(at).split('##')[0])
+                    dpg.set_item_indent(at, node_width - np.power(string_size, 0.7)*18)
 
             # Add the extra input button with its popup window for extra inputs like ssh and verbosity
             self.extra_input_window()
