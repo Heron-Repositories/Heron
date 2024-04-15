@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Heron-42ad"
-version = "0.7.2.1"
+version = "0.7.3"
 authors = [
     {name = "George Dimitriadis", email = "gdimitri@hotmail.com"},
 ]
 description = "Heron Node baed experiment designer"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 keywords = ["Node-based", "experiment"]
 license = {text = "MIT License"}
 classifiers = [
@@ -19,8 +19,6 @@ classifiers = [
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11'
 ]
 dependencies = ['pyzmq>=20.0',
