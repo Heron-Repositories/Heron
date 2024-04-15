@@ -16,7 +16,7 @@ from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron.gui.fdialog import FileDialog
 from Heron import constants as ct
-from Heron.gui import ssh_info_editor
+from Heron.gui import ssh_info_editor, create_new_node
 import dearpygui.dearpygui as dpg
 
 operations_list = op_list.generate_operations_list() #operations_list  # This generates all of the Operation dataclass instances currently
@@ -685,6 +685,10 @@ def known_hosts_file_setup_check():
                 dpg.add_button(label='Select a known_hosts file', user_data=False, callback=on_press_known_hosts_buttons)
 
 
+def graphically_create_new_node(sender, data):
+    create_new_node.start()
+
+
 def run(load_json_file=None):
     global node_editor
     global start_graph_button_id
@@ -699,7 +703,7 @@ def run(load_json_file=None):
         # add font (set as default for entire app)
         default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
 
-    with dpg.window(width=1620, height=1000, pos=[0, 0]) as main_window:
+    with dpg.window(width=1620, height=1000, pos=[0, 0], tag='main_window') as main_window:
         dpg.set_primary_window(main_window, True)
         # The Start Graph button that starts all processes
         with dpg.group(horizontal=True):
@@ -717,11 +721,12 @@ def run(load_json_file=None):
             with dpg.menu(label='Local Network') as menu:
                 ssh_info_editor.set_parent_id(menu)
                 dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
-            with dpg.menu(label='Operations'):
+            with dpg.menu(label='Nodes'):
                 dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
                                   callback=add_new_symbolic_link_node_folder)
-                dpg.add_menu_item(label='Download Operations from the Heron-Repositories page',
+                dpg.add_menu_item(label='Download Nodes from the Heron-Repositories page',
                                   callback=view_operations_repos)
+                dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
     _ = create_node_selector_window()
 
