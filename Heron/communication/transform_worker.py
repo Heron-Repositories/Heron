@@ -116,7 +116,7 @@ class TransformWorker:
         The result must be a list of numpy arrays! Each element of the list represent one output of the node in the
         same order as the order of Outputs specified in the xxx_com.py of the node
         The callback will call the work_function only if the self.initialised is True (i.e. if the parameters_callback
-        has had a chance to call the initialisation_function and get back a True). Otherwise it will pass to the com
+        has had a chance to call the initialisation_function and get back a True). Otherwise, it will pass to the com
         a set of ct.IGNORE (as many as the Node's outputs).
         :param data: The link received
         :return: Nothing
