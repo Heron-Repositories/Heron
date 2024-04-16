@@ -449,7 +449,7 @@ class Node:
 
         if platform.system() == 'Windows':
             self.process.send_signal(signal.CTRL_BREAK_EVENT)
-        elif platform.system() == 'Linux':
+        elif platform.system() == 'Linux' or platform.system() == 'Darwin':
             self.process.terminate()
         gu.accurate_delay(500)
         self.process.kill()
