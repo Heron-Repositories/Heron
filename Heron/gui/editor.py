@@ -9,6 +9,7 @@ import numpy as np
 import json
 import copy
 import sys
+import ctypes
 
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
@@ -30,6 +31,7 @@ panel_coordinates = [0, 0]
 mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
 node_selector: int
+italic_font: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 last_visited_directory = os.path.expanduser('~')
 
@@ -466,6 +468,7 @@ def clear_editor():
 
 
 def add_new_symbolic_link_node_folder():
+    global last_visited_directory
 
     def delete_error_popup_aliases():
         if dpg.does_alias_exist('modal_error_id'):
@@ -476,45 +479,58 @@ def add_new_symbolic_link_node_folder():
         if dpg.does_alias_exist("modal_id_folders_not_found"):
             dpg.delete_item("modal_id_folders_not_found")
             print('killed wrong folder window')
+            
+    def create_error_window(error_text, spacer):
+        with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
+                        no_title_bar=True, popup=True):
+            dpg.add_text(error_text)
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=spacer)
+                dpg.add_button(label="OK", width=75, callback=delete_error_popup_aliases)
+
+    # Check if in Windows and running as an Admin
+    if os.name == 'nt' and ctypes.windll.shell32.IsUserAnAdmin() == 0:
+        error_text = 'In Windows you need to run the python that runs Heron\n' \
+                     'with elevated credentials in order to create a symbolic link.\n' \
+                     'Restart Heron with a python that has started with "Run as Administrator".'
+        spacer = 160
+        create_error_window(error_text, spacer)
+        return False
 
     delete_error_popup_aliases()
 
     def on_folder_select(selected_files):
         global node_selector
         global operations_list
+        global last_visited_directory
 
         main_folders = ['Sources', 'Transforms', 'Sinks']
-        operations_directory = dirname(selected_files[0])
-
-        def create_error_window(error_text, spacer):
-            with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
-                            no_title_bar=True, popup=True):
-                dpg.add_text(error_text)
-                dpg.add_separator()
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=spacer)
-                    dpg.add_button(label="OK", width=75, callback=delete_error_popup_aliases)
+        operations_directory = selected_files[0]
+        last_visited_directory = dirname(operations_directory)
 
         def add_symlink(target, link):
-            result = True
             try:
                 os.symlink(target, link)
+                return True
             except Exception as e:
-                if 'privilege' in str(e):
-                    error_text = 'If you are running Windows you need to run the python that runs Heron\n' \
-                                 'with elevated credentials in order to create a symbolic link.\n' \
-                                 'Restart Heron with a python that has started with "Run as Administrator".'
-                    spacer = 160
-                elif 'Cannot create a file when that file already exists' in str(e):
-                    error_text = 'You are trying to add a set of Nodes that already exist.'
-                    spacer = 130
+                if 'Cannot create a file when that file already exists' in str(e):
+                    if os.path.islink(link):
+                        os.unlink(link)
+                        os.symlink(target, link)
+                        return True
+                    else:
+                        error_text = 'There is a folder in the Heron Operations dir that has the same name\n' \
+                                     'as the source folder but is not a symbolic link. No symbolic link can\n' \
+                                     'be created overriding it.'
+                        spacer = 160
+                        create_error_window(error_text, spacer)
+                        return False
                 else:
                     error_text = str(e)
                     spacer = 300
-                create_error_window(error_text, spacer)
-                result = False
-
-            return result
+                    create_error_window(error_text, spacer)
+                    return False
 
         folders_exist = False
         for f in main_folders:
@@ -524,20 +540,19 @@ def add_new_symbolic_link_node_folder():
                     target = os.path.join(operations_directory, f, d)
                     link = os.path.join(heron_path, 'Operations', f, d)
                     if not os.path.isdir(link):
-                        if not add_symlink(target, link):
+                        os.mkdir(link)
+
+                    for inner_dir in os.listdir(target):
+                        link_inner = os.path.join(link, inner_dir)
+                        inner_target = os.path.join(target, inner_dir)
+                        if not add_symlink(inner_target, link_inner):
                             return
-                    else:
-                        for inner_dir in os.listdir(target):
-                            link_inner = os.path.join(link, inner_dir)
-                            inner_target = os.path.join(target, inner_dir)
-                            if not add_symlink(inner_target, link_inner):
-                                return
 
         if not folders_exist:
             error_text = "The selected Directory {} \n" \
                          "doesn't have at least one of the\n" \
                          "Sources, Transforms or Sinks folders in it, so it cannot\n" \
-                         "be a Heron Node code. Please select another directory.".format(operations_directory)
+                         "be Heron Node code. Please select another directory.".format(operations_directory)
             create_error_window(error_text, 120)
         else:
             dpg.delete_item(node_selector)
@@ -547,7 +562,7 @@ def add_new_symbolic_link_node_folder():
 
     file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                              show_hidden_files=False, multi_selection=False, tag='file_dialog',
-                             default_path=os.path.expanduser('~'), dirs_only=True, callback=on_folder_select)
+                             default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
     file_dialog.show_file_dialog()
 
 
@@ -695,6 +710,7 @@ def run(load_json_file=None):
     global end_graph_button_id
     global node_editor_window
     global file_dialog
+    global italic_font
 
     dpg.create_context()
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
@@ -702,6 +718,9 @@ def run(load_json_file=None):
     with dpg.font_registry():
         # add font (set as default for entire app)
         default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
+        italic_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-LightItalic.ttf'), 18)
+
+    create_new_node.italic_font = italic_font
 
     with dpg.window(width=1620, height=1000, pos=[0, 0], tag='main_window') as main_window:
         dpg.set_primary_window(main_window, True)
