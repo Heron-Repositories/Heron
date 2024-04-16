@@ -5,6 +5,7 @@ import os
 import ast
 from Heron.gui.fdialog import FileDialog
 import numpy as np
+import webbrowser
 
 aliases_list = []
 colours = {'Transform': [8, 132, 2], 'Sink': [161, 4, 9], 'Source': [0, 24, 152]}
@@ -21,6 +22,7 @@ num_of_parameters = 0
 num_of_inputs = 0
 num_of_outputs = 0
 parameter_types = ['bool', 'str', 'list', 'float', 'int']
+italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
 
 images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources')
 
@@ -420,17 +422,23 @@ def on_group_selected(sender, app_data):
                              default_path=os.path.expanduser('~'), dirs_only=True, callback=on_path_selected)
     file_dialog.show_file_dialog()
 
-    with dpg.window(label='Info', pos=[300, 200], height=220, width=460, show=True) as info:
+    with dpg.window(label='Info', pos=[300, 200], height=270, width=520, show=True) as info:
         dpg.add_spacer(height=5)
-        dpg.add_text(default_value="Select the base folder of the Node's file structure.\n"
-                                   "It is advisable to make this a git repository base folder.\n"
-                                   "Once you are done creating the Node you need to link its folder\n"
-                                   "to Heron's Operations folder using the\n"
+        dpg.add_text(default_value="Select the Base (Repository) Folder of the Node's File Structure.", indent=10)
+        with dpg.group(horizontal=True, indent=10):
+            dpg.add_text(default_value="See:")
+            doc = dpg.add_selectable(label='documentation', width=100, callback=lambda: webbrowser.open("https://heron-42ad.readthedocs.io/en/latest/source/documentation/adding_repos.html#creating-a-valid-heron-nodes-repository-from-scratch"))
+            dpg.add_text(default_value='for the File Structure of a single or group of Nodes.')
+        dpg.add_text(default_value="It is highly advisable to make this a git repository base folder!\n\n"
+                                   "Once you are done creating the Node you need to link its folder to Heron's\n"
+                                   "Operations folder using the\n"
                                    "Add new Operations Folder (as Symbolic Link from Existing Repo)\n"
-                                   "in the Nodes dropdown of the menu bar.",
+                                   "in the Nodes dropdown of the Menu Bar.",
                      indent=10)
         dpg.add_spacer(height=15)
-        dpg.add_button(label='Ok', callback=lambda: dpg.delete_item(info), indent=200)
+        dpg.add_button(label='Ok', callback=lambda: dpg.delete_item(info), indent=250)
+
+        dpg.bind_item_font(doc, italic_font)
 
 
 def on_path_selected(files_selected):
