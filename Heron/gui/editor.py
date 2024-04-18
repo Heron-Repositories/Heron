@@ -253,9 +253,9 @@ def on_end_graph(sender, data):
     elif platform.system() == 'Linux':
         forwarders.terminate()
 
-    with dpg.window(label='Progress bar', pos=[500, 400], width=400, height=80) as progress_bar:
+    with dpg.window(label='Progress bar', pos=[500, 400], width=440, height=40) as progress_bar:
         killing_proc_bar = dpg.add_progress_bar(label='Killing processes', parent=progress_bar, width=400, height=40,
-                                                overlay='Closing worker_exec processes')
+                                                overlay='Closing worker_exec processes', indent=10)
         t = 0
         while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
             dpg.set_value(killing_proc_bar, t / (ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
@@ -619,32 +619,47 @@ def on_mouse_release(sender, app_data, user_data):
     mouse_dragging_deltas = [0, 0]
 
 
-def create_node_selector_window():
+def create_node_selector_window(main_window, title_font):
     global node_selector
 
-    with dpg.window(label='Node Selector', pos=[10, 60], width=300, height=890) as node_selector:
-        # Create the window of the Node selector
+    with dpg.child_window(pos=[5, 65], width=270, height=-1, parent=main_window, no_scrollbar=True) \
+            as node_selector_holder:
+        title = dpg.add_text(default_value='Node Tree', indent=75)
+        dpg.add_separator()
 
-        node_tree = generate_node_tree()
-        base_id = node_tree[0][0]
-        base_name = node_tree[0][1]
-        with dpg.tree_node(label=base_name, parent=node_selector, default_open=True, id=base_id, open_on_arrow=True):
+        with dpg.child_window(label='Node Selector', height=-1, parent=node_selector_holder) \
+                as node_selector:
+            # Create the window of the Node selector
+            node_tree = generate_node_tree()
+            base_id = node_tree[0][0]
+            base_name = node_tree[0][1]
+            with dpg.tree_node(parent=node_selector, default_open=True, id=base_id, open_on_arrow=True,
+                               selectable=False, bullet=True, pos=[-20, -20]):
 
-            # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
-            # tree_node widget
-            for parent_id, parent, node_id, node in node_tree:
-                with dpg.tree_node(label=node, parent=parent_id, default_open=True, id=node_id):
-                    for op in operations_list:
-                        if node == op.parent_dir:
-                            colour = gu.choose_color_according_to_operations_type(node)
-                            button = dpg.add_button(label=op.name, width=200, height=30, callback=on_add_node)
-                            with dpg.theme() as theme_id:
-                                with dpg.theme_component(0):
-                                    dpg.add_theme_color(dpg.mvThemeCol_Button, colour, category=dpg.mvThemeCat_Core)
-                                    dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
+                # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
+                # tree_node widget
+                for parent_id, parent, node_id, node in node_tree:
+                    with dpg.tree_node(label=node, parent=parent_id, default_open=True, id=node_id, bullet=True):
+                        for op in operations_list:
+                            if node == op.parent_dir:
+                                colour = gu.choose_color_according_to_operations_type(node)
+                                button = dpg.add_selectable(label=op.name, width=200, height=30, indent=10,
+                                                            callback=on_add_node)
+                                with dpg.theme() as theme_id:
+                                    with dpg.theme_component(0):
+                                        dpg.add_theme_color(dpg.mvThemeCol_Text, colour, category=dpg.mvThemeCat_Core)
+                                        dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
 
-                            dpg.bind_item_theme(button, theme_id)
-        return node_selector
+                                dpg.bind_item_theme(button, theme_id)
+
+    with dpg.theme() as node_selector_theme_id:
+        with dpg.theme_component(0):
+            dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0, category=dpg.mvThemeCat_Core)
+    dpg.bind_item_theme(node_selector, node_selector_theme_id)
+
+    dpg.bind_item_font(title, title_font)
+
+    return node_selector
 
 
 def known_hosts_file_setup_check():
@@ -716,21 +731,41 @@ def run(load_json_file=None):
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
 
     with dpg.font_registry():
-        # add font (set as default for entire app)
-        default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SF-Pro-Rounded-Regular.ttf'), 18)
+        default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Regular.ttf'), 18)
         italic_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-LightItalic.ttf'), 18)
+        bold_font_large = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Semibold.ttf'), 22)
 
+    dpg.bind_font(default_font)
     create_new_node.italic_font = italic_font
+
+    with dpg.theme() as main_theme_id:
+        with dpg.theme_component(0):
+            dpg.add_theme_color(dpg.mvNodeCol_GridBackground, [1, 48, 63, 0], category=dpg.mvThemeCat_Nodes)
+            dpg.add_theme_style(dpg.mvNodeStyleVar_PinCircleRadius, 8, category=dpg.mvThemeCat_Nodes)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 12, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 12, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 8, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 6, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_PopupBorderSize, 2, category=dpg.mvThemeCat_Core)
+
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBg, [20, 20, 20, 255], category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, [20, 20, 20, 255], category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvNodeCol_Pin, [172, 124, 41, 255], category=dpg.mvThemeCat_Nodes)
+            dpg.add_theme_color(dpg.mvNodeCol_Link, [172, 124, 41, 255], category=dpg.mvThemeCat_Nodes)
+            dpg.add_theme_color(dpg.mvNodeCol_GridLine, [51, 51, 51, 255], category=dpg.mvThemeCat_Nodes)
+
+    dpg.bind_theme(main_theme_id)
 
     with dpg.window(width=1620, height=1000, pos=[0, 0], tag='main_window') as main_window:
         dpg.set_primary_window(main_window, True)
-        # The Start Graph button that starts all processes
-        with dpg.group(horizontal=True):
-            start_graph_button_id = dpg.add_button(label="Start Graph", callback=on_start_graph)
-            end_graph_button_id = dpg.add_button(label="End Graph", callback=on_end_graph)
-        update_control_graph_buttons(False)
 
-        dpg.bind_font(default_font)
+        with dpg.group(horizontal=True):
+            start_graph_button_id = dpg.add_button(label="Start Graph", width=125, height=30, callback=on_start_graph)
+            end_graph_button_id = dpg.add_button(label="End Graph", width=125, height=30, callback=on_end_graph)
+            dpg.bind_item_font(start_graph_button_id, bold_font_large)
+            dpg.bind_item_font(end_graph_button_id, bold_font_large)
+        update_control_graph_buttons(False)
 
         with dpg.menu_bar(label='Menu Bar'):
             with dpg.menu(label='File'):
@@ -747,19 +782,24 @@ def run(load_json_file=None):
                                   callback=view_operations_repos)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
-    _ = create_node_selector_window()
+    _ = create_node_selector_window(main_window, bold_font_large)
 
-    with dpg.window(label="Node Editor", pos=[dpg.get_item_width(main_window) - 1000, 0], )as node_editor_window:
+    with dpg.child_window(parent=main_window,  width=-1, height=-1)as node_editor_window:
+        editor_title = dpg.add_text(default_value='Editor')
         # The node editor
         with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
-                             width=1220, height=dpg.get_item_height(main_window) - 100) as node_editor:
-            dpg.set_item_pos(item=node_editor_window, pos=[370, 30])
+                             width=-1, height=-1, parent=node_editor_window, minimap=True,
+                             minimap_location=dpg.mvNodeMiniMap_Location_BottomRight) as node_editor:
+            dpg.set_item_pos(item=node_editor_window, pos=[275, 30])
+
+        dpg.bind_item_font(editor_title, bold_font_large)
 
     # For Debugging purposes
     # dpg.show_debug()
     # dpg.show_logger()
     # dpg.show_documentation()
     # dpg.show_style_editor()
+    # dpg.show_font_manager()
 
     # Button and mouse callback registers
     with dpg.handler_registry():
@@ -769,13 +809,12 @@ def run(load_json_file=None):
 
     #  At start the editor checks if the known_hosts file can be found and if not warns the user
     known_hosts_file_setup_check()
-    
+
     dpg.setup_dearpygui()
     dpg.show_viewport()
 
     if load_json_file is not None:
-        app_data = {'file_path_name': load_json_file}
-        do_the_loading_of_json_file(sender=None, app_data=app_data, user_data=None)
+        do_the_loading_of_json_file(load_json_file)
 
     dpg.start_dearpygui()
     dpg.destroy_context()

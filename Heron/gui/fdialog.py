@@ -661,9 +661,9 @@ class FileDialog:
         def on_right_click_selectable(sender, app_data, user_data):
             path_to_delete = dpg.get_item_user_data(app_data[1])[1]
             name_to_delete = dpg.get_item_user_data(app_data[1])[0]
-            with dpg.window(label='Deleting', pos=[700, 300], height=120, width=480, show=True) as del_check:
+            with dpg.window(label='Deleting', pos=[700, 300], height=125, width=480, show=True) as del_check:
                 dpg.add_text(default_value=f'Do you want to permanently delete {name_to_delete}?\n'
-                                           f'If {name_to_delete} is a folder this will permanently delete everything in it.')
+                                           f'If {name_to_delete} is a folder this will permanently delete\neverything in it.')
                 with dpg.group(horizontal=True):
                     dpg.add_button(label='Yes', callback=delete_file_or_folder, indent=150,
                                    user_data=[path_to_delete, del_check])

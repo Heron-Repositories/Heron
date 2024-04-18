@@ -138,7 +138,7 @@ def edit_ssh_info():
     global ssh_table
     global parent_id
 
-    with dpg.window(label='ssh info editor', width=800, height=500, on_close=on_close):
+    with dpg.window(label='ssh info editor', width=800, height=500, on_close=on_close, pos=[400, 200]):
         with dpg.group(horizontal=True):
             dpg.add_button(label='Add ssh server', callback=add_ssh_server_row)
             dpg.add_button(label='Remove ssh server', callback=remove_ssh_server_rows)

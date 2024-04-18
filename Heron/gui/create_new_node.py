@@ -4,6 +4,7 @@ from os.path import dirname, join
 import os
 import ast
 from Heron.gui.fdialog import FileDialog
+from Heron import general_utils as gu
 import numpy as np
 import webbrowser
 
@@ -24,7 +25,7 @@ num_of_outputs = 0
 parameter_types = ['bool', 'str', 'list', 'float', 'int']
 italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
 
-images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources')
+images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources', 'basic_icons')
 
 
 # The Code Editing
@@ -381,7 +382,7 @@ def start():
     :return: Nothing
     """
     tag = 'type_selector'
-    with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200]):
+    with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200], no_collapse=True):
         dpg.add_combo(label="Pick the Node's type", items=['Source', 'Transform', 'Sink'], width=200,
                       callback=on_type_selected)
 
@@ -400,7 +401,7 @@ def on_type_selected(sender, app_data):
     dpg.delete_item('type_selector')
 
     tag = 'group_selector'
-    with dpg.window(label='Node Type Selector', tag=tag, width=480, height=100, pos=[500, 200]):
+    with dpg.window(label='Node Type Selector', tag=tag, width=480, height=100, pos=[500, 200], no_collapse=True):
         dpg.add_input_text(label="Provide Node's Group (e.g. Vision)", width=200, default_value='General',
                            callback=on_group_selected, on_enter=True)
 
@@ -422,7 +423,7 @@ def on_group_selected(sender, app_data):
                              default_path=os.path.expanduser('~'), dirs_only=True, callback=on_path_selected)
     file_dialog.show_file_dialog()
 
-    with dpg.window(label='Info', pos=[300, 200], height=270, width=520, show=True) as info:
+    with dpg.window(label='Info', pos=[360, 200], height=265, width=580, show=True, no_collapse=True) as info:
         dpg.add_spacer(height=5)
         dpg.add_text(default_value="Select the Base (Repository) Folder of the Node's File Structure.", indent=10)
         with dpg.group(horizontal=True, indent=10):
@@ -596,15 +597,15 @@ def make_node_window():
     aliases_list.append(tag_input_window)
     aliases_list.append(tag_output_window)
 
-    width, height, channels, data = dpg.load_image(join(images_path, "Delete.png"))
+    width, height, channels, data = dpg.load_image(join(images_path, "DeleteG.png"))
     with dpg.texture_registry():
         delete_texture = dpg.add_static_texture(width, height, data)
 
-    with dpg.window(label='New Node Editor', tag=tag_main, width=470, height=500, pos=[500, 200],
-                    user_data=tag_name_text, on_close=on_close_main) as node_win:
-        dpg.add_input_text(tag=tag_name_text, width=480, height=300, indent=5, default_value='Node Name')
+    with dpg.window(label='New Node Editor', tag=tag_main, width=470, height=430, pos=[500, 200],
+                    user_data=tag_name_text, on_close=on_close_main, no_collapse=True) as node_win:
+        dpg.add_input_text(tag=tag_name_text, width=-5, height=40, indent=5, default_value='Node Name')
 
-        dpg.add_spacer(height=10)
+        dpg.add_spacer(height=2)
         dpg.add_separator()
 
         with dpg.child_window(tag=tag_param_window, height=150, border=False) as param_win:
@@ -623,15 +624,21 @@ def make_node_window():
                 make_add_output_button()
 
         if node_type == 'Transform':
-            dpg.configure_item(node_win, height=620)
+            dpg.configure_item(node_win, height=605)
 
         with dpg.group(horizontal=True):
             dpg.add_button(label='OK', indent=200, callback=on_close_main_with_buttons, user_data=[tag_name_text, True])
             dpg.add_button(label='Cancel', callback=on_close_main_with_buttons, user_data=[tag_name_text, False])
 
-    with dpg.theme() as container_theme:
+    with dpg.theme() as node_name_theme:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, colours[node_type], category=dpg.mvThemeCat_Core)
-            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, gu.choose_color_according_to_operations_type(node_type+'s'),
+                                category=dpg.mvThemeCat_Core)
 
-    dpg.bind_item_theme(tag_name_text, container_theme)
+    with dpg.theme() as node_editor_name_theme:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBg, [20, 20, 20, 255], category=dpg.mvThemeCat_Core)
+            #dpg.add_theme_color(dpg.mvThemeCol_Text, [217, 194, 76], category=dpg.mvThemeCat_Core)
+
+    dpg.bind_item_theme(tag_name_text, node_name_theme)
+    dpg.bind_item_theme(node_win, node_editor_name_theme)

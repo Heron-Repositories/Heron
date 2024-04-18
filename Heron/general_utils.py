@@ -93,11 +93,11 @@ def choose_color_according_to_operations_type(operations_parent_name):
     """
     colour = [255, 255, 255, 100]
     if 'Sources' in operations_parent_name:
-        colour = [0, 0, 255, 100]
+        colour = [172, 124, 41, 255]
     elif 'Transforms' in operations_parent_name:
-        colour = [0, 255, 0, 100]
+        colour = [50, 134, 79, 255]
     elif 'Sinks' in operations_parent_name:
-        colour = [255, 0, 0, 100]
+        colour = [105, 110, 196, 255]
     return colour
 
 
