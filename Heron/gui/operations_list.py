@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from importlib import import_module
 from dataclasses import dataclass
+from typing import Optional
 from Heron.general_utils import full_split_path
 
 root = os.path.join(Path(os.path.dirname(os.path.realpath(__file__))).parent, 'Operations')
@@ -16,9 +17,14 @@ class Operation:
     parameters: list
     parameter_types: list
     parameters_def_values: list
+
     executable: str
     parent_dir: str
     worker_exec: str
+
+    tooltip: Optional[str] = None
+    attribute_tooltips: Optional[list] = None
+    parameter_tooltips: Optional[list] = None
 
 
 operations_list = []
@@ -61,6 +67,20 @@ def generate_operations_list():
                     temp = temp + piece + '##'
                 parent = temp[:-2]
 
+                not_available_text = 'Documentation not available'
+                try:
+                    tooltip = module.NodeTooltip
+                except AttributeError as e:
+                    tooltip = not_available_text
+                try:
+                    params_tooltips = module.ParameterTooltips
+                except AttributeError as e:
+                    params_tooltips = [not_available_text] * len(module.ParameterNames)
+                try:
+                    input_output_tooltips = module.InOutTooltips
+                except AttributeError as e:
+                    input_output_tooltips = [not_available_text] * (len([i for i in module.NodeAttributeType if i != 'Static']))
+
                 operation = Operation(full_filename=os.path.join(path, name),
                                       name=module.BaseName,
                                       attributes=module.NodeAttributeNames,
@@ -70,7 +90,10 @@ def generate_operations_list():
                                       parameters_def_values=module.ParametersDefaultValues,
                                       executable=module.Exec,
                                       parent_dir=parent,
-                                      worker_exec=module.WorkerDefaultExecutable)
+                                      worker_exec=module.WorkerDefaultExecutable,
+                                      tooltip=tooltip,
+                                      parameter_tooltips=params_tooltips,
+                                      attribute_tooltips=input_output_tooltips)
                 operations_list.append(operation)
 
     return operations_list

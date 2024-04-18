@@ -41,10 +41,13 @@ class Node:
         self.socket_pub_parameters = None
         self.socket_sub_proof_of_life = None
         self.theme_id = None
-        self.extra_window_id = None
+        self.connections_window_id = None
+        self.saving_window_id = None
+        self.info_window_id = None
         self.possible_cpus_to_pin = ['Any']
         self.cpu_to_pin = 'Any'
         self.operations_list = op.operations_list
+        self.tooltip_tags = []
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -57,6 +60,46 @@ class Node:
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
+
+    def invert_tooltip_visibility(self):
+        for tag in self.tooltip_tags:
+            value = not dpg.is_item_shown(tag)
+            dpg.configure_item(tag, show=value)
+
+        on_tag = 'info_on#{}##{}'.format(self.operation.name, self.node_index)
+        off_tag = 'info_off#{}##{}'.format(self.operation.name, self.node_index)
+
+        if value:
+            dpg.configure_item('info#{}#{}'.format(self.operation.name, self.node_index), texture_tag=on_tag)
+        else:
+            dpg.configure_item('info#{}#{}'.format(self.operation.name, self.node_index), texture_tag=off_tag)
+
+    def add_tooltip(self, attribute_name):
+        attr_name = attribute_name.split('_')[0]
+        attr_type = attribute_name.split('_')[1]
+
+        has_params = False
+        for attr in self.operation.attribute_types:
+            if attr == 'Static':
+                has_params = True
+
+        text = None
+        for i, attr in enumerate(self.operation.attributes):
+            if attr_type != str(dpg.mvNode_Attr_Static) and attr in attr_name:
+                x = i - 1 if has_params else i
+                text = f'{self.operation.attributes[i]}: {self.operation.attribute_tooltips[x]}'
+            elif 'Param' in attr_type:
+                param_num = int(attr_type.split(':')[1])
+                text = f'{self.operation.parameters[param_num]}: {self.operation.parameter_tooltips[param_num]}'
+
+        if text is not None:
+            text += '\n ___________________________________________________________________________________' \
+                    '\n'
+            with dpg.tooltip(dpg.last_item(), tag='tooltip#{}' + attribute_name):
+                dpg.add_text(default_value=text,  tag='tooltip#' + attribute_name, wrap=600,
+                             tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
+            self.tooltip_tags.append('tooltip#{}' + attribute_name)
+
 
     def generate_cpus_to_pin_list(self):
         n_cpus = psutil.cpu_count()
@@ -85,6 +128,17 @@ class Node:
             dpg.remove_alias('savenodestate#{}#{}'.format(self.operation.name, self.node_index))
         if dpg.does_alias_exist('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index)):
             dpg.remove_alias('cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('info#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('info#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('delete#{}#{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('delete#{}#{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('info_on#{}##{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('info_on#{}##{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('info_off#{}##{}'.format(self.operation.name, self.node_index)):
+            dpg.remove_alias('info_off#{}##{}'.format(self.operation.name, self.node_index))
+        for tag in self.tooltip_tags:
+            if dpg.does_alias_exist(tag):
+                dpg.remove_alias(tag)
         alias = dpg.get_item_alias(self.id)
         dpg.delete_item(self.id)
         if alias is not None:
@@ -173,19 +227,26 @@ class Node:
                     dpg.add_theme_color(dpg.mvNodeCol_TitleBar, colour, category=dpg.mvThemeCat_Nodes)
                     dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, colour, category=dpg.mvThemeCat_Nodes)
                     dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, colour, category=dpg.mvThemeCat_Nodes)
-                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundSelected, [120, 120, 120, 255],
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundSelected, [90, 90, 90, 255], #[120, 120, 120, 255],
                                         category=dpg.mvThemeCat_Nodes)
-                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackground, [70, 70, 70, 255],
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackground, [64, 64, 64, 255],#[70, 70, 70, 255],
                                         category=dpg.mvThemeCat_Nodes)
-                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundHovered, [80, 80, 80, 255],
+                    dpg.add_theme_color(dpg.mvNodeCol_NodeBackgroundHovered, [90, 90, 90, 255], #[80, 80, 80, 255],
                                         category=dpg.mvThemeCat_Nodes)
                     dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [50, 50, 50, 255], category=dpg.mvThemeCat_Nodes)
+
                     dpg.add_theme_style(dpg.mvNodeStyleVar_NodeBorderThickness, x=4, category=dpg.mvThemeCat_Nodes)
+                    dpg.add_theme_style(dpg.mvNodeStyleVar_NodeCornerRounding, 15, category=dpg.mvThemeCat_Nodes)
+
             dpg.bind_item_theme(self.id, self.theme_id)
+
+            # Add the extra input button with its popup window for extra inputs like ssh and verbosity
+            self.node_menu_bar()
 
             # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
             # the node
             node_attributes_list = []
+            previous_attr_type = None
             for i, attr in enumerate(self.operation.attributes):
 
                 if 'Input' in self.operation.attribute_types[i]:
@@ -197,7 +258,16 @@ class Node:
 
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
 
+                '''
+                with dpg.node_attribute(parent=self.id, attribute_type=dpg.mvNode_Attr_Static):
+                    if (attribute_type == dpg.mvNode_Attr_Input and previous_attr_type == dpg.mvNode_Attr_Static) or \
+                            (attribute_type == dpg.mvNode_Attr_Output and previous_attr_type == dpg.mvNode_Attr_Input) or \
+                            (attribute_type == dpg.mvNode_Attr_Output and previous_attr_type == dpg.mvNode_Attr_Static):
+                        dpg.add_separator()
+                '''
+
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type)as at:
+
                     node_attributes_list.append(at)
                     if attribute_type == dpg.mvNode_Attr_Output:
                         dpg.add_spacer()
@@ -206,7 +276,7 @@ class Node:
                         colour = [0, 255, 0, 255]
                     dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                                  default_value=attr, color=colour)
-
+                    self.add_tooltip(attribute_name+f'_{attribute_type}')
                     if 'Parameters' in attr:
                         for k, parameter in enumerate(self.operation.parameters):
                             if self.operation.parameter_types[k] == 'int':
@@ -239,8 +309,10 @@ class Node:
                                                    callback=self.update_parameters, width=100)
 
                             self.parameter_inputs_ids[parameter] = id
+                            self.add_tooltip(attribute_name+f'_Param:{k}')
+                    dpg.add_spacer(label='##Spacing##'+attribute_name, indent=3)
 
-                    dpg.add_spacer(label='##Spacing##'+attribute_name, indent =3)
+                previous_attr_type = attribute_type
 
             #  Move Output attribute labels to the right of the Node
             dpg.split_frame()
@@ -249,105 +321,141 @@ class Node:
                 if 'Output' in self.operation.attribute_types[i]:
                     string_size = len(dpg.get_item_label(at).split('##')[0])
                     dpg.set_item_indent(at, node_width - np.power(string_size, 0.7)*18)
+            del_alias = 'delete#{}#{}'.format(self.operation.name, self.node_index)
+            info_alias = 'info#{}#{}'.format(self.operation.name, self.node_index)
+            dpg.set_item_indent(info_alias, node_width - 100)
+            dpg.set_item_indent(del_alias, node_width - 50)
 
-            # Add the extra input button with its popup window for extra inputs like ssh and verbosity
-            self.extra_input_window()
-
-    def extra_input_window(self):
-        attr = 'Extra_Input'
+    def node_menu_bar(self):
+        attr = 'Menu_Bar'
         attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
         with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=dpg.mvNode_Attr_Static) as attr_id:
 
-            image_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'resources',
-                                      'Blue_glass_button_square_34x34.png')
+            icons_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'resources',
+                                        'basic_icons')
+            x_cycle_file = os.path.join(icons_folder, 'XCycleG.png')
+            save_file = os.path.join(icons_folder, 'SaveG.png')
+            info_on_file = os.path.join(icons_folder, 'InfoOnG.png')
+            info_off_file = os.path.join(icons_folder, 'InfoOffG.png')
+            connect_file = os.path.join(icons_folder, 'ConnectG.png')
             
-            width, height, channels, data = dpg.load_image(image_file)
+            wx, hx, cx, dx = dpg.load_image(x_cycle_file)
+            ws, hs, cs, ds = dpg.load_image(save_file)
+            win, hin, cin, din = dpg.load_image(info_on_file)
+            wif, hif, cif, dif = dpg.load_image(info_off_file)
+            wc, hc, cc, dc = dpg.load_image(connect_file)
 
             with dpg.texture_registry():
-                texture_id = dpg.add_static_texture(width, height, data)
+                x_cycle_tex_id = dpg.add_static_texture(wx, hx, dx)
+                save_tex_id = dpg.add_static_texture(ws, hs, ds)
+                info_on_tex_id = dpg.add_static_texture(win, hin, din,
+                                                        tag='info_on#{}##{}'.format(self.operation.name, self.node_index))
+                info_off_tex_id = dpg.add_static_texture(wif, hif, dif,
+                                                         tag='info_off#{}##{}'.format(self.operation.name, self.node_index))
+                connect_tex_id = dpg.add_static_texture(wc, hc, dc)
 
-            image_button = dpg.add_image_button(texture_tag =texture_id,
-                                                label='##' + attr + ' Name{}##{}'.format(self.operation.name,
-                                                                                         self.node_index),
-                                                callback=self.update_ssh_combo_boxes)
+            self.connections_window()
+            self.saving_window()
 
-            with dpg.window(label='##Window#Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                            width=550, height=250, pos=[self.coordinates[0] + 400, self.coordinates[1] + 200],
-                            show=False, popup=True) as self.extra_window_id:
+            with dpg.group(horizontal=True):
+                dpg.add_image_button(texture_tag=connect_tex_id,
+                                     label='##' + attr + ' Connect{}##{}'.format(self.operation.name, self.node_index),
+                                     callback=self.update_ssh_combo_boxes)
+                dpg.add_image_button(texture_tag=save_tex_id,
+                                     label='##' + attr + ' Save{}##{}'.format(self.operation.name, self.node_index),
+                                     callback=lambda: dpg.configure_item(self.saving_window_id, show=True))
+                dpg.add_image_button(texture_tag=info_on_tex_id,
+                                     label='##' + attr + ' Info{}##{}'.format(self.operation.name, self.node_index),
+                                     callback=self.invert_tooltip_visibility,
+                                     tag='info#{}#{}'.format(self.operation.name, self.node_index))
+                dpg.add_image_button(texture_tag=x_cycle_tex_id,
+                                     label='##' + attr + ' Delete{}##{}'.format(self.operation.name, self.node_index),
+                                     tag='delete#{}#{}'.format(self.operation.name, self.node_index))
 
-                # Add the local ssh input
-                dpg.add_spacer(height=10)
+            #dpg.add_separator(parent=attr_id)
 
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_text('SSH local server')
-                    dpg.add_spacer(width=80)
-                    dpg.add_text('SSH remote server')
+    def connections_window(self):
+        with dpg.window(label='##Window#Connections input##{}##{}'.format(self.operation.name, self.node_index),
+                        width=700, height=300, pos=[self.coordinates[0] + 400, self.coordinates[1] + 200],
+                        show=False, popup=True) as self.connections_window_id:
+            # Add the local ssh input
+            dpg.add_spacer(height=10)
 
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    id = dpg.add_combo(label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                              items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_local_server,
-                              callback=self.assign_local_server)
-                    self.parameter_inputs_ids['SSH local server'] = id
-                    dpg.add_spacer(width=40)
-                    id = dpg.add_combo(
-                        label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                        items=self.ssh_server_id_and_names,  width=140, default_value=self.ssh_remote_server,
-                        callback=self.assign_remote_server)
-                    self.parameter_inputs_ids['SSH remote server'] = id
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_text('SSH local server')
+                dpg.add_spacer(width=80)
+                dpg.add_text('SSH remote server')
 
-                dpg.add_spacer(height=10)
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_text('Python script of worker process OR Python.exe and script:')
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                id = dpg.add_combo(
+                    label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                    items=self.ssh_server_id_and_names, width=140, default_value=self.ssh_local_server,
+                    callback=self.assign_local_server)
+                self.parameter_inputs_ids['SSH local server'] = id
+                dpg.add_spacer(width=40)
+                id = dpg.add_combo(
+                    label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                    items=self.ssh_server_id_and_names, width=140, default_value=self.ssh_remote_server,
+                    callback=self.assign_remote_server)
+                self.parameter_inputs_ids['SSH remote server'] = id
 
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_input_text(
-                        label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
-                        width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
+            dpg.add_spacer(height=10)
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_text('Python script of worker process OR Python.exe and script:')
 
-                # Add the verbocity input
-                dpg.add_spacer(height=10)
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    attr = 'Log file or Verbosity level:'
-                    attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-                    self.verbosity_id = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                                                     default_value=attr)
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_input_text(
+                    label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
+                    width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
 
-                dpg.add_spacer(height=10)
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
-                                       callback=self.update_verbosity, width=400,
-                                       hint='Log file name or verbosity level integer.',
-                                       tag='verb#{}#{}'.format(self.operation.name, self.node_index))
+    def saving_window(self):
+        with dpg.window(label='##Window#Saving input##{}##{}'.format(self.operation.name, self.node_index),
+                        width=550, height=250, pos=[self.coordinates[0] + 450, self.coordinates[1] + 200],
+                        show=False, popup=True) as self.saving_window_id:
+            # Add the verbocity input
+            dpg.add_spacer(height=10)
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                attr = 'Log file or Verbosity level:'
+                attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
+                self.verbosity_id = dpg.add_text(
+                    label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                    default_value=attr)
 
-                # Create the savenodestate input
-                dpg.add_spacer(height=10)
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_text(default_value='Save the Node State to directory:')
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
+                                   callback=self.update_verbosity, width=400,
+                                   hint='Log file name or verbosity level integer.',
+                                   tag='verb#{}#{}'.format(self.operation.name, self.node_index))
 
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
-                                       hint='The path where the Node State for this worker process will be saved',
-                                       tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+            # Create the savenodestate input
+            dpg.add_spacer(height=10)
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_text(default_value='Save the Node State to directory:')
 
-                # Create the pin to CPU input
-                dpg.add_spacer(height=10)
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_text(default_value='Choose a specific CPU to pin the Com and Worker Processes')
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
+                                   hint='The path where the Node State for this worker process will be saved',
+                                   tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
 
-                with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    dpg.add_combo(items=self.possible_cpus_to_pin,  width=140, default_value=self.cpu_to_pin,
-                                  tag='cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index),
-                                  callback=self.update_cpu_to_pin)
+            # Create the pin to CPU input
+            dpg.add_spacer(height=10)
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_text(default_value='Choose a specific CPU to pin the Com and Worker Processes')
+
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=10)
+                dpg.add_combo(items=self.possible_cpus_to_pin, width=140, default_value=self.cpu_to_pin,
+                              tag='cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index),
+                              callback=self.update_cpu_to_pin)
 
     def update_verbosity(self, sender, data):
         self.com_verbosity = ''
@@ -367,7 +475,7 @@ class Node:
             self.ssh_server_id_and_names.append(id + ' ' + ssh_info[id]['Name'])
 
     def update_ssh_combo_boxes(self):
-        dpg.configure_item(self.extra_window_id, show=True)
+        dpg.configure_item(self.connections_window_id, show=True)
         self.get_ssh_server_names_and_ids()
         if dpg.does_item_exist(self.parameter_inputs_ids['SSH local server']):
             dpg.configure_item(self.parameter_inputs_ids['SSH local server'], items=self.ssh_server_id_and_names)
