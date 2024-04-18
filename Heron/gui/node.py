@@ -48,6 +48,7 @@ class Node:
         self.cpu_to_pin = 'Any'
         self.operations_list = op.operations_list
         self.tooltip_tags = []
+        self.to_be_deleted = False
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -60,6 +61,9 @@ class Node:
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
+
+    def set_to_delete(self):
+        self.to_be_deleted = True
 
     def invert_tooltip_visibility(self):
         for tag in self.tooltip_tags:
@@ -95,7 +99,7 @@ class Node:
         if text is not None:
             text += '\n ___________________________________________________________________________________' \
                     '\n'
-            with dpg.tooltip(dpg.last_item(), tag='tooltip#{}' + attribute_name):
+            with dpg.tooltip(parent=dpg.last_item(), tag='tooltip#{}' + attribute_name):
                 dpg.add_text(default_value=text,  tag='tooltip#' + attribute_name, wrap=600,
                              tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
             self.tooltip_tags.append('tooltip#{}' + attribute_name)
@@ -370,7 +374,8 @@ class Node:
                                      tag='info#{}#{}'.format(self.operation.name, self.node_index))
                 dpg.add_image_button(texture_tag=x_cycle_tex_id,
                                      label='##' + attr + ' Delete{}##{}'.format(self.operation.name, self.node_index),
-                                     tag='delete#{}#{}'.format(self.operation.name, self.node_index))
+                                     tag='delete#{}#{}'.format(self.operation.name, self.node_index),
+                                     callback=self.set_to_delete)
 
             #dpg.add_separator(parent=attr_id)
 
