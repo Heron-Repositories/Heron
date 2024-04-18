@@ -79,7 +79,8 @@ def generate_operations_list():
                 try:
                     input_output_tooltips = module.InOutTooltips
                 except AttributeError as e:
-                    input_output_tooltips = [not_available_text] * (len([i for i in module.NodeAttributeType if i != 'Static']))
+                    input_output_tooltips = [not_available_text] * (
+                        len([i for i in module.NodeAttributeType if i != 'Static']))
 
                 operation = Operation(full_filename=os.path.join(path, name),
                                       name=module.BaseName,
@@ -104,6 +105,8 @@ def create_operation_from_dictionary(op_dict):
                    attributes=op_dict['attributes'], attribute_types=op_dict['attribute_types'],
                    executable=op_dict['executable'], parent_dir=op_dict['parent_dir'], parameters=op_dict['parameters'],
                    parameter_types=op_dict['parameter_types'], parameters_def_values=op_dict['parameters_def_values'],
-                   worker_exec=op_dict['worker_exec'])
-
+                   worker_exec=op_dict['worker_exec'], tooltip=op_dict['tooltip'],
+                   parameter_tooltips=op_dict['parameter_tooltips'], attribute_tooltips=op_dict['attribute_tooltips'])
     return op
+
+

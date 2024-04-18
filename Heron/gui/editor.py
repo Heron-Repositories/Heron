@@ -10,6 +10,7 @@ import json
 import copy
 import sys
 import ctypes
+import threading
 
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
@@ -20,9 +21,7 @@ from Heron import constants as ct
 from Heron.gui import ssh_info_editor, create_new_node
 import dearpygui.dearpygui as dpg
 
-operations_list = op_list.generate_operations_list() #operations_list  # This generates all of the Operation dataclass instances currently
-# in the Heron/Operations directory
-
+operations_list = op_list.generate_operations_list()
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 last_used_port = 6050
 nodes_list = []
@@ -253,7 +252,8 @@ def on_end_graph(sender, data):
     elif platform.system() == 'Linux':
         forwarders.terminate()
 
-    with dpg.window(label='Progress bar', pos=[500, 400], width=440, height=40) as progress_bar:
+    with dpg.window(label='Progress bar', pos=[500, 400], width=440, height=40, no_collapse=True,
+                    no_close=True) as progress_bar:
         killing_proc_bar = dpg.add_progress_bar(label='Killing processes', parent=progress_bar, width=400, height=40,
                                                 overlay='Closing worker_exec processes', indent=10)
         t = 0
@@ -279,6 +279,23 @@ def on_del_pressed(sender, key_value):
             if nodes_list[i].name == node_name:
                 indices_to_remove.append(i)
 
+    delete_node(indices_to_remove)
+
+
+def check_for_del_press_on_node():
+    while True:
+        indices_to_remove = []
+        for i, n in enumerate(nodes_list):
+            if n.to_be_deleted:
+                indices_to_remove.append(i)
+
+        if len(indices_to_remove) > 0:
+            delete_node(indices_to_remove)
+
+        time.sleep(0.2)
+
+
+def delete_node(indices_to_remove):
     for i in indices_to_remove:
         links_to_be_deleted = copy.copy(nodes_list[i].links_list)
         for link in links_to_be_deleted:
@@ -391,6 +408,13 @@ def do_the_loading_of_json_file(selected_files):
                 value = raw_dict[key]
                 n = Node(name=value['name'], parent=node_editor)
                 op_dict = value['operation']
+                if 'tooltip' not in op_dict.keys():
+                    not_available_text = 'Documentation not available'
+                    num_of_params = len(op_dict['parameters'])
+                    num_of_inputs_outputs = len([i for i in op_dict['attribute_types'] if i != 'Static'])
+                    op_dict['tooltip'] = not_available_text,
+                    op_dict['parameter_tooltips'] = [not_available_text] * num_of_params
+                    op_dict['attribute_tooltips'] = [not_available_text] * num_of_inputs_outputs
                 n.operation = op_list.create_operation_from_dictionary(op_dict)
                 n.node_index = value['node_index']
                 n.process = value['process']
@@ -809,6 +833,10 @@ def run(load_json_file=None):
 
     #  At start the editor checks if the known_hosts file can be found and if not warns the user
     known_hosts_file_setup_check()
+
+    # Start a thread that checks if a Node is to be deleted (when a user presses the Del button on the Node)
+    test = threading.Thread(group=None, target=check_for_del_press_on_node)
+    test.start()
 
     dpg.setup_dearpygui()
     dpg.show_viewport()

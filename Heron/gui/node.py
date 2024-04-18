@@ -97,13 +97,11 @@ class Node:
                 text = f'{self.operation.parameters[param_num]}: {self.operation.parameter_tooltips[param_num]}'
 
         if text is not None:
-            text += '\n ___________________________________________________________________________________' \
-                    '\n'
+            text += '\n ___________________________________________________________________________________\n'
             with dpg.tooltip(parent=dpg.last_item(), tag='tooltip#{}' + attribute_name):
                 dpg.add_text(default_value=text,  tag='tooltip#' + attribute_name, wrap=600,
                              tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
             self.tooltip_tags.append('tooltip#{}' + attribute_name)
-
 
     def generate_cpus_to_pin_list(self):
         n_cpus = psutil.cpu_count()
@@ -250,7 +248,7 @@ class Node:
             # Loop through all the attributes defined in the operation (as seen in the *_com.py file) and put them on
             # the node
             node_attributes_list = []
-            previous_attr_type = None
+
             for i, attr in enumerate(self.operation.attributes):
 
                 if 'Input' in self.operation.attribute_types[i]:
@@ -263,6 +261,7 @@ class Node:
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
 
                 '''
+                previous_attr_type = None
                 with dpg.node_attribute(parent=self.id, attribute_type=dpg.mvNode_Attr_Static):
                     if (attribute_type == dpg.mvNode_Attr_Input and previous_attr_type == dpg.mvNode_Attr_Static) or \
                             (attribute_type == dpg.mvNode_Attr_Output and previous_attr_type == dpg.mvNode_Attr_Input) or \
@@ -316,7 +315,7 @@ class Node:
                             self.add_tooltip(attribute_name+f'_Param:{k}')
                     dpg.add_spacer(label='##Spacing##'+attribute_name, indent=3)
 
-                previous_attr_type = attribute_type
+                #previous_attr_type = attribute_type
 
             #  Move Output attribute labels to the right of the Node
             dpg.split_frame()
