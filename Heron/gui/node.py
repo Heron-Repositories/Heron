@@ -4,6 +4,8 @@ import platform
 import signal
 import os
 import subprocess
+import time
+import re
 
 import numpy as np
 import zmq
@@ -49,6 +51,8 @@ class Node:
         self.operations_list = op.operations_list
         self.tooltip_tags = []
         self.to_be_deleted = False
+        self.node_editor_window_pos = [0, 0]
+        self.tooltip_visibility = False
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -75,8 +79,10 @@ class Node:
 
         if value:
             dpg.configure_item('info#{}#{}'.format(self.operation.name, self.node_index), texture_tag=on_tag)
+            self.tooltip_visibility = True
         else:
             dpg.configure_item('info#{}#{}'.format(self.operation.name, self.node_index), texture_tag=off_tag)
+            self.tooltip_visibility = False
 
     def add_tooltip(self, attribute_name):
         attr_name = attribute_name.split('_')[0]
@@ -98,10 +104,10 @@ class Node:
 
         if text is not None:
             text += '\n ___________________________________________________________________________________\n'
-            with dpg.tooltip(parent=dpg.last_item(), tag='tooltip#{}' + attribute_name):
-                dpg.add_text(default_value=text,  tag='tooltip#' + attribute_name, wrap=600,
+            with dpg.tooltip(parent=dpg.last_item(), tag='tooltip#' + attribute_name, show=False):
+                dpg.add_text(default_value=text, wrap=600,
                              tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
-            self.tooltip_tags.append('tooltip#{}' + attribute_name)
+            self.tooltip_tags.append('tooltip#' + attribute_name)
 
     def generate_cpus_to_pin_list(self):
         n_cpus = psutil.cpu_count()
@@ -218,11 +224,14 @@ class Node:
         self.socket_pub_parameters.send_string(topic, flags=zmq.SNDMORE)
         self.socket_pub_parameters.send_pyobj(self.node_parameters)
 
-    def spawn_node_on_editor(self):
+    def spawn_node_on_editor(self, editor_pos=[0, 0]):
         self.context = zmq.Context()
         self.initialise_parameters_socket()
+        self.node_editor_window_pos = editor_pos
 
         with dpg.node(label=self.name, parent=self.parent, pos=[self.coordinates[0], self.coordinates[1]]) as self.id:
+            #with dpg.popup(parent=dpg.last_item()):
+            #    dpg.add_text("A popup")
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
             with dpg.theme() as self.theme_id:
                 with dpg.theme_component(0):
@@ -329,6 +338,39 @@ class Node:
             dpg.set_item_indent(info_alias, node_width - 100)
             dpg.set_item_indent(del_alias, node_width - 50)
 
+        self.setup_title_tooltip()
+
+    def setup_title_tooltip(self):
+        node_height = dpg.get_item_rect_size(self.id)[1]
+        with dpg.window(no_close=True, no_collapse=True, show=False, modal=False, width=400, height=node_height) \
+                as title_tooltip:
+            node_name = re.sub('\d', '', self.name).replace('#', '')
+            dpg.add_text(f'{node_name}: {self.operation.tooltip}', wrap=390, indent=5)
+        #print(self.worker_executable)
+        def show_node_tooltip_on_hover():
+            while True:
+                try:
+                    mouse = dpg.get_mouse_pos(local=False)
+                    node = dpg.get_item_pos(self.id)
+                    mouse_in_node = (-node[0] + mouse[0] - self.node_editor_window_pos[0],
+                                     -node[1] + mouse[1] - self.node_editor_window_pos[1] - 40)
+                    node_width = dpg.get_item_rect_size(self.id)[0]
+                    clicked = dpg.is_item_clicked(self.id)
+                    if 0 < mouse_in_node[1] < 30 and 0 < mouse_in_node[0] < node_width and not clicked \
+                            and self.tooltip_visibility:
+                        dpg.configure_item(title_tooltip, show=True)
+                        dpg.set_item_pos(title_tooltip, [node[0] + self.node_editor_window_pos[0] + node_width + 20,
+                                                         node[1] + 70])
+                    else:
+                        dpg.configure_item(title_tooltip, show=False)
+                except:
+                    pass
+
+                time.sleep(0.2)
+
+        tooltip_on_hover_thread = threading.Thread(group=None, target=show_node_tooltip_on_hover)
+        tooltip_on_hover_thread.start()
+
     def node_menu_bar(self):
         attr = 'Menu_Bar'
         attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
@@ -367,7 +409,7 @@ class Node:
                 dpg.add_image_button(texture_tag=save_tex_id,
                                      label='##' + attr + ' Save{}##{}'.format(self.operation.name, self.node_index),
                                      callback=lambda: dpg.configure_item(self.saving_window_id, show=True))
-                dpg.add_image_button(texture_tag=info_on_tex_id,
+                dpg.add_image_button(texture_tag=info_off_tex_id,
                                      label='##' + attr + ' Info{}##{}'.format(self.operation.name, self.node_index),
                                      callback=self.invert_tooltip_visibility,
                                      tag='info#{}#{}'.format(self.operation.name, self.node_index))

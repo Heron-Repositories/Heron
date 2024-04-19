@@ -116,7 +116,7 @@ def on_add_node(sender, data):
     # Create the Node
     name = operation.name + '##{}'.format(num_of_same_nodes)
     n = Node(name=name, parent=node_editor)
-    n.spawn_node_on_editor()
+    n.spawn_node_on_editor(dpg.get_item_pos(node_editor_window))
     n.starting_port = next(port_generator)
     nodes_list.append(n)
 
@@ -439,7 +439,7 @@ def do_the_loading_of_json_file(selected_files):
                 n.socket_pub_parameters = value['socket_pub_parameters']
                 n.socket_sub_proof_of_life = value['socket_sub_proof_of_life']
                 n.worker_executable = value['worker_executable']
-                n.spawn_node_on_editor()
+                n.spawn_node_on_editor(dpg.get_item_pos(node_editor_window))
 
                 nodes_list.append(n)
 
