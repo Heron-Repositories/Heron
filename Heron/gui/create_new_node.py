@@ -3,11 +3,15 @@ from dearpygui import dearpygui as dpg
 from os.path import dirname, join
 import os
 import ast
-from Heron.gui.fdialog import FileDialog
-from Heron import general_utils as gu
 import numpy as np
 import webbrowser
-from enum import IntEnum
+import subprocess
+from pathlib import Path
+
+from Heron.gui.fdialog import FileDialog
+from Heron import general_utils as gu
+from Heron.gui import settings
+
 
 aliases_list = []
 colours = {'Transform': [8, 132, 2], 'Sink': [161, 4, 9], 'Source': [0, 24, 152]}
@@ -24,7 +28,20 @@ num_of_inputs = 0
 num_of_outputs = 0
 parameter_types = ['bool', 'str', 'list', 'float', 'int']
 italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
-images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources', 'basic_icons')
+heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+images_path = join(heron_path, 'resources', 'basic_icons')
+
+
+# Helper functions to start IDE after new Node is written
+def start_ide():
+
+    project = settings.settings_dict['IDE']['IDE Project Path']
+    if project != '':
+        args = [settings.settings_dict['IDE']['IDE Path'], project, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
+    else:
+        args = [settings.settings_dict['IDE']['IDE Path'], node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
+
+    subprocess.run(args)
 
 
 # The Code Editing
@@ -174,6 +191,7 @@ def write_code():
     com_executable = os.path.split(node_data['ComExecutable'])[-1].split('.')[0]
     worker_executable = os.path.split(node_data['WorkerDefaultExecutable'])[-1]
     node_type_lower_case = node_type.lower()
+    args_for_start_the_com_process = '' if node_type=='Sink' else 'NodeAttributeType, NodeAttributeNames'
 
     com_script = "import os\n" \
                  "import sys\n" \
@@ -197,7 +215,7 @@ def write_code():
                  f"InOutTooltips = {node_data['InOutTooltips']}\n" \
                  f"WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), '{worker_executable}')\n\n\n" \
                  "if __name__ == '__main__':\n" \
-                 f"    {com_executable} = gu.start_the_{node_type_lower_case}_communications_process(NodeAttributeType, NodeAttributeNames)\n" \
+                 f"    {com_executable} = gu.start_the_{node_type_lower_case}_communications_process({args_for_start_the_com_process})\n" \
                  f"    gu.register_exit_signals({com_executable}.on_kill)\n" \
                  f"    {com_executable}.start_ioloop()"
 
@@ -371,6 +389,7 @@ def generate_code(node_name_id):
     if generate_data(node_name_id):
         generate_folder_structure()
         write_code()
+        start_ide()
 
 
 # The GUI
@@ -688,8 +707,8 @@ def make_node_window():
     aliases_list.append(tag_param_window)
     aliases_list.append(tag_input_window)
     aliases_list.append(tag_output_window)
-    aliases_list.append('delete_texture')
-    aliases_list.append('edit_texture')
+    aliases_list.append(tag_delete_texture)
+    aliases_list.append(tag_edit_texture)
 
     wdel, hdel, cdel, ddel = dpg.load_image(join(images_path, "DeleteG.png"))
     wedit, hedit, cedit, dedit = dpg.load_image(join(images_path, "EditG.png"))
