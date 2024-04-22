@@ -9,6 +9,7 @@ import psutil
 
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.socket_for_serialization import Socket
+from Heron.gui import settings
 from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.ssh_com import SSHCom
 
@@ -146,7 +147,7 @@ class SourceCom:
                 self.socket_pub_data.send("{}".format(self.time).encode('ascii'), flags=zmq.SNDMORE)
                 self.socket_pub_data.send_data(new_message_data[k], copy=False)
                 # This delay is critical to get single output to multiple inputs to work!
-                gu.accurate_delay(ct.DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS)
+                gu.accurate_delay(settings.settings_dict['Operation']['DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS'])
 
             if self.verbose:
                 dt = self.time - self.previous_time
@@ -162,12 +163,12 @@ class SourceCom:
 
     def heartbeat_loop(self):
         """
-        Sending every ct.HEARTBEAT_RATE a 'PULSE' to the worker_exec so that it stays alive
+        Sending every HEARTBEAT_RATE a 'PULSE' to the worker_exec so that it stays alive
         :return: Nothing
         """
         while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
-            time.sleep(ct.HEARTBEAT_RATE)
+            time.sleep(settings.settings_dict['Operation']['HEARTBEAT_RATE'])
 
     def start_heartbeat_thread(self):
         """

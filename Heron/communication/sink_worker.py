@@ -10,6 +10,7 @@ import sys
 
 from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct, general_utils as gu
+from Heron.gui import settings
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
 from Heron.gui.save_node_state import SaveNodeState
@@ -201,15 +202,19 @@ class SinkWorker:
         If it is then the current process is killed
         :return: Nothing
         """
+
+        heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
+        heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
+
         while self.loops_on:
             current_time = time.perf_counter()
-            if current_time - self.time_of_pulse > ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
+            if current_time - self.time_of_pulse > heartbeat_rate * heartbeats_to_death:
                 pid = os.getpid()
                 self.end_of_life_function()
                 self.on_kill(pid)
                 os.kill(pid, signal.SIGTERM)
                 time.sleep(0.5)
-            time.sleep(ct.HEARTBEAT_RATE)
+            time.sleep(heartbeat_rate)
         self.socket_pull_heartbeat.close()
 
     def proof_of_life(self):

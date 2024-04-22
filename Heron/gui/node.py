@@ -13,7 +13,7 @@ import zmq
 import copy
 import psutil
 import dearpygui.dearpygui as dpg
-from Heron.gui import operations_list as op
+from Heron.gui import operations_list as op, settings
 from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
@@ -120,14 +120,14 @@ class Node:
             self.context = zmq.Context()
         self.socket_pub_parameters = Socket(self.context, zmq.PUB)
         self.socket_pub_parameters.setsockopt(zmq.LINGER, 0)
-        self.socket_pub_parameters.connect(r"tcp://127.0.0.1:{}".format(ct.PARAMETERS_FORWARDER_SUBMIT_PORT))
+        self.socket_pub_parameters.connect(fr"tcp://127.0.0.1:{ct.PARAMETERS_FORWARDER_SUBMIT_PORT}")
 
     def initialise_proof_of_life_socket(self):
         if self.context is None:
             self.context = zmq.Context()
         self.socket_sub_proof_of_life = self.context.socket(zmq.SUB)
         self.socket_sub_proof_of_life.setsockopt(zmq.LINGER, 0)
-        self.socket_sub_proof_of_life.connect(r"tcp://127.0.0.1:{}".format(ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT))
+        self.socket_sub_proof_of_life.connect(fr"tcp://127.0.0.1:{ct.PROOF_OF_LIFE_FORWARDER_PUBLISH_PORT}")
         self.socket_sub_proof_of_life.setsockopt(zmq.SUBSCRIBE,
                                                  '{}'.format(self.name.replace(' ', '_')).encode('ascii'))
 
@@ -584,7 +584,7 @@ class Node:
             dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], category=dpg.mvThemeCat_Nodes)
 
     def sending_parameters_multiple_times(self):
-        for i in range(ct.NUMBER_OF_INITIAL_PARAMETERS_UPDATES):
+        for i in range(settings.settings_dict['Operation']['NUMBER_OF_INITIAL_PARAMETERS_UPDATES']):
             self.update_parameters()
             gu.accurate_delay(500)
 

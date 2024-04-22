@@ -11,6 +11,7 @@ import numpy as np
 from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
+from Heron.gui import settings
 from Heron.communication.ssh_com import SSHCom
 
 
@@ -119,12 +120,12 @@ class SinkCom:
 
     def heartbeat_loop(self):
         """
-        The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every ct.HEARTBEAT_RATE seconds)
+        The loop that send a 'PULSE' heartbeat to the worker_exec process to keep it alive (every HEARTBEAT_RATE seconds)
         :return: Nothing
         """
         while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
-            time.sleep(ct.HEARTBEAT_RATE)
+            time.sleep(settings.settings_dict['Operation']['HEARTBEAT_RATE'])
 
     def start_heartbeat_thread(self):
         """

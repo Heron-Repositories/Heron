@@ -18,7 +18,7 @@ from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron.gui.fdialog import FileDialog
 from Heron import constants as ct
-from Heron.gui import ssh_info_editor, create_new_node
+from Heron.gui import ssh_info_editor, create_new_node, settings
 import dearpygui.dearpygui as dpg
 
 operations_list = op_list.generate_operations_list()
@@ -237,12 +237,14 @@ def on_start_graph(sender, data):
 def on_end_graph(sender, data):
     """
     Kill all running processes (except the one running the gui). Also shows a progress bar while waiting for processes
-    to die. They need a ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH seconds to die.
+    to die. They need a HEARTBEAT_RATE * HEARTBEATS_TO_DEATH seconds to die.
     :param sender: Not used
     :param data: Not used
     :return: Nothing
     """
     global forwarders
+    heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
+    heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
 
     for n in nodes_list:
         n.stop_com_process()
@@ -257,8 +259,8 @@ def on_end_graph(sender, data):
         killing_proc_bar = dpg.add_progress_bar(label='Killing processes', parent=progress_bar, width=400, height=40,
                                                 overlay='Closing worker_exec processes', indent=10)
         t = 0
-        while t < ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH:
-            dpg.set_value(killing_proc_bar, t / (ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH))
+        while t < heartbeat_rate * heartbeats_to_death:
+            dpg.set_value(killing_proc_bar, t / (heartbeat_rate * heartbeats_to_death))
             t = t + 0.1
             time.sleep(0.1)
         dpg.delete_item(killing_proc_bar)
@@ -694,7 +696,9 @@ def known_hosts_file_setup_check():
     to either create a new empty one where it is expected or choose another one.
     :return: Nothing
     """
-    known_hosts_file_path = ct.KNOWN_HOSTS_FILE
+    known_hosts_file_path = settings.settings_dict['Operation']['KNOWN_HOSTS_FILE']
+    if known_hosts_file_path == '/.ssh/known_hosts':
+        known_hosts_file_path = os.path.expanduser('~') + known_hosts_file_path
 
     def on_press_known_hosts_buttons(sender, app_data, user_data):
         dpg.delete_item('known_hosts_window')
@@ -808,6 +812,8 @@ def run(load_json_file=None):
                 dpg.add_menu_item(label='Download Nodes from the Heron-Repositories page',
                                   callback=view_operations_repos)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
+            with dpg.menu(label='Settings'):
+                dpg.add_menu_item(label='Settings', callback=settings.start)
 
     _ = create_node_selector_window()
 

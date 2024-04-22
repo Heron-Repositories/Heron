@@ -9,6 +9,7 @@ import pickle
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
+from Heron.gui import settings
 from Heron.gui.save_node_state import SaveNodeState
 
 
@@ -172,8 +173,11 @@ class SourceWorker:
         it kills the worker_exec process
         :return: Nothing
         """
+        heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
+        heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
+
         while self.loops_on:
-            if self.socket_pull_heartbeat.poll(timeout=(1000 * ct.HEARTBEAT_RATE * ct.HEARTBEATS_TO_DEATH)):
+            if self.socket_pull_heartbeat.poll(timeout=(1000 * heartbeat_rate * heartbeats_to_death)):
                 self.socket_pull_heartbeat.recv()
             else:
                 pid = os.getpid()
@@ -181,7 +185,7 @@ class SourceWorker:
                 self.on_kill(pid)
                 os.kill(pid, signal.SIGTERM)
                 time.sleep(0.5)
-            time.sleep(int(ct.HEARTBEAT_RATE))
+            time.sleep(int(heartbeat_rate))
         self.socket_pull_heartbeat.close()
 
     def proof_of_life(self):

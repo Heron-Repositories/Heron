@@ -2,11 +2,10 @@
 import copy
 import os
 import threading
-import time
-
 import pandas as pd
 from datetime import datetime
-from Heron import constants as ct, general_utils as gu
+from Heron import constants as ct
+from Heron.gui import settings
 
 
 
@@ -44,7 +43,7 @@ class SaveNodeState():
         self.parameters_pandasdf: pd.DataFrame
         self.substate_pandasdf: pd.DataFrame
 
-        self.num_of_iters = ct.NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE
+        self.num_of_iters = settings.settings_dict['Operation']['NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE']
 
         if num_of_iters is not None:
             self.num_of_iters = num_of_iters
@@ -126,7 +125,7 @@ class SaveNodeState():
         Updates the Substate pandasdf of the SaveNodeState. It first checks to see if the Substate pandadf exist and if it
         doesn't it creates it. The update happens incrementally through the self.substate_pandasdf temporary
         dataframe which gets loaded and at a certain number of worker_function iterations it gets saved into the dataframe.
-        This number can be either ct.NUMBER_OF_ITTERATIONS_BEFORE_RELIC_SUBSTATE_SAVE when the Node's worker function
+        This number can be either NUMBER_OF_ITTERATIONS_BEFORE_SAVE_SUBSTATE_SAVE when the Node's worker function
         hasn't specified it in the xxx_worker.num_of_iters_to_update_savenodestate_substate variable or that variable. If that
         variable has the value of -1 then the information never gets saved to the hard disk until the process is about
         to die at which point the whole pandas (which has been kept in RAM) gets dumped in one go to the HD.
