@@ -7,6 +7,7 @@ from Heron.gui.fdialog import FileDialog
 from Heron import general_utils as gu
 import numpy as np
 import webbrowser
+from enum import IntEnum
 
 aliases_list = []
 colours = {'Transform': [8, 132, 2], 'Sink': [161, 4, 9], 'Source': [0, 24, 152]}
@@ -18,13 +19,11 @@ node_win: int
 param_win: int
 input_win: int
 output_win: int
-delete_texture: int
 num_of_parameters = 0
 num_of_inputs = 0
 num_of_outputs = 0
 parameter_types = ['bool', 'str', 'list', 'float', 'int']
 italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
-
 images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources', 'basic_icons')
 
 
@@ -38,18 +37,54 @@ def generate_data(node_name_id):
     global node_data
 
     initial_data = {'node_name': dpg.get_value(node_name_id), 'node_path': path, 'parameter_names': [],
-                    'parameter_types': [], 'parameter_defaults': [], 'inputs': [], 'outputs': []}
+                    'parameter_types': [], 'parameter_defaults': [], 'inputs': [], 'outputs': [],
+                    'node_tooltip': '', 'parameter_tooltips': [], 'in_out_tooltips': []}
+
+    not_available_text = 'Documentation not available'
+    param_tooltip_indices = []
+    in_tooltip_indices = []
+    out_tooltip_indices = []
     for alias in aliases_list:
-        if 'parameter_name_' in alias:
-            initial_data['parameter_names'].append(dpg.get_value(alias))
-        if 'parameter_type_' in alias:
-            initial_data['parameter_types'].append(dpg.get_value(alias))
-        if 'parameter_default_' in alias:
-            initial_data['parameter_defaults'].append(dpg.get_value(alias))
-        if 'input_' in alias:
-            initial_data['inputs'].append(dpg.get_value(alias))
-        if 'output_' in alias:
-            initial_data['outputs'].append(dpg.get_value(alias))
+        index = alias.split('_')[-1]
+        if 'tooltip' not in alias:
+            if 'parameter_name_' in alias:
+                initial_data['parameter_names'].append(dpg.get_value(alias))
+                param_tooltip_indices.append(index)
+            if 'parameter_type_' in alias:
+                initial_data['parameter_types'].append(dpg.get_value(alias))
+            if 'parameter_default_' in alias:
+                initial_data['parameter_defaults'].append(dpg.get_value(alias))
+            if 'input_' in alias:
+                initial_data['inputs'].append(dpg.get_value(alias))
+                in_tooltip_indices.append(index)
+            if 'output_' in alias:
+                initial_data['outputs'].append(dpg.get_value(alias))
+                out_tooltip_indices.append(index)
+        if 'text_tooltip_node' in alias:
+            text = dpg.get_value(alias)
+            text = text.replace('\n', '\\n')
+            initial_data['node_tooltip'] = text
+
+    for index in param_tooltip_indices:
+        if 'text_tooltip_parameter_' + index in aliases_list:
+            alias = aliases_list[aliases_list.index('text_tooltip_parameter_' + index)]
+            initial_data['parameter_tooltips'].append(dpg.get_value(alias))
+        else:
+            initial_data['parameter_tooltips'].append(not_available_text)
+
+    for index in in_tooltip_indices:
+        if 'text_tooltip_input_' + index in aliases_list:
+            alias = aliases_list[aliases_list.index('text_tooltip_input_' + index)]
+            initial_data['in_out_tooltips'].append(dpg.get_value(alias))
+        else:
+            initial_data['in_out_tooltips'].append(not_available_text)
+
+    for index in out_tooltip_indices:
+        if 'text_tooltip_output_' + index in aliases_list:
+            alias = aliases_list[aliases_list.index('text_tooltip_output_' + index)]
+            initial_data['in_out_tooltips'].append(dpg.get_value(alias))
+        else:
+            initial_data['in_out_tooltips'].append(not_available_text)
 
     node_com_file_name = initial_data['node_name'].lower().replace(' ', '_')+'_com.py'
     node_worker_file_name = initial_data['node_name'].lower().replace(' ', '_')+'_worker.py'
@@ -57,8 +92,9 @@ def generate_data(node_name_id):
     node_data = {'BaseName': initial_data['node_name'], 'NodeAttributeNames': [], 'NodeAttributeType': [],
                  'ParameterNames': initial_data['parameter_names'], 'ParameterTypes': initial_data['parameter_types'],
                  'ParametersDefaultValues': initial_data['parameter_defaults'],
-                 'WorkerDefaultExecutable': node_worker_file_name,
-                 'ComExecutable': node_com_file_name}
+                 'WorkerDefaultExecutable': node_worker_file_name, 'ComExecutable': node_com_file_name,
+                 'NodeTooltip': initial_data['node_tooltip'], 'ParameterTooltips':initial_data['parameter_tooltips'],
+                 'InOutTooltips':initial_data['in_out_tooltips']}
 
     # Generate NodeAttributeNames and NodeAttributeType
     if len(initial_data['parameter_names']) > 0:
@@ -73,8 +109,6 @@ def generate_data(node_name_id):
             node_data['NodeAttributeNames'].append(output)
             node_data['NodeAttributeType'].append('Output')
 
-    node_data['ParametersDefaultValues'] = initial_data['parameter_defaults']
-
     # Turn the default values from strings to literal values
     error = False
     for i, type in enumerate(node_data['ParameterTypes']):
@@ -85,7 +119,7 @@ def generate_data(node_name_id):
                 message = f"Default value {node_data['ParametersDefaultValues'][i]} of parameter " \
                           f"{node_data['ParameterNames'][i]}\ncannot be evaluated appropriately."
                 print(message)
-                with dpg.window(label=f'Error on parameter {i}', pos=[300, 200+120*i], height=120, width=300,
+                with dpg.window(label=f'Error on parameter {i}', pos=[100, 200+120*i], height=120, width=300,
                                 show=True, popup=True):
                     dpg.add_text(default_value=message)
                 error = True
@@ -153,11 +187,14 @@ def write_code():
                  "Exec = os.path.abspath(__file__)\n\n\n" \
                                                         \
                  f"BaseName = '{node_data['BaseName']}'\n" \
+                 f"NodeTooltip = '{node_data['NodeTooltip']}'\n" \
                  f"NodeAttributeNames = {node_data['NodeAttributeNames']}\n" \
                  f"NodeAttributeType = {node_data['NodeAttributeType']}\n" \
                  f"ParameterNames = {node_data['ParameterNames']}\n" \
                  f"ParameterTypes = {node_data['ParameterTypes']}\n" \
                  f"ParametersDefaultValues = {node_data['ParametersDefaultValues']}\n" \
+                 f"ParameterTooltips = {node_data['ParameterTooltips']}\n" \
+                 f"InOutTooltips = {node_data['InOutTooltips']}\n" \
                  f"WorkerDefaultExecutable = os.path.join(os.path.dirname(Exec), '{worker_executable}')\n\n\n" \
                  "if __name__ == '__main__':\n" \
                  f"    {com_executable} = gu.start_the_{node_type_lower_case}_communications_process(NodeAttributeType, NodeAttributeNames)\n" \
@@ -186,6 +223,7 @@ def write_code():
 
     worker_script = "import sys\n" \
                     "from os import path\n" \
+                    "import numpy as np\n" \
                     "from typing import List, Union\n\n" \
                     "current_dir = path.dirname(path.abspath(__file__))\n" \
                     "while path.split(current_dir)[-1] != r'Heron':\n" \
@@ -237,7 +275,7 @@ def write_code():
         worker_script += \
                      f"    #                                                   {name }={name}\n"
     worker_script += "    #                                                    )\n\n" \
-                     "    # DO ANY OTHER INITIALISATION HERE \n\n\n"
+                     "    # DO ANY OTHER INITIALISATION HERE \n\n"
 
     worker_script += "    return True\n\n\n"
 
@@ -454,12 +492,19 @@ def delete_parameter(sender, app_data, user_data):
 
     param_group, tag_param_name, tag_param_type, tag_param_default = user_data
 
+    tag_tooltip_edit_window = f'tooltip_{tag_param_name}'.replace('name_', '')
+    tag_tooltip_text = 'text_' + tag_tooltip_edit_window
+
     del aliases_list[aliases_list.index(tag_param_name)]
     del aliases_list[aliases_list.index(tag_param_type)]
     del aliases_list[aliases_list.index(tag_param_default)]
-    dpg.delete_item(param_group)
+    try:
+        del aliases_list[aliases_list.index(tag_tooltip_edit_window)]
+        del aliases_list[aliases_list.index(tag_tooltip_text)]
+    except:
+        pass
 
-    #num_of_parameters -= 1
+    dpg.delete_item(param_group)
 
 
 def delete_input(sender, app_data, user_data):
@@ -467,7 +512,17 @@ def delete_input(sender, app_data, user_data):
     global aliases_list
 
     input_group, tag = user_data
+    tag_draw = f"draw_in_{tag.replace('input_', '')}"
+    tag_tooltip_edit_window = f'tooltip_{tag}'
+    tag_tooltip_text = 'text_' + tag_tooltip_edit_window
+
     del aliases_list[aliases_list.index(tag)]
+    del aliases_list[aliases_list.index(tag_draw)]
+    try:
+        del aliases_list[aliases_list.index(tag_tooltip_edit_window)]
+        del aliases_list[aliases_list.index(tag_tooltip_text)]
+    except:
+        pass
     dpg.delete_item(input_group)
 
 
@@ -476,7 +531,17 @@ def delete_output(sender, app_data, user_data):
     global aliases_list
 
     output_group, tag = user_data
+    tag_draw = f"draw_out_{tag.replace('output_', '')}"
+    tag_tooltip_edit_window = f'tooltip_{tag}'
+    tag_tooltip_text = 'text_' + tag_tooltip_edit_window
+
     del aliases_list[aliases_list.index(tag)]
+    del aliases_list[aliases_list.index(tag_draw)]
+    try:
+        del aliases_list[aliases_list.index(tag_tooltip_edit_window)]
+        del aliases_list[aliases_list.index(tag_tooltip_text)]
+    except:
+        pass
     dpg.delete_item(output_group)
 
 
@@ -513,6 +578,28 @@ def make_add_output_button():
         dpg.add_text('Add a new Output', tag='add_output_txt')
 
 
+def on_edit_tooltip(sender, app_data, user_data):
+    if 'parameter' in user_data:
+        tag_tooltip_edit_window = f"tooltip_parameter_{user_data.split('_')[-1]}"
+    else:
+        tag_tooltip_edit_window = f'tooltip_{user_data}'
+
+    tag_tooltip_text = 'text_' + tag_tooltip_edit_window
+
+    if tag_tooltip_edit_window in aliases_list:
+        dpg.configure_item(tag_tooltip_edit_window, show=True)
+    else:
+        aliases_list.append(tag_tooltip_edit_window)
+        aliases_list.append(tag_tooltip_text)
+
+        with dpg.window(label='Documentation', tag=tag_tooltip_edit_window, modal=True, no_collapse=True,
+                        show=True, width=500, height=300, pos=[850, 100], no_close=True):
+            dpg.add_input_text(default_value='', width=-10, height=220, multiline=True, tag=tag_tooltip_text)
+            with dpg.group(horizontal=True):
+                dpg.add_button(label='Ok', indent=220,
+                               callback=lambda: dpg.configure_item(tag_tooltip_edit_window, show=False))
+
+
 def add_new_parameter(sender, app_data):
     global num_of_parameters
     num_of_parameters += 1
@@ -522,15 +609,16 @@ def add_new_parameter(sender, app_data):
 
     delete_add_parameter_button()
     with dpg.group(horizontal=True, parent=param_win) as param_group:
-        dpg.add_image_button(delete_texture, width=20, height=20,
+        dpg.add_image_button('delete_texture', width=20, height=20,
                              user_data=[param_group, tag_param_name, tag_param_type, tag_param_default],
                              callback=delete_parameter)
-        dpg.add_input_text(default_value="Parameter's name", tag=tag_param_name, width=150)
+        dpg.add_input_text(default_value="Name", tag=tag_param_name, width=200)
         with dpg.tooltip(parent=tag_param_name):
             dpg.add_text(default_value='Add the name of the Parameter. If the name is Visualisation then the\n'
                                        'automatically generated code will include the VisualisationDPG module.')
-        dpg.add_combo(items=parameter_types, tag=tag_param_type, width=80)
-        dpg.add_input_text(default_value='Default value', tag=tag_param_default, width=200)
+        dpg.add_combo(items=parameter_types, tag=tag_param_type, width=60)
+        dpg.add_input_text(default_value='Default value', tag=tag_param_default, width=170)
+        dpg.add_image_button('edit_texture', width=20, height=20, callback=on_edit_tooltip, user_data=tag_param_name)
     aliases_list.append(tag_param_name)
     aliases_list.append(tag_param_type)
     aliases_list.append(tag_param_default)
@@ -548,8 +636,10 @@ def add_new_input(sender, app_data):
         with dpg.drawlist(width=20, height=20):
             with dpg.draw_node(tag=draw_tag):
                 dpg.draw_circle(center=[10, 10], radius=5, color=[234, 225, 5], fill=[234, 225, 5])
-        dpg.add_input_text(default_value="Input's name", tag=tag)
-        dpg.add_image_button(delete_texture, width=20, height=20, user_data=[input_group, tag], callback=delete_input)
+        dpg.add_image_button('delete_texture', width=20, height=20, user_data=[input_group, tag],
+                              callback=delete_input)
+        dpg.add_input_text(default_value="Name", tag=tag, width=200)
+        dpg.add_image_button('edit_texture', width=20, height=20, callback=on_edit_tooltip, user_data=tag)
     aliases_list.append(tag)
     aliases_list.append(draw_tag)
     make_add_input_button()
@@ -562,9 +652,10 @@ def add_new_output(sender, app_data):
     draw_tag = f'draw_out_{num_of_outputs}'
 
     delete_add_output_button()
-    with dpg.group(horizontal=True, parent=output_win, indent=55) as output_group:
-        dpg.add_image_button(delete_texture, width=20, height=20, user_data=[output_group, tag], callback=delete_output)
-        dpg.add_input_text(default_value="Output's name", tag=tag)
+    with dpg.group(horizontal=True, parent=output_win, indent=230) as output_group:
+        dpg.add_image_button('delete_texture', width=20, height=20, user_data=[output_group, tag], callback=delete_output)
+        dpg.add_input_text(default_value="Name", tag=tag, width=200)
+        dpg.add_image_button('edit_texture', width=20, height=20, callback=on_edit_tooltip, user_data=tag)
         with dpg.drawlist(width=20, height=20):
             with dpg.draw_node(tag=draw_tag):
                 dpg.draw_circle(center=[10, 10], radius=5, color=[234, 225, 5], fill=[234, 225, 5])
@@ -583,31 +674,37 @@ def make_node_window():
     global param_win
     global input_win
     global output_win
-    global delete_texture
 
     tag_main = 'new_node_editor'
     tag_name_text = 'name_input'
     tag_param_window = 'parameterscontainer'
     tag_input_window = 'inputcontainer'
     tag_output_window = 'outputwindow'
+    tag_delete_texture = 'delete_texture'
+    tag_edit_texture = 'edit_texture'
 
     aliases_list.append(tag_main)
     aliases_list.append(tag_name_text)
     aliases_list.append(tag_param_window)
     aliases_list.append(tag_input_window)
     aliases_list.append(tag_output_window)
+    aliases_list.append('delete_texture')
+    aliases_list.append('edit_texture')
 
-    width, height, channels, data = dpg.load_image(join(images_path, "DeleteG.png"))
+    wdel, hdel, cdel, ddel = dpg.load_image(join(images_path, "DeleteG.png"))
+    wedit, hedit, cedit, dedit = dpg.load_image(join(images_path, "EditG.png"))
     with dpg.texture_registry():
-        delete_texture = dpg.add_static_texture(width, height, data)
+        dpg.add_static_texture(wdel, hdel, ddel, tag=tag_delete_texture)
+        dpg.add_static_texture(wedit, hedit, dedit, tag=tag_edit_texture)
 
-    with dpg.window(label='New Node Editor', tag=tag_main, width=470, height=430, pos=[500, 200],
+    with dpg.window(label='New Node Editor', tag=tag_main, width=550, height=430, pos=[300, 100],
                     user_data=tag_name_text, on_close=on_close_main, no_collapse=True) as node_win:
-        dpg.add_input_text(tag=tag_name_text, width=-5, height=40, indent=5, default_value='Node Name')
-
+        with dpg.group(horizontal=True):
+            dpg.add_input_text(tag=tag_name_text, width=-30, height=40, indent=5, default_value='Node Name')
+            dpg.add_image_button('edit_texture', width=20, height=20, callback=on_edit_tooltip, user_data='node')
         dpg.add_spacer(height=2)
         dpg.add_separator()
-
+        
         with dpg.child_window(tag=tag_param_window, height=150, border=False) as param_win:
             make_add_parameter_button()
 
@@ -627,7 +724,7 @@ def make_node_window():
             dpg.configure_item(node_win, height=605)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label='OK', indent=200, callback=on_close_main_with_buttons, user_data=[tag_name_text, True])
+            dpg.add_button(label='OK', indent=240, callback=on_close_main_with_buttons, user_data=[tag_name_text, True])
             dpg.add_button(label='Cancel', callback=on_close_main_with_buttons, user_data=[tag_name_text, False])
 
     with dpg.theme() as node_name_theme:
@@ -642,3 +739,4 @@ def make_node_window():
 
     dpg.bind_item_theme(tag_name_text, node_name_theme)
     dpg.bind_item_theme(node_win, node_editor_name_theme)
+

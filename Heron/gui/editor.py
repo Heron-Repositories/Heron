@@ -544,9 +544,10 @@ def add_new_symbolic_link_node_folder():
                         os.symlink(target, link)
                         return True
                     else:
-                        error_text = 'There is a folder in the Heron Operations dir that has the same name\n' \
-                                     'as the source folder but is not a symbolic link. No symbolic link can\n' \
-                                     'be created overriding it.'
+                        error_text = f'There is a folder {link}\n' \
+                                     'in the Heron Operations dir that has the same name\n' \
+                                     f'as the source folder {target} \n' \
+                                     'but is not a symbolic link. No symbolic link can be created overriding it.'
                         spacer = 160
                         create_error_window(error_text, spacer)
                         return False
@@ -567,10 +568,11 @@ def add_new_symbolic_link_node_folder():
                         os.mkdir(link)
 
                     for inner_dir in os.listdir(target):
-                        link_inner = os.path.join(link, inner_dir)
-                        inner_target = os.path.join(target, inner_dir)
-                        if not add_symlink(inner_target, link_inner):
-                            return
+                        if '__top__' not in inner_dir:
+                            link_inner = os.path.join(link, inner_dir)
+                            inner_target = os.path.join(target, inner_dir)
+                            if not add_symlink(inner_target, link_inner):
+                                return
 
         if not folders_exist:
             error_text = "The selected Directory {} \n" \
@@ -643,10 +645,10 @@ def on_mouse_release(sender, app_data, user_data):
     mouse_dragging_deltas = [0, 0]
 
 
-def create_node_selector_window(main_window, title_font):
+def create_node_selector_window():
     global node_selector
 
-    with dpg.child_window(pos=[5, 65], width=270, height=-1, parent=main_window, no_scrollbar=True) \
+    with dpg.child_window(pos=[5, 65], width=270, height=-1, parent='main_window', no_scrollbar=True) \
             as node_selector_holder:
         title = dpg.add_text(default_value='Node Tree', indent=75)
         dpg.add_separator()
@@ -681,7 +683,7 @@ def create_node_selector_window(main_window, title_font):
             dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0, category=dpg.mvThemeCat_Core)
     dpg.bind_item_theme(node_selector, node_selector_theme_id)
 
-    dpg.bind_item_font(title, title_font)
+    dpg.bind_item_font(title, 'bold_font_large')
 
     return node_selector
 
@@ -757,7 +759,8 @@ def run(load_json_file=None):
     with dpg.font_registry():
         default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Regular.ttf'), 18)
         italic_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-LightItalic.ttf'), 18)
-        bold_font_large = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Semibold.ttf'), 22)
+        bold_font_large = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Semibold.ttf'), 22,
+                                       tag='bold_font_large')
 
     dpg.bind_font(default_font)
     create_new_node.italic_font = italic_font
@@ -806,7 +809,7 @@ def run(load_json_file=None):
                                   callback=view_operations_repos)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
-    _ = create_node_selector_window(main_window, bold_font_large)
+    _ = create_node_selector_window()
 
     with dpg.child_window(parent=main_window,  width=-1, height=-1)as node_editor_window:
         editor_title = dpg.add_text(default_value='Editor')

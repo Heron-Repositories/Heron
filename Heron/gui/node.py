@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import re
+import codecs
 
 import numpy as np
 import zmq
@@ -345,8 +346,9 @@ class Node:
         with dpg.window(no_close=True, no_collapse=True, show=False, modal=False, width=400, height=node_height) \
                 as title_tooltip:
             node_name = re.sub('\d', '', self.name).replace('#', '')
-            dpg.add_text(f'{node_name}: {self.operation.tooltip}', wrap=390, indent=5)
-        #print(self.worker_executable)
+            text = codecs.decode(self.operation.tooltip, 'unicode_escape')
+            dpg.add_text(f'{node_name}: {text}', wrap=390, indent=5)
+
         def show_node_tooltip_on_hover():
             while True:
                 try:
