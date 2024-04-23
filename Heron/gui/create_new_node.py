@@ -419,16 +419,19 @@ def kill_existing_aliases(node_name_id):
 def on_close_main(sender, app_data, user_data):
     node_name_id = user_data
     generate_code(node_name_id)
-    kill_existing_aliases(node_name_id)
+    kill_existing_aliases(node_win)
+    dpg.delete_item(node_win)
 
 
 def on_close_main_with_buttons(sender, app_data, user_data):
     global node_win
 
     node_name_id, gen_data = user_data
+    dpg.configure_item(node_win, show=False)
     if gen_data:
         generate_code(node_name_id)
 
+    kill_existing_aliases(node_name_id)
     dpg.delete_item(node_win)
 
 
