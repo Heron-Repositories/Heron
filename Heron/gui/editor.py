@@ -708,16 +708,9 @@ def known_hosts_file_setup_check():
         else:
             def on_file_dialog_return(selected_files):
                 knownhost_filepath = selected_files[0]
-                constants_file = join(dirname(dirname(os.path.realpath(__file__))), 'constants.py')
-                constants_txt = '\n'
-                with open(constants_file, 'r') as f:
-                    lines = f.read().split('\n')
-                    for i, line in enumerate(lines):
-                        if 'KNOWN_HOSTS_FILE' in line:
-                            lines[i] = "KNOWN_HOSTS_FILE = r'{}'".format(knownhost_filepath)
-                    constants_txt = constants_txt.join(lines)
-                with open(constants_file, 'w') as f:
-                    f.write(constants_txt)
+                settings.settings_dict['Operation']['KNOWN_HOSTS_FILE'] = knownhost_filepath
+                with open(settings.settings_file, 'w') as sf:
+                    json.dump(settings.settings_dict, sf, indent=4)
                 dpg.delete_item('known_hosts_window')
 
             file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,

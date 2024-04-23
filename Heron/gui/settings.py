@@ -1,17 +1,24 @@
 
 from dearpygui import dearpygui as dpg
-from os.path import dirname, join
+from os.path import join
 import os
 from pathlib import Path
 import json
-from Heron import general_utils as gu
 import numpy as np
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
-with open(join(heron_path, 'settings.json'), 'r') as settings_file:
-    settings_dict = json.load(settings_file)
+settings_file = join(heron_path, 'settings.json')
+if not os.path.isfile(settings_file):
+    with open(join(heron_path, 'settings_default.json'), 'r') as sfd:
+        settings_dict = json.load(sfd)
+        with open(join(heron_path, 'settings.json'), 'w') as sf:
+            json.dump(settings_dict, sf, indent=4)
+else:
+    with open(join(heron_path, 'settings.json'), 'r') as sf:
+        settings_dict = json.load(sf)
 
 aliases_list = []
+
 
 def kill_existing_aliases():
     global aliases_list

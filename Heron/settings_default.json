@@ -14,7 +14,7 @@
         "DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS": 0.2
     },
     "IDE": {
-        "IDE Path": "C:\\Program Files\\JetBrains\\PyCharm 2021.1.1\\bin\\pycharm64.exe",
-        "IDE Project Path": "E:\\Code\\Mine\\Heron_Repos\\Heron_pycharm_project"
+        "IDE Path": "",
+        "IDE Project Path": ""
     }
 }
