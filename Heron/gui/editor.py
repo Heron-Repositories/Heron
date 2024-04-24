@@ -796,17 +796,16 @@ def run(load_json_file=None):
                 dpg.add_menu_item(label='New', callback=clear_editor)
                 dpg.add_menu_item(label='Save', callback=save_graph)
                 dpg.add_menu_item(label='Load', callback=load_graph)
-            with dpg.menu(label='Local Network') as menu:
+            with dpg.menu(label='Edit') as menu:
                 ssh_info_editor.set_parent_id(menu)
                 dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
+                dpg.add_menu_item(label='Settings', callback=settings.start)
             with dpg.menu(label='Nodes'):
                 dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
                                   callback=add_new_symbolic_link_node_folder)
                 dpg.add_menu_item(label='Download Nodes from the Heron-Repositories page',
                                   callback=view_operations_repos)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
-            with dpg.menu(label='Settings'):
-                dpg.add_menu_item(label='Settings', callback=settings.start)
 
     _ = create_node_selector_window()
 

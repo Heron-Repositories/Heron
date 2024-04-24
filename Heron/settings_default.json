@@ -7,7 +7,7 @@
     },
     "Operation": {
         "HEARTBEAT_RATE": 1,
-        "HEARTBEATS_TO_DEATH": 20,
+        "HEARTBEATS_TO_DEATH": 10,
         "NUMBER_OF_INITIAL_PARAMETERS_UPDATES": 20,
         "KNOWN_HOSTS_FILE": "/.ssh/known_hosts",
         "NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE": 1000,
