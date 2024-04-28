@@ -36,12 +36,15 @@ images_path = join(heron_path, 'resources', 'basic_icons')
 def start_ide():
 
     project = settings.settings_dict['IDE']['IDE Project Path']
-    if project != '':
-        args = [settings.settings_dict['IDE']['IDE Path'], project, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
-    else:
-        args = [settings.settings_dict['IDE']['IDE Path'], node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
+    ide_path = settings.settings_dict['IDE']['IDE Path']
 
-    subprocess.run(args)
+    if ide_path != '':
+        if project != '':
+            args = [ide_path, project, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
+        else:
+            args = [ide_path, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
+
+        subprocess.run(args)
 
 
 # The Code Editing
