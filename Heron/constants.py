@@ -4,8 +4,12 @@ import os
 from pathlib import Path
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__)))
-logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.DEBUG,
+logging.basicConfig(filename=os.path.join(heron_path, 'heron.log'), level=logging.ERROR,
                     format='%(asctime)s %(message)s', datefmt='%H:%M:%S')
+logging.logThreads = False
+logging.logProcesses = False
+logging.logMultiprocessing = False
+logging.logAsyncioTasks = False
 
 
 DATA_FORWARDER_SUBMIT_PORT = '6560'

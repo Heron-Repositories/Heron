@@ -8,7 +8,6 @@ from Heron import constants as ct
 from Heron.gui import settings
 
 
-
 def rearrange_pandasdf_columns(df):
     """
     Takes a pandas Dataframe with columns 'DateTime' and 'WorkerIndex' amongst others and places them at the front
@@ -119,19 +118,18 @@ class SaveNodeState():
 
             self.save_current_df('Parameters')
 
-    # TODO: Rewrite the doc
     def update_the_substate_pandasdf(self, worker_index, **variables):
         """
         Updates the Substate pandasdf of the SaveNodeState. It first checks to see if the Substate pandadf exist and if it
-        doesn't it creates it. The update happens incrementally through the self.substate_pandasdf temporary
-        dataframe which gets loaded and at a certain number of worker_function iterations it gets saved into the dataframe.
+        doesn't it creates it. The update happens incrementally through the self.temp_substate_list temporary
+        list which gets loaded and at a certain number of worker_function iterations it gets saved into the dataframe.
         This number can be either NUMBER_OF_ITTERATIONS_BEFORE_SAVE_SUBSTATE_SAVE when the Node's worker function
         hasn't specified it in the xxx_worker.num_of_iters_to_update_savenodestate_substate variable or that variable. If that
         variable has the value of -1 then the information never gets saved to the hard disk until the process is about
-        to die at which point the whole pandas (which has been kept in RAM) gets dumped in one go to the HD.
+        to die at which point the whole list (which has been kept in RAM) gets dumped in one go to the HD.
         Nodes that struggle to keep up with their operations can use the later strategy to not take any time in loading
         and re-saving the pandasdf. But that means that if the Node crashes without calling the on_kill of the worker
-        object then the pandas is lost.
+        object then the data are lost.
         :param worker_index: The index of the worker function iteration
         :param kwarg_variables: The variables passed as multiple arguments with names (**kwargs style)
         :return: Nothing
@@ -141,8 +139,6 @@ class SaveNodeState():
             if not self.substate_pandasdf_exists:
                 self.create_the_pandasdf(type='Substate', **variables)
 
-            variables['DateTime'] = datetime.now()
-            variables['WorkerIndex'] = worker_index
             self.add_new_line_to_temp_array(worker_index, variables)
 
             if self.num_of_iters != -1 and worker_index % self.num_of_iters == 0:
@@ -157,9 +153,6 @@ class SaveNodeState():
         :return:
         """
         self.substate_pandasdf_new_data = None
-
-        variables['DateTime'] = datetime.now()
-        variables['WorkerIndex'] = worker_index
 
         new_variables = {'DateTime': datetime.now(), 'WorkerIndex': worker_index}
         for v in variables:

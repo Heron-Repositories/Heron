@@ -66,7 +66,7 @@ class SourceWorker:
         self.ssh_com.connect_socket_to_local(self.socket_sub_parameters, r'tcp://127.0.0.1', self.port_sub_parameters)
         self.socket_sub_parameters.subscribe(self.parameters_topic)
 
-        # Setup the socket that pushes the data to the com
+        # Set up the socket that pushes the data to the com
         self.socket_push_data = Socket(self.context, zmq.PUSH)
         self.socket_push_data.setsockopt(zmq.LINGER, 0)
         self.socket_push_data.set_hwm(1)

@@ -44,12 +44,13 @@ class SourceCom:
 
         # If self.verbose is a string it is the file name to log things in. If it is an int it is the level of the verbosity
         self.logger = None
+        self.listener = None
         if self.verbose != 0:
             try:
                 self.verbose = int(self.verbose)
             except:
                 log_file_name = gu.add_timestamp_to_filename(self.verbose, datetime.now())
-                self.logger = gu.setup_logger('Source', log_file_name)
+                self.logger, self.listener = gu.setup_logger('Source', log_file_name)
                 self.logger.info('Index of data packet : Computer Time Data Out')
                 self.verbose = False
 
@@ -226,6 +227,7 @@ class SourceCom:
             self.socket_pull_data.close()
             self.socket_pub_data.close()
             self.socket_push_heartbeat.close()
+            self.listener.stop()
         except Exception as e:
             print('Trying to kill Source com {} failed with error: {}'.format(self.sending_topics[0], e))
         finally:

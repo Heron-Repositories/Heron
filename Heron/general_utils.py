@@ -7,6 +7,8 @@ import signal
 import math
 from struct import *
 import logging
+import queue
+import logging.handlers
 import psutil
 import json
 import numpy as np
@@ -117,27 +119,31 @@ def add_heron_to_pythonpath():
 
 def register_exit_signals(function_to_register):
     """
-    In windows it registers a function to the SIGBREAK signal, while in linux to the SIGTERM signal
+    In windows it registers a function to the SIGBREAK signal, while in linux and Mac to the SIGTERM signal
     :param function_to_register: The function to register
     :return: Nothing
     """
     if platform.system() == 'Windows':
         signal.signal(signal.SIGBREAK, function_to_register)
-    elif platform.system() == 'Linux':
+    elif platform.system() == 'Linux' or platform.system() == 'Darwin':
         signal.signal(signal.SIGTERM, function_to_register)
 
 
 def setup_logger(name, log_file, level=logging.DEBUG):
-
     formatter = logging.Formatter(fmt='%(message)s')
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(formatter)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+
+    log_queue = queue.Queue(-1)
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    listener = logging.handlers.QueueListener(log_queue, file_handler)
+    listener.start()
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    logger.addHandler(handler)
+    logger.addHandler(queue_handler)
 
-    return logger
+    return logger, listener
 
 
 def add_timestamp_to_filename(file_name, datetime):
