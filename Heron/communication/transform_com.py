@@ -303,6 +303,7 @@ class TransformCom:
         :return: Nothing
         """
         try:
+            self.listener.stop()
             self.all_loops_running = False
             self.poller.unregister(socket=self.socket_sub_data)
             self.poller.unregister(socket=self.socket_pull_data)
@@ -311,7 +312,6 @@ class TransformCom:
             self.socket_pull_data.close()
             self.socket_pub_data.close()
             self.socket_push_heartbeat.close()
-            self.listener.stop()
         except Exception as e:
             print('Trying to kill Transform com {} failed with error: {}'.format(self.sending_topics, e))
         finally:
