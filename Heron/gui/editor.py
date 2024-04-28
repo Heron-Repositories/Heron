@@ -699,6 +699,8 @@ def known_hosts_file_setup_check():
     known_hosts_file_path = settings.settings_dict['Operation']['KNOWN_HOSTS_FILE']
     if known_hosts_file_path == '/.ssh/known_hosts':
         known_hosts_file_path = os.path.expanduser('~') + known_hosts_file_path
+        settings.settings_dict['Operation']['KNOWN_HOSTS_FILE'] = known_hosts_file_path
+        settings.save_settings()
 
     def on_press_known_hosts_buttons(sender, app_data, user_data):
         dpg.delete_item('known_hosts_window')
@@ -709,8 +711,7 @@ def known_hosts_file_setup_check():
             def on_file_dialog_return(selected_files):
                 knownhost_filepath = selected_files[0]
                 settings.settings_dict['Operation']['KNOWN_HOSTS_FILE'] = knownhost_filepath
-                with open(settings.settings_file, 'w') as sf:
-                    json.dump(settings.settings_dict, sf, indent=4)
+                settings.save_settings()
                 dpg.delete_item('known_hosts_window')
 
             file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,

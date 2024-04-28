@@ -19,6 +19,11 @@ else:
 aliases_list = []
 
 
+def save_settings():
+    with open(settings_file, 'w') as sf:
+        json.dump(settings_dict, sf, indent=4)
+
+
 def kill_existing_aliases():
     global aliases_list
 
