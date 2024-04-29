@@ -1,12 +1,14 @@
 
 from dearpygui import dearpygui as dpg
-from os.path import dirname, join
+from os.path import join
 import os
 import ast
 import numpy as np
 import webbrowser
 import subprocess
 from pathlib import Path
+from typing import Callable
+import ctypes
 
 from Heron.gui.fdialog import FileDialog
 from Heron import general_utils as gu
@@ -30,6 +32,7 @@ parameter_types = ['bool', 'str', 'list', 'float', 'int']
 italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 images_path = join(heron_path, 'resources', 'basic_icons')
+add_node_to_tree_func: Callable
 
 
 # Helper functions to start IDE after new Node is written
@@ -245,6 +248,7 @@ def write_code():
     worker_script = "import sys\n" \
                     "from os import path\n" \
                     "import numpy as np\n" \
+                    "import time\n" \
                     "from typing import List, Union\n\n" \
                     "current_dir = path.dirname(path.abspath(__file__))\n" \
                     "while path.split(current_dir)[-1] != r'Heron':\n" \
@@ -274,8 +278,8 @@ def write_code():
             worker_script += f"    global {name}\n"
     worker_script += "\n"
 
-    worker_script += "    # The arguments depend on what will be visualised. See Worker Templates on how to fill them in.\n" \
-                     "    vis = VisualisationDPG(arguments)\n\n" \
+    worker_script += "    # The args depend on what will be visualised. See Worker Templates on how to fill them in.\n" \
+                     "    vis = VisualisationDPG(worker_object.node_name, worker_object.node_index, *args)\n\n" \
         if visualisation else "\n"
 
     worker_script += "    try:\n" \
@@ -326,7 +330,7 @@ def write_code():
                          "        if worker_object.initialised:\n" \
                          "            need_parameters = False\n" \
                          "            running = True\n" \
-                         "            gu.accurate_delay(10)\n\n"
+                         "            time.sleep(0.01)\n\n"
     worker_script += "    while running:\n" if node_type == 'Source' else ""
     worker_script += f"    {extra_indent}try:\n"
     worker_script += f"        {extra_indent}#  Uncomment any of the parameter updates whose values\n" \
@@ -366,7 +370,7 @@ def write_code():
         if node_type == 'Source':
             worker_script += "        worker_object.send_data_to_com(result)\n" \
                              "        # You might want to add some delay here\n" \
-                             "        # gu.accurate_delay(10)\n"
+                             "        # time.sleep(0.01)\n"
         else:
             worker_script += "    return result\n"
 
@@ -379,7 +383,7 @@ def write_code():
     worker_script += "    pass\n\n\n" if (not visualisation and node_type != 'Sources') else "\n\n"
 
     worker_script += "if __name__ == '__main__':\n" \
-                     "    worker_object = gu.start_the_transform_worker_process(work_function=work_function,\n" \
+                     f"    worker_object = gu.start_the_{node_type.lower()}_worker_process(work_function=work_function,\n" \
                      "                                                          end_of_life_function=on_end_of_life,\n" \
                      "                                                          initialisation_function=initialise)\n"
     worker_script += "    worker_object.start_ioloop()\n" if node_type != 'Source' else "\n"
@@ -389,10 +393,12 @@ def write_code():
 
 
 def generate_code(node_name_id):
+    global path
     if generate_data(node_name_id):
         generate_folder_structure()
         write_code()
         start_ide()
+        add_node_to_tree_func(sender=None, app_data=None, user_data=path)
 
 
 # The GUI
@@ -438,16 +444,40 @@ def on_close_main_with_buttons(sender, app_data, user_data):
     dpg.delete_item(node_win)
 
 
-def start():
+def start(_add_node_to_tree_func):
     """
     The first function to be called which starts the process of showing consecutive windows to get all the info
     for a new Node. The first window is the Node type selector
     :return: Nothing
     """
-    tag = 'type_selector'
-    with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200], no_collapse=True):
-        dpg.add_combo(label="Pick the Node's type", items=['Source', 'Transform', 'Sink'], width=200,
-                      callback=on_type_selected)
+    global add_node_to_tree_func
+    add_node_to_tree_func = _add_node_to_tree_func
+
+    def delete_error_popup_aliases():
+        if dpg.does_alias_exist('modal_error_id'):
+            dpg.delete_item('modal_error_id')
+
+    def create_error_window(error_text, spacer):
+        with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
+                        no_title_bar=True, popup=True, pos=[500,300]):
+            dpg.add_text(error_text)
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_spacer(width=spacer)
+                dpg.add_button(label="OK", width=75, callback=delete_error_popup_aliases)
+
+    # Check if in Windows and running as an Admin
+    if os.name == 'nt' and ctypes.windll.shell32.IsUserAnAdmin() == 0:
+        error_text = 'In Windows you need to run the python that runs Heron\n' \
+                     'with elevated credentials in order to create a symbolic link.\n' \
+                     'Restart Heron with a python that has started with "Run as Administrator".'
+        spacer = 160
+        create_error_window(error_text, spacer)
+    else:
+        tag = 'type_selector'
+        with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200], no_collapse=True):
+            dpg.add_combo(label="Pick the Node's type", items=['Source', 'Transform', 'Sink'], width=200,
+                          callback=on_type_selected)
 
 
 def on_type_selected(sender, app_data):

@@ -493,7 +493,7 @@ def clear_editor():
     nodes_list = []
 
 
-def add_new_symbolic_link_node_folder():
+def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
     global last_visited_directory
 
     def delete_error_popup_aliases():
@@ -508,7 +508,7 @@ def add_new_symbolic_link_node_folder():
             
     def create_error_window(error_text, spacer):
         with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
-                        no_title_bar=True, popup=True):
+                        no_title_bar=True, popup=True, pos=[500, 300]):
             dpg.add_text(error_text)
             dpg.add_separator()
             with dpg.group(horizontal=True):
@@ -588,10 +588,13 @@ def add_new_symbolic_link_node_folder():
             Node.operations_list = operations_list
             node_selector = create_node_selector_window()
 
-    file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
-                             show_hidden_files=False, multi_selection=False, tag='file_dialog',
-                             default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
-    file_dialog.show_file_dialog()
+    if user_data is None:
+        file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
+                                 show_hidden_files=False, multi_selection=False, tag='file_dialog',
+                                 default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
+        file_dialog.show_file_dialog()
+    else:
+        on_folder_select(user_data)
 
 
 def view_operations_repos():
@@ -740,7 +743,7 @@ def known_hosts_file_setup_check():
 
 
 def graphically_create_new_node(sender, data):
-    create_new_node.start()
+    create_new_node.start(add_new_symbolic_link_node_folder)
 
 
 def run(load_json_file=None):
@@ -803,7 +806,7 @@ def run(load_json_file=None):
                 dpg.add_menu_item(label='Settings', callback=settings.start)
             with dpg.menu(label='Nodes'):
                 dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
-                                  callback=add_new_symbolic_link_node_folder)
+                                  callback=add_new_symbolic_link_node_folder, user_data=None)
                 dpg.add_menu_item(label='Download Nodes from the Heron-Repositories page',
                                   callback=view_operations_repos)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
