@@ -570,10 +570,12 @@ def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
                         os.mkdir(link)
 
                     for inner_dir in os.listdir(target):
-                        if '__top__' not in inner_dir:
-                            link_inner = os.path.join(link, inner_dir)
-                            inner_target = os.path.join(target, inner_dir)
-                            if not add_symlink(inner_target, link_inner):
+                        link_inner = os.path.join(link, inner_dir)
+                        inner_target = os.path.join(target, inner_dir)
+                        if not add_symlink(inner_target, link_inner):
+                            if '__top__' in inner_dir:
+                                pass
+                            else:
                                 return
 
         if not folders_exist:

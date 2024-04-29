@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Heron-42ad"
-version = "0.7.4"
+version = "0.7.5.2"
 authors = [
     {name = "George Dimitriadis", email = "gdimitri@hotmail.com"},
 ]
