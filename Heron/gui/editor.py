@@ -75,7 +75,7 @@ def generate_node_tree():
                     except:
                         pass
                 i = i - 1
-            if len(d[1]) > 1 and '__top__' not in d[1]:
+            if len(d[1]) > 0 and '__top__' not in d[1]:
                 if '__' not in d[0]:
                     for dir in d[1]:
                         if '__' not in dir:
