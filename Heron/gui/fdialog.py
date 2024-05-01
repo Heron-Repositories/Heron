@@ -1,7 +1,3 @@
-# file_dialog v3.0
-# originally designed and created for the Workspace Desktop Interface
-
-# in this version it contais bug fixes and improvements on selecting items (files and folder), new file icons, new option 'show_hidden_files'
 
 import dearpygui.dearpygui as dpg
 import os
@@ -328,7 +324,11 @@ class FileDialog:
             if callback is None:
                 pass
             else:
-                self.callback(self.selected_files)
+                # This allows a callback to return False and keep the file dialog window alive after the press of the
+                # OK button
+                callback_return = self.callback(self.selected_files)
+                if callback_return is not None and not callback_return:
+                    return
             self.selected_files.clear()
             self.__del__()
 
@@ -673,7 +673,8 @@ class FileDialog:
 
         # main file dialog header
         with dpg.window(label=self.title, tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
-                        width=self.width, height=self.height, min_size=self.min_size, no_collapse=True, pos=(50, 50)):
+                        width=self.width, height=self.height, min_size=self.min_size, no_collapse=True, pos=(50, 50),
+                        user_data=self):
             info_px = 110
 
             # horizontal group (shot_menu + dir_list)

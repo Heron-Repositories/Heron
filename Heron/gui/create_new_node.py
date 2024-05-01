@@ -516,19 +516,15 @@ def on_group_selected(sender, app_data):
                              default_path=os.path.expanduser('~'), dirs_only=True, callback=on_path_selected)
     file_dialog.show_file_dialog()
 
-    with dpg.window(label='Info', pos=[360, 200], height=265, width=580, show=True, no_collapse=True) as info:
+    with dpg.window(label='Info', pos=[360, 200], height=180, width=580, show=True, no_collapse=True) as info:
         dpg.add_spacer(height=5)
         dpg.add_text(default_value="Select the Base (Repository) Folder of the Node's File Structure.", indent=10)
         with dpg.group(horizontal=True, indent=10):
             dpg.add_text(default_value="See:")
-            doc = dpg.add_selectable(label='documentation', width=100, callback=lambda: webbrowser.open("https://heron-42ad.readthedocs.io/en/latest/source/documentation/adding_repos.html#creating-a-valid-heron-nodes-repository-from-scratch"))
+            doc = dpg.add_selectable(label='documentation', width=100,
+                                     callback=lambda: webbrowser.open("https://heron-42ad.readthedocs.io/en/latest/source/documentation/adding_repos.html#creating-a-valid-heron-nodes-repository-from-scratch"))
             dpg.add_text(default_value='for the File Structure of a single or group of Nodes.')
-        dpg.add_text(default_value="It is highly advisable to make this a git repository base folder!\n\n"
-                                   "Once you are done creating the Node you need to link its folder to Heron's\n"
-                                   "Operations folder using the\n"
-                                   "Add new Operations Folder (as Symbolic Link from Existing Repo)\n"
-                                   "in the Nodes dropdown of the Menu Bar.",
-                     indent=10)
+        dpg.add_text(default_value="It is highly advisable to make this a git repository base folder!", indent=10)
         dpg.add_spacer(height=15)
         dpg.add_button(label='Ok', callback=lambda: dpg.delete_item(info), indent=250)
 

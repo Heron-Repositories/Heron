@@ -3,7 +3,7 @@ import signal
 import time
 import subprocess
 import os
-from os.path import dirname, join
+from os.path import dirname
 from pathlib import Path
 import numpy as np
 import json
@@ -584,6 +584,9 @@ def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
                          "Sources, Transforms or Sinks folders in it, so it cannot\n" \
                          "be Heron Node code. Please select another directory.".format(operations_directory)
             create_error_window(error_text, 120)
+            # The FileEditor checks if the callback from pressing OK returns anything and if it does, and it is False
+            # then it does nothing (including not killing the file dialog window)
+            return False
         else:
             dpg.delete_item(node_selector)
             operations_list = op_list.generate_operations_list()
