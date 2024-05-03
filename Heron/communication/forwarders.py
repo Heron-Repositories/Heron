@@ -1,5 +1,4 @@
 
-import sys
 import threading
 import zmq
 import zmq.ssh
@@ -56,7 +55,8 @@ def data_forwarder_loop():
             all_proxies.append(zmq.proxy(frontend, backend))
 
     except Exception as e:
-        print("Closing down Forwarder for Data because {}\n".format(e))
+        pass
+        # print("Closing down Forwarder for Data because {}".format(e))
 
 
 def parameters_forwarder_loop():
@@ -94,7 +94,8 @@ def parameters_forwarder_loop():
             all_proxies.append(zmq.proxy(frontend, backend))
 
     except Exception as e:
-        print("Closing down Forwarder for Parameters because {}\n".format(e))
+        pass
+        # print("Closing down Forwarder for Parameters because {}".format(e))
 
 
 def proof_of_life_forwarder_loop():
@@ -134,7 +135,8 @@ def proof_of_life_forwarder_loop():
         all_sockets.append(frontend, backend)
 
     except Exception as e:
-        print("Closing down Forwarder for Proof of Life because {}\n".format(e))
+        pass
+        # print("Closing down Forwarder for Proof of Life because {}".format(e))
 
 
 def close_all_sockets(signal, frame):
