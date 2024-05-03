@@ -387,7 +387,7 @@ def generate_code(node_name_id):
 
 
 # The GUI
-def kill_existing_aliases(node_name_id):
+def kill_existing_aliases():
     global aliases_list
 
     for alias in aliases_list:
@@ -398,23 +398,37 @@ def kill_existing_aliases(node_name_id):
     aliases_list = []
 
     try:
-        dpg.remove_alias('add_param_cross')
-        dpg.remove_alias('add_param_txt')
+        if dpg.does_alias_exist('add_param_cross'):
+            dpg.remove_alias('add_param_cross')
+        if dpg.does_alias_exist('add_param_txt'):
+            dpg.remove_alias('add_param_txt')
+        if dpg.does_alias_exist('type_selector'):
+            dpg.remove_alias('type_selector')
+        if dpg.does_alias_exist('group_selector'):
+            dpg.remove_alias('group_selector')
+        if dpg.does_alias_exist('file_dialog'):
+            dpg.remove_alias('file_dialog')
     except:
         pass
     if node_type != 'Source':
-        dpg.remove_alias('add_input_cross')
-        dpg.remove_alias('add_input_txt')
+        if dpg.does_alias_exist('add_input_cross'):
+            dpg.remove_alias('add_input_cross')
+        if dpg.does_alias_exist('add_input_txt'):
+            dpg.remove_alias('add_input_txt')
     if node_type != 'Sink':
-        dpg.remove_alias('add_output_cross')
-        dpg.remove_alias('add_output_txt')
+        if dpg.does_alias_exist('add_output_cross'):
+            dpg.remove_alias('add_output_cross')
+        if dpg.does_alias_exist('add_output_txt'):
+            dpg.remove_alias('add_output_txt')
 
 
 def on_close_main(sender, app_data, user_data):
-    node_name_id = user_data
-    generate_code(node_name_id)
-    kill_existing_aliases(node_win)
-    dpg.delete_item(node_win)
+    if user_data:
+        node_name_id = user_data
+        generate_code(node_name_id)
+    kill_existing_aliases()
+    if user_data:
+        dpg.delete_item(node_win)
 
 
 def on_close_main_with_buttons(sender, app_data, user_data):
@@ -425,7 +439,7 @@ def on_close_main_with_buttons(sender, app_data, user_data):
     if gen_data:
         generate_code(node_name_id)
 
-    kill_existing_aliases(node_name_id)
+    kill_existing_aliases()
     dpg.delete_item(node_win)
 
 
@@ -460,7 +474,8 @@ def start(_add_node_to_tree_func):
         create_error_window(error_text, spacer)
     else:
         tag = 'type_selector'
-        with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200], no_collapse=True):
+        with dpg.window(label='Node Type Selector', tag=tag, width=380, height=100, pos=[500, 200], no_collapse=True,
+                        on_close=on_close_main):
             dpg.add_combo(label="Pick the Node's type", items=['Source', 'Transform', 'Sink'], width=200,
                           callback=on_type_selected)
 
@@ -479,7 +494,8 @@ def on_type_selected(sender, app_data):
     dpg.delete_item('type_selector')
 
     tag = 'group_selector'
-    with dpg.window(label='Node Type Selector', tag=tag, width=480, height=100, pos=[500, 200], no_collapse=True):
+    with dpg.window(label='Node Type Selector', tag=tag, width=480, height=100, pos=[500, 200], no_collapse=True,
+                    on_close=on_close_main):
         dpg.add_input_text(label="Provide Node's Group (e.g. Vision)", width=200, default_value='General',
                            callback=on_group_selected, on_enter=True)
 

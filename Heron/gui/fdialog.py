@@ -674,7 +674,7 @@ class FileDialog:
         # main file dialog header
         with dpg.window(label=self.title, tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
                         width=self.width, height=self.height, min_size=self.min_size, no_collapse=True, pos=(50, 50),
-                        user_data=self):
+                        user_data=self, on_close=self.__del__):
             info_px = 110
 
             # horizontal group (shot_menu + dir_list)
