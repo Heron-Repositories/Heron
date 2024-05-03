@@ -252,7 +252,8 @@ class SinkCom:
 
     def on_kill(self, signal, frame):
         try:
-            self.listener.stop()
+            if self.listener is not None:
+                self.listener.stop()
             self.all_loops_running = False
             self.poller.unregister(socket=self.socket_sub_data)
             self.poller.unregister(socket=self.socket_pull_data)

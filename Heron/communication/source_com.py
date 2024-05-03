@@ -222,7 +222,8 @@ class SourceCom:
         :return: Nothing
         """
         try:
-            self.listener.stop()
+            if self.listener is not None:
+                self.listener.stop()
             self.all_loops_running = False
             self.stream_pull_data.close(linger=0)
             self.socket_pull_data.close()
