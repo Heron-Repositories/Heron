@@ -35,21 +35,6 @@ images_path = join(heron_path, 'resources', 'basic_icons')
 add_node_to_tree_func: Callable
 
 
-# Helper functions to start IDE after new Node is written
-def start_ide():
-
-    project = settings.settings_dict['IDE']['IDE Project Path']
-    ide_path = settings.settings_dict['IDE']['IDE Path']
-
-    if ide_path != '':
-        if project != '':
-            args = [ide_path, project, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
-        else:
-            args = [ide_path, node_data['ComExecutable'], node_data['WorkerDefaultExecutable']]
-
-        subprocess.run(args)
-
-
 # The Code Editing
 def generate_data(node_name_id):
     """
@@ -397,7 +382,7 @@ def generate_code(node_name_id):
     if generate_data(node_name_id):
         generate_folder_structure()
         write_code()
-        start_ide()
+        gu.start_ide(node_data['ComExecutable'], node_data['WorkerDefaultExecutable'])
         add_node_to_tree_func(sender=None, app_data=None, user_data=path)
 
 

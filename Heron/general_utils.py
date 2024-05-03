@@ -13,12 +13,31 @@ import psutil
 import json
 import numpy as np
 from pathlib import Path
+import subprocess
+
 from Heron.communication.source_com import SourceCom
 from Heron.communication.source_worker import SourceWorker
 from Heron.communication.transform_com import TransformCom
 from Heron.communication.transform_worker import TransformWorker
 from Heron.communication.sink_com import SinkCom
 from Heron.communication.sink_worker import SinkWorker
+from Heron.gui import settings
+
+
+# Helper functions to start IDE with some files open
+def start_ide(*files_to_open):
+    project = settings.settings_dict['IDE']['IDE Project Path']
+    ide_path = settings.settings_dict['IDE']['IDE Path']
+
+    if ide_path != '':
+        if project != '':
+            args = [ide_path, project]
+        else:
+            args = [ide_path]
+
+        args = args + list(files_to_open)
+
+        subprocess.run(args)
 
 
 def convert_to_number (s):

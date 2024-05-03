@@ -670,7 +670,7 @@ def create_node_selector_window():
             base_id = node_tree[0][0]
             base_name = node_tree[0][1]
             with dpg.tree_node(parent=node_selector, default_open=True, id=base_id, open_on_arrow=True,
-                               selectable=False, bullet=True, pos=[-20, -20]):
+                               selectable=False, bullet=True, pos=[-20, 2]):
 
                 # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
                 # tree_node widget

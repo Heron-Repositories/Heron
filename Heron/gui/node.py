@@ -54,6 +54,7 @@ class Node:
         self.to_be_deleted = False
         self.node_editor_window_pos = [0, 0]
         self.tooltip_visibility = False
+        self.time_for_double_click = 0
 
         self.get_corresponding_operation()
         self.get_node_index()
@@ -145,6 +146,8 @@ class Node:
             dpg.remove_alias('info_on#{}##{}'.format(self.operation.name, self.node_index))
         if dpg.does_alias_exist('info_off#{}##{}'.format(self.operation.name, self.node_index)):
             dpg.remove_alias('info_off#{}##{}'.format(self.operation.name, self.node_index))
+        if dpg.does_alias_exist('widget_handler'):
+            dpg.remove_alias('widget_handler')
         for tag in self.tooltip_tags:
             if dpg.does_alias_exist(tag):
                 dpg.remove_alias(tag)
@@ -225,14 +228,21 @@ class Node:
         self.socket_pub_parameters.send_string(topic, flags=zmq.SNDMORE)
         self.socket_pub_parameters.send_pyobj(self.node_parameters)
 
-    def spawn_node_on_editor(self, editor_pos=[0, 0]):
+    def on_click_on_node(self):
+        now = time.time()
+        if now - self.time_for_double_click < 0.3:
+            gu.start_ide(self.operation.executable, self.operation.worker_exec)
+        self.time_for_double_click = time.time()
+
+    def spawn_node_on_editor(self, editor_pos=(0, 0)):
         self.context = zmq.Context()
         self.initialise_parameters_socket()
         self.node_editor_window_pos = editor_pos
 
+        with dpg.item_handler_registry(tag='widget_handler'):
+            dpg.add_item_clicked_handler(callback=self.on_click_on_node)
+
         with dpg.node(label=self.name, parent=self.parent, pos=[self.coordinates[0], self.coordinates[1]]) as self.id:
-            #with dpg.popup(parent=dpg.last_item()):
-            #    dpg.add_text("A popup")
             colour = choose_color_according_to_operations_type(self.operation.parent_dir)
             with dpg.theme() as self.theme_id:
                 with dpg.theme_component(0):
@@ -269,15 +279,6 @@ class Node:
                     attribute_type = dpg.mvNode_Attr_Static
 
                 attribute_name = attr + '##{}##{}'.format(self.operation.name, self.node_index)
-
-                '''
-                previous_attr_type = None
-                with dpg.node_attribute(parent=self.id, attribute_type=dpg.mvNode_Attr_Static):
-                    if (attribute_type == dpg.mvNode_Attr_Input and previous_attr_type == dpg.mvNode_Attr_Static) or \
-                            (attribute_type == dpg.mvNode_Attr_Output and previous_attr_type == dpg.mvNode_Attr_Input) or \
-                            (attribute_type == dpg.mvNode_Attr_Output and previous_attr_type == dpg.mvNode_Attr_Static):
-                        dpg.add_separator()
-                '''
 
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type)as at:
 
@@ -325,8 +326,6 @@ class Node:
                             self.add_tooltip(attribute_name+f'_Param:{k}')
                     dpg.add_spacer(label='##Spacing##'+attribute_name, indent=3)
 
-                #previous_attr_type = attribute_type
-
             #  Move Output attribute labels to the right of the Node
             dpg.split_frame()
             node_width = dpg.get_item_rect_size(self.id)[0]
@@ -338,6 +337,9 @@ class Node:
             info_alias = 'info#{}#{}'.format(self.operation.name, self.node_index)
             dpg.set_item_indent(info_alias, node_width - 100)
             dpg.set_item_indent(del_alias, node_width - 50)
+
+            # Add the click handler to the Node
+            dpg.bind_item_handler_registry(self.id, "widget_handler")
 
         self.setup_title_tooltip()
 
