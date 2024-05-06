@@ -1,5 +1,9 @@
 # Heron
 
+Heron is an open source software conceived as an experiment (and general data) pipeline implementation tool. It allows users to realise their conceptual experimental designs such that the final result, i.e. the implementation running the experiment, visually and structurally bears a significant resemblance to its mental schema, i.e. the idea of the experiment in the experimenter’s imagination.
+
+Heron combines a Node based experiment designer with a Python API allowing users to quicly construct and add their own Nodes. It fully obfuscates the Node communication from the user and offers seamless communication between separate machines running different operating systems.
+
 A more thorough description of both why Heron exists in the first place and some info on how to use it can be found in [this document](https://medium.com/@gdimitri/heron-a-hybrid-approach-to-data-pipelines-in-python-aa7719fe8f2e).
 
 The manual is [here](https://heron-42ad.readthedocs.io/en/latest/index.html).
@@ -23,7 +27,8 @@ Heron is not another visual programming language. It is just a graphical abstrac
 Here is an example of the Heron editor running a simple pipeline
 
 
-![Heron at work](https://user-images.githubusercontent.com/12892531/124310304-e7139e80-db63-11eb-8640-40b23746dfbb.png)
+![Heron at work](https://github.com/Heron-Repositories/Heron/assets/12892531/8c5f15cd-f77b-4263-87e2-30e4e6b8c5f0)
+
 
 More information on the parts of the Heron editor and its use see the Use paragraph.
 
