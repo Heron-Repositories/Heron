@@ -12,20 +12,24 @@ new Nodes to Heron's GUI.
 
 The first step in that process is to create or download a repository designed to be a Heron Node or group of Nodes.
 Once such a repository is in place on the hard disk somewhere (do not put it in Heron's folder structure) then
-do Menu Bar -> Operations -> Add new Operations Folder (as Symbolic Link from Existing Repo). Point Heron to the
+do Menu Bar -> Nodes -> Add new Operations Folder (as Symbolic Link from Existing Repo). Point Heron to the
 top folder of the repository and it will add the correct parts of it in Heron's Operations folder as symbolic links.
 
-In Windows, in order for an app to make symbolic links it needs to have Administrator rights, so to do the above in
-Windows, Heron must have been started with a Run as administrator (Linux does not require anything like this).
-If the above is not the case then Heron will give a warning reminding the user to give it elevated privileges.
-Another error will be generated if the directory Heron is pointed to does not contain a valid Heron Nodes folder
-structure.
+.. note::
+    In Windows, in order for an app to make symbolic links it needs to have Administrator rights, so to do the above in
+    Windows, Heron must have been started with a Run as administrator (Linux does not require anything like this).
+    If the above is not the case then Heron will give a warning reminding the user to give it elevated privileges.
+    Another error will be generated if the directory Heron is pointed to does not contain a valid Heron Nodes folder
+    structure.
 
 Downloading a repository from inside Heron
 -------------------------------------------
-Currently this functionality (Menu Bar -> Operations -> Download Operations from the Heron-Repositories page)
-is not implemented. In the future you will be able to download a repository straight from a repository website and
-into a new repository on your machine with the symbolic links taken care of.
+Heron allows you to clone a repository from an online source and then add the newly created repository to the Operations
+folder. To do this click Menu Bar -> Nodes -> Download Operations from the Heron-Repositories page. You will then
+be asked to fill in the URL of the repo and after that you will be asked to select a folder into which the repo will
+be cloned (with the same base folder name as the name of the online repo). Once these two steps are done Heron will
+automatically clone the repo in the target folder and then add the new local repo in the Operations folder as a symbolic
+link. Again, in Windows you have to be running Heron as an Administrator (Heron will let you know if you are not).
 
 Creating a valid Heron Nodes repository from scratch
 ----------------------------------------------------

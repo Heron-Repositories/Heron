@@ -4,15 +4,24 @@ Writing new Nodes
 ==================
 
 In order to write a new Heron Node one needs to do two things. First create a correct Node folder/file structure and
-then populate the xxx_com.py and xxx_worker.py scripts with the appropriate code.
+then populate the xxx_com.py and xxx_worker.py scripts with the appropriate code. Heron offers both a GUI based and
+a manual way to generate a Node's file/folder structure, create and fully populate the xxx_com.py script and write the
+boilerplate code of the xxx_worker.py script. The filling in of the worker script with the actual functionality of the
+code is something that has to happen by the user (obviously).
 
-The first step is fully described in the 'Creating a valid Heron Nodes repository from scratch' paragraph of the
-:doc:`adding_repos` section. The one thing that is beyond the scope of this manual, is not necessary, but is most
-definitely good practice is to create a repository for the new Node(s), (ideally in the
+In the following we first describe the fully manual way of creating Nodes. Having a grasp of this will make it much
+easier to understand exactly what Heron does to create a Node through its GUI and how to go on about creating the
+functional code of the worker script.
+
+The Manual Way
+----------------
+The file/folder structure of a Node is fully described in the 'Creating a valid Heron Nodes repository from scratch'
+paragraph of the :doc:`adding_repos` section. The one thing that is beyond the scope of this manual, which is not necessary,
+but is most definitely good practice, is to create a repository for the new Node(s), (ideally in the
 `Heron-Repositories <https://github.com/Heron-Repositories>`_ GitHub organisation, but anywhere is better than nowhere).
 
-This part of the manual will deal with the second step, that of writing the code in the two Python scripts to create a functional
-Node.
+This part of the manual will deal with the second step, that of writing the code in the two Python scripts to create a
+functional Node.
 
 The Node templates
 ------------------
@@ -33,22 +42,24 @@ Because the template scripts were authored in PyCharm some comments are actually
 that allow you to minimise and maximize different parts of the scripts. Ignore them if you are not using a JetBrains
 editor.
 
-
 ______________________________________________________________________________________________________________________________
 
 
 The com script
---------------
+---------------
 The xxx_com.py script (from now on referred to as simply the com script) deals with the basic definition of the Node.
 
 This definition comprises of the following variables:
 
 * BaseName
+* NodeTooltip
 * NodeAttributeNames
 * NodeAttributeType
 * ParameterNames
 * ParameterTypes
 * ParametersDefaultValues
+* ParameterTooltips
+* InOutTooltips
 * WorkerDefaultExecutable
 
 The Node's Name
@@ -58,6 +69,11 @@ The BaseName is a string that provides the name of the Node (e.g. 'Camera' or 'M
 .. code-block:: python
 
     BaseName = 'My Super Duper Node'
+
+The Node's Tooltip
+^^^^^^^^^^^^^^^^^^
+This is a string that should describe the Node's functionality. It will be visible in Heron's main GUI by hovering over
+the Node's title if the info toggle button of the Node is on.
 
 The Node's Attributes
 ^^^^^^^^^^^^^^^^^^^^^
@@ -115,6 +131,11 @@ would look like this
     ParameterNames = ['My Integer', 'My Dropdown']
     ParameterTypes = ['int', 'list']
     ParametersDefaultValues = [5, ['1st item', '2nd item']]
+
+Parameters' and Input, Output Tooltips
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Just like the Node's tooltip, all parameters and inputs and outputs have their own description. This again
+will be visible in Heron's main GUI by hovering over the Node's title if the info toggle button of the Node is on.
 
 The Node's worker script
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -348,4 +369,47 @@ when the process terminates itself (see the Running a Graph (a Node's life) para
 where code that deals with gracefully closing down the process should be written (e.g. closing graphical elements,
 releasing memory, etc.). Since this function has to be defined, if there is nothing to close down then a pass call
 should be used.
+
+
+Constructing a Node from a GUI
+------------------------------
+By clicking on Menu Bar -> Nodes -> Create New Node you can start a GUI that allows you to quickly construct a Node's
+basic structures. The first thing that Heron will ask you is the base folder you want to create the Node in.
+Heron expects the base folder of a folder structure that can potentially store many Nodes and can act as a repo's
+base folder (see :doc:`adding_repos` for the folder structure of a Node). The folder does not have to be an empty one and
+Heron will happily work with a folder that hosts other Nodes. Once you have selected this folder Heron
+will show you the Node generation GUI.
+
+
+.. image:: ../images/NewNodeGUI.png
+
+The GUI's entries are self explanatory. You can add and delete entries but before you close the window (with the OK
+button or the close window X) you have to have all widgets of all entries filled (that includes the types and default
+values of the parameters). The edit button at the end of any row will open a separate text input window where you can
+write the tooltips for the that row (highly recommended). Canceling will close the window and abort the process.
+
+The first parameter of the GUI can be named 'Visualisation'. This doesn't have to exist but see further on what adding
+such a parameter will do. If it does it has to have a type of bool (with a default value set to either True or False).
+
+Once you press the OK (or the X) button Heron will automatically generate the correct folder structure in the base folder
+you have indicated and in there will create the two xxx_com.py and xxx_worker.py scripts. The com script will be fully
+generated and no extra editing will be required (unless of course you realise you have made a mistake in some of the
+Node's attributes in which case just go ahead and change what is required straight in the com script).
+
+The worker script will be generated automatically and filled with the appropriate boilerplate code as well as quite a
+bit of code appropriate  to the type of the Node you are creating and whether a Visualisation parameter has been defined.
+Of course the main code that does the actual work of the Node will have to be filled in manually but the predefined
+part of the script will act as a solid segway in defining for you all the things Heron needs to see for a fully
+functional Node.
+
+The output of these worker scripts will always be
+
+.. code-block:: python
+    result =  [np.array([ct.IGNORE]), np.array([ct.IGNORE]), ...]
+    ...
+    return result
+
+with as many np.array([ct.IGNORE]) as the Node has outputs. It is up to you to change these entries to the appropriate
+numpy arrays or dictionaries the Node is supposed to output (see the :doc:`worker function` entry above)
+
 

@@ -126,6 +126,7 @@ then Heron will not complain.
 Also after you have set the whole thing up test it out by sshing somewhere from your Windows machine and from somewhere
 to your Windows machine (making sure both server and client are working).
 
+
 Linux (both x86 and ARM)
 """"""""""""""""""""""""
 If you install Heron using pip on a machine running Linux (either a PC or a Raspberry Pi) you will need to give executable
@@ -145,12 +146,13 @@ DearPyGui 2.0) so your mileage may vary.
 Once DearPyGui is up and running then Heron can be installed either through a pip command or by installing the individual
 requirements and then downloading Heron from its github page.
 
-Once up and running, Heron might complain that it cannot find the /$HOME/.ssh/known_hosts file. If this is the case
-then you will need to make an empty known_hosts in the directory Heron is looking for it. This will not bother your
-standard ssh installation. If you are planning on using the Heron GUI running on Raspberry Pi to run graphs that connect
-to Nodes on other machines then you need to setup your ssh so that the known_hosts file resides in /$HOME/.ssh.
 
-
+.. note::
+    On all systems, Heron on startup will check that you have a known_hosts file in your computer saved as USER_FOLDER/.ssh/known_hosts.
+    If no such file is found Heron will ask if you want to create an empty known_hosts file in the above folder or
+    specify where an existing a file is. Heron needs this file to exist (even empty and even when there is
+    no ssh installed in your computer) to operate. So if you have not installed ssh on your machine and you are not
+    planning to use Heron over multiple machines then allow Heron to generate an empty known_hosts file.
 
 Node requirements
 ^^^^^^^^^^^^^^^^^

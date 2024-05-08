@@ -75,7 +75,7 @@ Attributes
 
    
 
-.. py:function:: initialise(_worker_object)
+.. py:function:: initialise(worker_object)
 
 
 .. py:function:: work_function(data, parameters, savenodestate_update_substate_df)
