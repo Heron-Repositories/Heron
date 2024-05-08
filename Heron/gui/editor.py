@@ -11,6 +11,7 @@ import copy
 import sys
 import ctypes
 import threading
+import shutil
 
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
 import Heron.general_utils as gu
@@ -18,7 +19,7 @@ from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron.gui.fdialog import FileDialog
 from Heron import constants as ct
-from Heron.gui import ssh_info_editor, create_new_node, settings
+from Heron.gui import ssh_info_editor, create_new_node, settings, message
 import dearpygui.dearpygui as dpg
 
 operations_list = op_list.generate_operations_list()
@@ -33,6 +34,7 @@ node_selector: int
 italic_font: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 last_visited_directory = os.path.expanduser('~')
+url_of_repo: str
 
 node_editor = None
 start_graph_button_id = None
@@ -493,117 +495,156 @@ def clear_editor():
     nodes_list = []
 
 
-def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
-    global last_visited_directory
-
-    def delete_error_popup_aliases():
-        if dpg.does_alias_exist('modal_error_id'):
-            dpg.delete_item('modal_error_id')
-        if dpg.does_alias_exist("modal_id_credentials"):
-            dpg.delete_item("modal_id_credentials")
-            print('killed creds window')
-        if dpg.does_alias_exist("modal_id_folders_not_found"):
-            dpg.delete_item("modal_id_folders_not_found")
-            print('killed wrong folder window')
-            
-    def create_error_window(error_text, spacer):
-        with dpg.window(label="Error Window", modal=True, show=True, id="modal_error_id",
-                        no_title_bar=True, popup=True, pos=[500, 300]):
-            dpg.add_text(error_text)
-            dpg.add_separator()
-            with dpg.group(horizontal=True):
-                dpg.add_spacer(width=spacer)
-                dpg.add_button(label="OK", width=75, callback=delete_error_popup_aliases)
+def check_for_windows_admin():
 
     # Check if in Windows and running as an Admin
     if os.name == 'nt' and ctypes.windll.shell32.IsUserAnAdmin() == 0:
-        error_text = 'In Windows you need to run the python that runs Heron\n' \
-                     'with elevated credentials in order to create a symbolic link.\n' \
-                     'Restart Heron with a python that has started with "Run as Administrator".'
-        spacer = 160
-        create_error_window(error_text, spacer)
+        error_text = 'In Windows you need to run the python that runs Heron with\n' \
+                     'elevated credentials in order to create a symbolic link. Restart\n' \
+                     'Heron with a python that has started with "Run as Administrator".'
+        ok_button_indent = 160
+        message.Message(error_text, element_indent=ok_button_indent)
         return False
 
-    delete_error_popup_aliases()
+    return True
 
-    def on_folder_select(selected_files):
-        global node_selector
-        global operations_list
-        global last_visited_directory
 
-        main_folders = ['Sources', 'Transforms', 'Sinks']
-        operations_directory = selected_files[0]
-        last_visited_directory = dirname(operations_directory)
+def create_symlink_of_node(selected_files):
+    global node_selector
+    global operations_list
+    global last_visited_directory
 
-        def add_symlink(target, link):
-            try:
-                os.symlink(target, link)
-                return True
-            except Exception as e:
-                if 'Cannot create a file when that file already exists' in str(e):
-                    if os.path.islink(link):
-                        os.unlink(link)
-                        os.symlink(target, link)
-                        return True
-                    else:
-                        error_text = f'There is a folder {link}\n' \
-                                     'in the Heron Operations dir that has the same name\n' \
-                                     f'as the source folder {target} \n' \
-                                     'but is not a symbolic link. No symbolic link can be created overriding it.'
-                        spacer = 160
-                        create_error_window(error_text, spacer)
-                        return False
+    main_folders = ['Sources', 'Transforms', 'Sinks']
+    operations_directory = selected_files[0]
+    last_visited_directory = dirname(operations_directory)
+
+    def add_symlink(target, link):
+        try:
+            os.symlink(target, link)
+            return True
+        except Exception as e:
+            if 'Cannot create a file when that file already exists' in str(e):
+                if os.path.islink(link):
+                    os.unlink(link)
+                    os.symlink(target, link)
+                    return True
                 else:
-                    error_text = str(e)
-                    spacer = 300
-                    create_error_window(error_text, spacer)
+                    error_text = f'There is a folder {link}\n' \
+                                 'in the Heron Operations dir that has the same name\n' \
+                                 f'as the source folder {target} \n' \
+                                 'but is not a symbolic link. No symbolic link can be created overriding it.'
+                    ok_button_indent = 160
+                    message.Message(error_text, element_indent=ok_button_indent)
                     return False
+            else:
+                error_text = str(e)
+                ok_button_indent = 100
+                message.Message(error_text, element_indent=ok_button_indent)
+                return False
 
-        folders_exist = False
-        for f in main_folders:
-            if os.path.isdir(os.path.join(operations_directory, f)):
-                folders_exist = True
-                for d in os.listdir(os.path.join(operations_directory, f)):
-                    target = os.path.join(operations_directory, f, d)
-                    link = os.path.join(heron_path, 'Operations', f, d)
-                    if not os.path.isdir(link):
-                        os.mkdir(link)
+    folders_exist = False
+    for f in main_folders:
+        if os.path.isdir(os.path.join(operations_directory, f)):
+            folders_exist = True
+            for d in os.listdir(os.path.join(operations_directory, f)):
+                target = os.path.join(operations_directory, f, d)
+                link = os.path.join(heron_path, 'Operations', f, d)
+                if not os.path.isdir(link):
+                    os.mkdir(link)
 
-                    for inner_dir in os.listdir(target):
-                        link_inner = os.path.join(link, inner_dir)
-                        inner_target = os.path.join(target, inner_dir)
-                        if not add_symlink(inner_target, link_inner):
-                            if '__top__' in inner_dir:
-                                pass
-                            else:
-                                return
+                for inner_dir in os.listdir(target):
+                    link_inner = os.path.join(link, inner_dir)
+                    inner_target = os.path.join(target, inner_dir)
+                    if not add_symlink(inner_target, link_inner):
+                        if '__top__' in inner_dir:
+                            pass
+                        else:
+                            return False
 
-        if not folders_exist:
-            error_text = "The selected Directory {} \n" \
-                         "doesn't have at least one of the\n" \
-                         "Sources, Transforms or Sinks folders in it, so it cannot\n" \
-                         "be Heron Node code. Please select another directory.".format(operations_directory)
-            create_error_window(error_text, 120)
-            # The FileEditor checks if the callback from pressing OK returns anything and if it does, and it is False
-            # then it does nothing (including not killing the file dialog window)
-            return False
-        else:
-            dpg.delete_item(node_selector)
-            operations_list = op_list.generate_operations_list()
-            Node.operations_list = operations_list
-            node_selector = create_node_selector_window()
+    if not folders_exist:
+        error_text = "The selected Directory {} \n" \
+                     "doesn't have at least one of the\n" \
+                     "Sources, Transforms or Sinks folders in it, so it cannot\n" \
+                     "be Heron Node code. Please select another directory.".format(operations_directory)
+        message.Message(error_text, element_indent=120)
+        # The FileEditor checks if the callback from pressing OK returns anything and if it does, and it is False
+        # then it does nothing (including not killing the file dialog window)
+        return False
+    else:
+        dpg.delete_item(node_selector)
+        operations_list = op_list.generate_operations_list()
+        Node.operations_list = operations_list
+        node_selector = create_node_selector_window()
+        return True
+
+
+def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
+    global last_visited_directory
+
+    if not check_for_windows_admin():
+        return False
 
     if user_data is None:
         file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                  show_hidden_files=False, multi_selection=False, tag='file_dialog',
-                                 default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
+                                 default_path=last_visited_directory, dirs_only=True, callback=create_symlink_of_node)
         file_dialog.show_file_dialog()
     else:
-        on_folder_select(user_data)
+        create_symlink_of_node(user_data)
 
 
-def view_operations_repos():
-    pass
+def clone_and_add_node_repo():
+    global url_of_repo
+    text_box: int
+
+    if not check_for_windows_admin():
+        return False
+
+    git_path = shutil.which("git")
+    if git_path is None:
+        error_txt = 'No git installed'
+        ok_button_indent = 50
+        message.Message(error_txt, element_indent=ok_button_indent)
+
+    def on_folder_select(selected_files):
+        operations_parent_directory = selected_files[0]
+        operation_folder = url_of_repo.split(r'/')[-1]
+        if '.git' in operation_folder:
+            operation_folder = operation_folder.split('.')[0]
+        operation_path = os.path.join(operations_parent_directory, operation_folder)
+        cmd = f'{git_path} clone {url_of_repo} {operation_path}'
+        msg = message.Message("Downloading and installing Node repository", show_ok_button=False,
+                              loading_indicator=True, element_indent=130)
+        git_process = subprocess.run(cmd)
+        if git_process.returncode == 0:
+            create_symlink_of_node([operation_path])
+            msg.__del__()
+        else:
+            msg.__del__()
+            message.Message("Error in calling git", element_indent=100)
+
+    def get_target_base_folder(sender, app_data):
+        global url_of_repo
+        url_of_repo = dpg.get_value(text_box)
+        dpg.delete_item(url_window)
+
+        if len(url_of_repo) > 0:
+            file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
+                                     show_hidden_files=False, multi_selection=False, tag='file_dialog',
+                                     default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
+            file_dialog.show_file_dialog()
+
+    with dpg.window(modal=True, pos=[500, 300], width=600, on_close=get_target_base_folder, no_close=True) as url_window:
+        dpg.add_text(default_value='URL of repository to clone')
+        text_box = dpg.add_input_text(width=580)
+        dpg.add_spacer(height=10)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label='OK', indent=260, callback=get_target_base_folder, user_data=url_window)
+            dpg.add_button(label='Cancel', indent=300, callback=lambda:dpg.delete_item(url_window))
+
+
+def graphically_create_new_node(sender, data):
+    create_new_node.start(add_new_symbolic_link_node_folder)
 
 
 def on_drag(sender, data, user_data):
@@ -747,10 +788,6 @@ def known_hosts_file_setup_check():
                 dpg.add_button(label='Select a known_hosts file', user_data=False, callback=on_press_known_hosts_buttons)
 
 
-def graphically_create_new_node(sender, data):
-    create_new_node.start(add_new_symbolic_link_node_folder)
-
-
 def run(load_json_file=None):
     global node_editor
     global start_graph_button_id
@@ -813,7 +850,7 @@ def run(load_json_file=None):
                 dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
                                   callback=add_new_symbolic_link_node_folder, user_data=None)
                 dpg.add_menu_item(label='Download Nodes from the Heron-Repositories page',
-                                  callback=view_operations_repos)
+                                  callback=clone_and_add_node_repo)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
     _ = create_node_selector_window()
@@ -834,6 +871,7 @@ def run(load_json_file=None):
     # dpg.show_documentation()
     # dpg.show_style_editor()
     # dpg.show_font_manager()
+    # dpg.show_imgui_demo()
 
     # Button and mouse callback registers
     with dpg.handler_registry():

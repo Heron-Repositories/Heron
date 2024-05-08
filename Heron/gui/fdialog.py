@@ -650,11 +650,25 @@ class FileDialog:
                 reset_dir(default_path=os.getcwd(), show_new_folder_input=False)
 
         def delete_file_or_folder(sender, app_data, user_data):
+            error_on_rmtree = False
+
+            def on_error(func, path, exc_info):
+                nonlocal error_on_rmtree
+                if not error_on_rmtree:
+                    with dpg.window(modal=True, pos=[500, 300]) as rmtree_error_window:
+                        error_txt = f'Error deleting {path}\n\n{exc_info}'
+                        dpg.add_text(default_value=error_txt)
+                        dpg.add_spacer(height=10)
+                        ok = dpg.add_button(label='Ok', callback=lambda: dpg.delete_item(rmtree_error_window))
+                        dpg.render_dearpygui_frame()
+                        dpg.set_item_indent(ok, int(dpg.get_item_rect_size(rmtree_error_window)[0]/2))
+                error_on_rmtree = True
+
             file_or_folder = user_data[0]
             if os.path.isfile(file_or_folder):
                 os.remove(user_data[0])
             else:
-                shutil.rmtree(file_or_folder, ignore_errors=True)
+                shutil.rmtree(file_or_folder, ignore_errors=False, onerror=on_error)
             reset_dir(default_path=os.getcwd())
             dpg.delete_item(user_data[1])
 
@@ -669,7 +683,6 @@ class FileDialog:
                                    user_data=[path_to_delete, del_check])
                     dpg.add_spacer(width=50)
                     dpg.add_button(label='Cancel', callback=lambda: dpg.delete_item(del_check))
-
 
         # main file dialog header
         with dpg.window(label=self.title, tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,

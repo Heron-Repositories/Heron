@@ -37,6 +37,7 @@ class Node:
         self.node_parameters = None
         self.node_parameters_combos_items = []
         self.parameter_inputs_ids = {}
+        self.widget_ids_with_text = []
         self.com_verbosity = ''
         self.savenodestate_verbosity = ''
         self.verbose = ''
@@ -107,8 +108,9 @@ class Node:
         if text is not None:
             text += '\n ___________________________________________________________________________________\n'
             with dpg.tooltip(parent=dpg.last_item(), tag='tooltip#' + attribute_name, show=False):
-                dpg.add_text(default_value=text, wrap=600,
-                             tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
+                id_tt = dpg.add_text(default_value=text, wrap=600,
+                                     tracked=True, track_offset=1.0, indent=10, pos=[5, 15])
+                self.widget_ids_with_text.append(id_tt)
             self.tooltip_tags.append('tooltip#' + attribute_name)
 
     def generate_cpus_to_pin_list(self):
@@ -146,8 +148,6 @@ class Node:
             dpg.remove_alias('info_on#{}##{}'.format(self.operation.name, self.node_index))
         if dpg.does_alias_exist('info_off#{}##{}'.format(self.operation.name, self.node_index)):
             dpg.remove_alias('info_off#{}##{}'.format(self.operation.name, self.node_index))
-        if dpg.does_alias_exist('widget_handler'):
-            dpg.remove_alias('widget_handler')
         for tag in self.tooltip_tags:
             if dpg.does_alias_exist(tag):
                 dpg.remove_alias(tag)
@@ -239,7 +239,7 @@ class Node:
         self.initialise_parameters_socket()
         self.node_editor_window_pos = editor_pos
 
-        with dpg.item_handler_registry(tag='widget_handler'):
+        with dpg.item_handler_registry() as widget_handler:
             dpg.add_item_clicked_handler(callback=self.on_click_on_node)
 
         with dpg.node(label=self.name, parent=self.parent, pos=[self.coordinates[0], self.coordinates[1]]) as self.id:
@@ -283,14 +283,18 @@ class Node:
                 with dpg.node_attribute(label=attribute_name, parent=self.id, attribute_type=attribute_type)as at:
 
                     node_attributes_list.append(at)
+                    self.widget_ids_with_text.append(at)
+
                     if attribute_type == dpg.mvNode_Attr_Output:
                         dpg.add_spacer()
                     colour = [255, 255, 255, 255]
                     if 'Dict' in self.operation.attributes[i]:
                         colour = [0, 255, 0, 255]
-                    dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
-                                 default_value=attr, color=colour)
+                    id_node_attr_name = dpg.add_text(label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
+                                                     default_value=attr, color=colour)
+                    self.widget_ids_with_text.append(id_node_attr_name)
                     self.add_tooltip(attribute_name+f'_{attribute_type}')
+
                     if 'Parameters' in attr:
                         for k, parameter in enumerate(self.operation.parameters):
                             if self.operation.parameter_types[k] == 'int':
@@ -323,6 +327,7 @@ class Node:
                                                    callback=self.update_parameters, width=100)
 
                             self.parameter_inputs_ids[parameter] = id
+                            self.widget_ids_with_text.append(id)
                             self.add_tooltip(attribute_name+f'_Param:{k}')
                     dpg.add_spacer(label='##Spacing##'+attribute_name, indent=3)
 
@@ -339,7 +344,7 @@ class Node:
             dpg.set_item_indent(del_alias, node_width - 50)
 
             # Add the click handler to the Node
-            dpg.bind_item_handler_registry(self.id, "widget_handler")
+            dpg.bind_item_handler_registry(self.id, widget_handler)
 
         self.setup_title_tooltip()
 
@@ -347,9 +352,11 @@ class Node:
         node_height = dpg.get_item_rect_size(self.id)[1]
         with dpg.window(no_close=True, no_collapse=True, show=False, modal=False, width=400, height=node_height) \
                 as title_tooltip:
+            self.widget_ids_with_text.append(title_tooltip)
             node_name = re.sub('\d', '', self.name).replace('#', '')
             text = codecs.decode(self.operation.tooltip, 'unicode_escape')
-            dpg.add_text(f'{node_name}: {text}', wrap=390, indent=5)
+            id_node_tt = dpg.add_text(f'{node_name}: {text}', wrap=390, indent=5)
+            self.widget_ids_with_text.append(id_node_tt)
 
         def show_node_tooltip_on_hover():
             while True:
@@ -433,34 +440,40 @@ class Node:
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_text('SSH local server')
+                id_ls = dpg.add_text('SSH local server')
                 dpg.add_spacer(width=80)
-                dpg.add_text('SSH remote server')
+                id_rs = dpg.add_text('SSH remote server')
+                self.widget_ids_with_text.append(id_ls)
+                self.widget_ids_with_text.append(id_rs)
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                id = dpg.add_combo(
+                id_ls_c = dpg.add_combo(
                     label='##SSH local server##Extra input##{}##{}'.format(self.operation.name, self.node_index),
                     items=self.ssh_server_id_and_names, width=140, default_value=self.ssh_local_server,
                     callback=self.assign_local_server)
-                self.parameter_inputs_ids['SSH local server'] = id
+                self.parameter_inputs_ids['SSH local server'] = id_ls_c
+                self.widget_ids_with_text.append(id_ls_c)
                 dpg.add_spacer(width=40)
-                id = dpg.add_combo(
+                id_rs_c = dpg.add_combo(
                     label='##SSH remote server ##Extra input##{}##{}'.format(self.operation.name, self.node_index),
                     items=self.ssh_server_id_and_names, width=140, default_value=self.ssh_remote_server,
                     callback=self.assign_remote_server)
-                self.parameter_inputs_ids['SSH remote server'] = id
+                self.parameter_inputs_ids['SSH remote server'] = id_rs_c
+                self.widget_ids_with_text.append(id_rs_c)
 
             dpg.add_spacer(height=10)
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_text('Python script of worker process OR Python.exe and script:')
+                id_ps = dpg.add_text('Python script of worker process OR Python.exe and script:')
+                self.widget_ids_with_text.append(id_ps)
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_input_text(
+                id_exec = dpg.add_input_text(
                     label='##Worker executable##Extra input##{}##{}'.format(self.operation.name, self.node_index),
                     width=400, default_value=self.worker_executable, callback=self.assign_worker_executable)
+                self.widget_ids_with_text.append(id_exec)
 
     def saving_window(self):
         with dpg.window(label='##Window#Saving input##{}##{}'.format(self.operation.name, self.node_index),
@@ -475,37 +488,43 @@ class Node:
                 self.verbosity_id = dpg.add_text(
                     label='##' + attr + ' Name{}##{}'.format(self.operation.name, self.node_index),
                     default_value=attr)
+                self.widget_ids_with_text.append(self.verbosity_id)
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
+                id_log = dpg.add_input_text(label='##{}'.format(attribute_name), default_value=self.com_verbosity,
                                    callback=self.update_verbosity, width=400,
                                    hint='Log file name or verbosity level integer.',
                                    tag='verb#{}#{}'.format(self.operation.name, self.node_index))
+                self.widget_ids_with_text.append(id_log)
 
             # Create the savenodestate input
             dpg.add_spacer(height=10)
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_text(default_value='Save the Node State to directory:')
+                id_save = dpg.add_text(default_value='Save the Node State to directory:')
+                self.widget_ids_with_text.append(id_save)
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
+                id_path = dpg.add_input_text(default_value=self.savenodestate_verbosity, callback=self.update_verbosity,
                                    hint='The path where the Node State for this worker process will be saved',
                                    tag='savenodestate#{}#{}'.format(self.operation.name, self.node_index))
+                self.widget_ids_with_text.append(id_path)
 
             # Create the pin to CPU input
             dpg.add_spacer(height=10)
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_text(default_value='Choose a specific CPU to pin the Com and Worker Processes')
+                id_cpu = dpg.add_text(default_value='Choose a specific CPU to pin the Com and Worker Processes')
+                self.widget_ids_with_text.append(id_cpu)
 
             with dpg.group(horizontal=True):
                 dpg.add_spacer(width=10)
-                dpg.add_combo(items=self.possible_cpus_to_pin, width=140, default_value=self.cpu_to_pin,
+                id_cpu_c = dpg.add_combo(items=self.possible_cpus_to_pin, width=140, default_value=self.cpu_to_pin,
                               tag='cpu_pin_combo#{}#{}'.format(self.operation.name, self.node_index),
                               callback=self.update_cpu_to_pin)
+                self.widget_ids_with_text.append(id_cpu_c)
 
     def update_verbosity(self, sender, data):
         self.com_verbosity = ''
