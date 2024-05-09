@@ -26,8 +26,9 @@ from Heron.gui import settings
 
 # Helper functions to start IDE with some files open
 def start_ide(*files_to_open):
-    project = settings.settings_dict['IDE']['IDE Project Path']
-    ide_path = settings.settings_dict['IDE']['IDE Path']
+    sett = settings.Settings()
+    project = sett.settings_dict['IDE']['IDE Project Path']
+    ide_path = sett.settings_dict['IDE']['IDE Path']
 
     if ide_path != '':
         if project != '':

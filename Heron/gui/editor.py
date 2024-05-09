@@ -19,7 +19,7 @@ from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
 from Heron.gui.fdialog import FileDialog
 from Heron import constants as ct
-from Heron.gui import ssh_info_editor, create_new_node, settings, message
+from Heron.gui import ssh_info_editor, create_new_node, message, settings as sett, fonts
 import dearpygui.dearpygui as dpg
 
 operations_list = op_list.generate_operations_list()
@@ -39,7 +39,12 @@ url_of_repo: str
 node_editor = None
 start_graph_button_id = None
 end_graph_button_id = None
+editor_title_id = None
+node_tree_title_id = None
 node_editor_window = None
+add_node_button_ids = []
+
+settings = sett.Settings(nodes_list)
 
 
 def generate_node_tree():
@@ -698,10 +703,11 @@ def on_mouse_release(sender, app_data, user_data):
 
 def create_node_selector_window():
     global node_selector
+    global node_tree_title_id
 
-    with dpg.child_window(pos=[5, 65], width=270, height=-1, parent='main_window', no_scrollbar=True) \
+    with dpg.child_window(pos=[5, 80], width=270, height=-1, parent='main_window', no_scrollbar=True) \
             as node_selector_holder:
-        title = dpg.add_text(default_value='Node Tree', indent=75)
+        node_tree_title_id = dpg.add_text(default_value='Node Tree', indent=75)
         dpg.add_separator()
 
         with dpg.child_window(label='Node Selector', height=-1, parent=node_selector_holder) \
@@ -709,7 +715,6 @@ def create_node_selector_window():
             # Create the window of the Node selector
             node_tree = generate_node_tree()
             base_id = node_tree[0][0]
-            base_name = node_tree[0][1]
             with dpg.tree_node(parent=node_selector, default_open=True, id=base_id, open_on_arrow=True,
                                selectable=False, bullet=True, pos=[-20, 2]):
 
@@ -722,6 +727,7 @@ def create_node_selector_window():
                                 colour = gu.choose_color_according_to_operations_type(node)
                                 button = dpg.add_selectable(label=op.name, width=200, height=30, indent=10,
                                                             callback=on_add_node)
+                                add_node_button_ids.append(button)
                                 with dpg.theme() as theme_id:
                                     with dpg.theme_component(0):
                                         dpg.add_theme_color(dpg.mvThemeCol_Text, colour, category=dpg.mvThemeCat_Core)
@@ -734,9 +740,7 @@ def create_node_selector_window():
             dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0, category=dpg.mvThemeCat_Core)
     dpg.bind_item_theme(node_selector, node_selector_theme_id)
 
-    dpg.bind_item_font(title, 'bold_font_large')
-
-    return node_selector
+    return node_selector_holder
 
 
 def known_hosts_file_setup_check():
@@ -793,20 +797,25 @@ def run(load_json_file=None):
     global start_graph_button_id
     global end_graph_button_id
     global node_editor_window
-    global file_dialog
-    global italic_font
+    global editor_title_id
+    global node_selector
 
     dpg.create_context()
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
 
-    with dpg.font_registry():
+    fonts.add_to_registry()
+
+    '''
+    with dpg.font_registry() as f_reg:
         default_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Regular.ttf'), 18)
         italic_font = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-LightItalic.ttf'), 18)
         bold_font_large = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', 'SFProText-Semibold.ttf'), 22,
                                        tag='bold_font_large')
+    settings.set_font_registry(f_reg)
 
-    dpg.bind_font(default_font)
-    create_new_node.italic_font = italic_font
+    #dpg.bind_font(default_font)
+    #create_new_node.italic_font = italic_font
+    '''
 
     with dpg.theme() as main_theme_id:
         with dpg.theme_component(0):
@@ -833,8 +842,6 @@ def run(load_json_file=None):
         with dpg.group(horizontal=True):
             start_graph_button_id = dpg.add_button(label="Start Graph", width=125, height=30, callback=on_start_graph)
             end_graph_button_id = dpg.add_button(label="End Graph", width=125, height=30, callback=on_end_graph)
-            dpg.bind_item_font(start_graph_button_id, bold_font_large)
-            dpg.bind_item_font(end_graph_button_id, bold_font_large)
         update_control_graph_buttons(False)
 
         with dpg.menu_bar(label='Menu Bar'):
@@ -853,17 +860,15 @@ def run(load_json_file=None):
                                   callback=clone_and_add_node_repo)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
-    _ = create_node_selector_window()
+    node_selector_holder_id = create_node_selector_window()
 
     with dpg.child_window(parent=main_window,  width=-1, height=-1)as node_editor_window:
-        editor_title = dpg.add_text(default_value='Editor')
+        editor_title_id = dpg.add_text(default_value='Editor')
         # The node editor
         with dpg.node_editor(label='Node Editor##Editor', callback=on_link, delink_callback=delete_link,
                              width=-1, height=-1, parent=node_editor_window, minimap=True,
                              minimap_location=dpg.mvNodeMiniMap_Location_BottomRight) as node_editor:
             dpg.set_item_pos(item=node_editor_window, pos=[275, 30])
-
-        dpg.bind_item_font(editor_title, bold_font_large)
 
     # For Debugging purposes
     # dpg.show_debug()
@@ -892,6 +897,11 @@ def run(load_json_file=None):
     if load_json_file is not None:
         do_the_loading_of_json_file(load_json_file)
 
+    settings.set_editor_widget_ids(editor_title_id=editor_title_id, start_graph_button_id=start_graph_button_id,
+                                   end_graph_button_id=end_graph_button_id, node_tree_title_id=node_tree_title_id,
+                                   node_selector_holder_id=node_selector_holder_id,
+                                   node_editor_window_id=node_editor_window, node_selector_id=node_selector,
+                                   add_node_button_ids=add_node_button_ids)
     dpg.start_dearpygui()
     dpg.destroy_context()
 
@@ -901,5 +911,4 @@ if __name__ == "__main__":
     json_file_to_load = None
     if len(args) > 1:
         json_file_to_load = args[1]
-
     run(load_json_file=json_file_to_load)

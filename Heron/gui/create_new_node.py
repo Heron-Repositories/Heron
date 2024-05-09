@@ -13,6 +13,7 @@ import ctypes
 from Heron.gui.fdialog import FileDialog
 from Heron import general_utils as gu
 from Heron.gui import settings
+from Heron.gui import fonts
 
 
 aliases_list = []
@@ -29,7 +30,6 @@ num_of_parameters = 0
 num_of_inputs = 0
 num_of_outputs = 0
 parameter_types = ['bool', 'str', 'list', 'float', 'int']
-italic_font: int  # This gets assigned in the editor.py where the italic_font is added to the font_registry
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 images_path = join(heron_path, 'resources', 'basic_icons')
 add_node_to_tree_func: Callable
@@ -529,7 +529,7 @@ def on_group_selected(sender, app_data):
         dpg.add_spacer(height=15)
         dpg.add_button(label='Ok', callback=lambda: dpg.delete_item(info), indent=250)
 
-        dpg.bind_item_font(doc, italic_font)
+        dpg.bind_item_font(doc, fonts.italic_font)
 
 
 def on_path_selected(files_selected):

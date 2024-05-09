@@ -1,6 +1,10 @@
 {
     "Appearance": {
-        "Font": {
+        "Editor Font": {
+            "Size": 18,
+            "Font": "SFProText-Regular.ttf"
+        },
+        "Node Font": {
             "Size": 18,
             "Font": "SFProText-Regular.ttf"
         }
