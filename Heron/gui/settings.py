@@ -28,6 +28,7 @@ class Settings:
                 self.settings_dict: dict = json.load(sf)
 
         self.file_dialog_selectable_height = 16
+        self.table_distance_to_bottom = -30 + 5 * self.file_dialog_selectable_height
         self.node_font = []
         self.editor_font = []
         self.editor_title_id = 0
@@ -131,8 +132,6 @@ class Settings:
                                        self.settings_dict['Appearance']['Editor Font']['Font'])
             editor_font_size = int(self.settings_dict['Appearance']['Editor Font']['Size'])
 
-            # Deal with File Dialog font size
-            self.file_dialog_selectable_height = editor_font_size
 
             # Deal with Node font size
             if self.node_font != [node_font, node_font_size]:
@@ -212,7 +211,8 @@ class Settings:
                 json.dump(self.settings_dict, sf, indent=4)
 
         fonts = [font for dirs in os.walk(os.path.join(heron_path, 'resources', 'fonts')) for font in dirs[2]]
-        with dpg.window(label='Settings', width=950, height=500, pos=[300, 200], no_collapse=True) as setting_window:
+        with dpg.window(label='Settings', width=1100 + 2 * editor_font_size, height=500, pos=[300, 200],
+                        no_collapse=True) as setting_window:
             with dpg.group(horizontal=True) as settings_group:
                 with dpg.child_window(label='Fonts', parent=settings_group, pos=[options_window_width + 10, 30],
                                       show=False) as fonts_window:

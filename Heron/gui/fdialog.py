@@ -50,7 +50,8 @@ class FileDialog:
         no_resize=False,
         modal=True,
         show_hidden_files=False,
-        selectable_height=16
+        font_size=20
+
     ):
         global chdir
         
@@ -71,7 +72,9 @@ class FileDialog:
         self.no_resize = no_resize
         self.modal = modal
         self.show_hidden_files = show_hidden_files
-        self.selectable_height = selectable_height
+        self.selectable_height = font_size
+        self.table_distance_to_bottom = int(60 + 3.1 * font_size)
+
 
         self.PAYLOAD_TYPE = 'ws_' + self.tag
         self.selected_files = []
@@ -688,12 +691,12 @@ class FileDialog:
         with dpg.window(label=self.title, tag=self.tag, no_resize=self.no_resize, show=False, modal=self.modal,
                         width=self.width, height=self.height, min_size=self.min_size, no_collapse=True, pos=(50, 50),
                         user_data=self, on_close=self.__del__):
-            info_px = 110
+            #info_px = 130
 
             # horizontal group (shot_menu + dir_list)
             with dpg.group(horizontal=True):
                 # shortcut menu
-                with dpg.child_window(tag="shortcut_menu", width=200, show=self.show_shortcuts_menu, height=-info_px):
+                with dpg.child_window(tag="shortcut_menu", width=200, show=self.show_shortcuts_menu, height=-self.table_distance_to_bottom):
                     desktop = get_directory_path("Desktop")
                     downloads = get_directory_path("Downloads")
                     images = get_directory_path("Pictures")
@@ -744,7 +747,7 @@ class FileDialog:
                     # main explorer table header
                     with dpg.table(
                         tag='explorer',
-                        height=-info_px,
+                        height=-self.table_distance_to_bottom,
                         width=-1,
                         resizable=True,
                         policy=dpg.mvTable_SizingStretchProp,
@@ -779,7 +782,7 @@ class FileDialog:
                                      ".blend", ".rs", ".vbs", ".ini", ".ppack", ".fbx", ".obj", ".mlt", ".bat", ".sh"],
                               callback=filter_combo_selector, default_value=self.file_filter, width=-1)
             with dpg.group(horizontal=True):
-                dpg.add_spacer(width=int(self.width*0.82))
+                dpg.add_spacer(width=int(self.width*0.98 - 1.4*self.table_distance_to_bottom))
                 dpg.add_button(label="   OK   ", tag=self.tag+"_return", callback=return_items)
                 dpg.add_button(label=" Cancel ", callback=lambda: self.__del__())
 

@@ -38,6 +38,7 @@ url_of_repo: str
 node_tree_title_id = 0
 node_selector = 0
 node_selector_holder = 0
+table_distance_to_bottom = 0
 node_editor = None
 start_graph_button_id = None
 end_graph_button_id = None
@@ -383,7 +384,7 @@ def save_graph():
     file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
                              show_hidden_files=True, multi_selection=False, tag='file_dialog',
                              default_path=last_visited_directory, dirs_only=False, callback=on_save_file_selected,
-                             selectable_height=settings.file_dialog_selectable_height)
+                             font_size=settings.editor_font[1])
     file_dialog.show_file_dialog()
 
 
@@ -482,7 +483,7 @@ def load_graph():
     file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
                              show_hidden_files=True, multi_selection=False, tag='file_dialog',
                              default_path=last_visited_directory, dirs_only=False, callback=do_the_loading_of_json_file,
-                             selectable_height=settings.file_dialog_selectable_height)
+                             font_size=settings.editor_font[1])
     file_dialog.show_file_dialog()
 
 
@@ -596,7 +597,7 @@ def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
         file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                  show_hidden_files=False, multi_selection=False, tag='file_dialog',
                                  default_path=last_visited_directory, dirs_only=True, callback=create_symlink_of_node,
-                                 selectable_height=settings.file_dialog_selectable_height)
+                                 font_size=settings.editor_font[1])
         file_dialog.show_file_dialog()
     else:
         create_symlink_of_node(user_data)
@@ -641,7 +642,7 @@ def clone_and_add_node_repo():
             file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                      show_hidden_files=False, multi_selection=False, tag='file_dialog',
                                      default_path=last_visited_directory, dirs_only=True, callback=on_folder_select,
-                                     selectable_height=settings.file_dialog_selectable_height)
+                                     font_size=settings.editor_font[1])
             file_dialog.show_file_dialog()
 
     with dpg.window(modal=True, pos=[500, 300], width=600, on_close=get_target_base_folder, no_close=True) as url_window:
@@ -732,7 +733,7 @@ def create_node_selector_window():
             # Create the window of the Node selector
             node_tree = generate_node_tree()
             base_id = node_tree[0][0]
-            with dpg.tree_node(parent=node_selector, default_open=True, id=base_id, open_on_arrow=True,
+            with dpg.tree_node(label='All Nodes', parent=node_selector, default_open=True, id=base_id, open_on_arrow=True,
                                selectable=False, bullet=True, pos=[-20, 2]):
 
                 # Read what *_com files exist in the Heron/Operations dir and sub dirs and create the correct
@@ -789,7 +790,7 @@ def known_hosts_file_setup_check():
                                      show_hidden_files=True, multi_selection=False, tag='file_dialog',
                                      default_path=last_visited_directory, dirs_only=False,
                                      callback=on_file_dialog_return,
-                                     selectable_height=settings.file_dialog_selectable_height)
+                                     font_size=settings.editor_font[1])
             file_dialog.show_file_dialog()
 
     try:
@@ -819,6 +820,7 @@ def run(load_json_file=None):
     global editor_title_id
     global node_selector
     global node_selector_holder
+    global table_distance_to_bottom
 
     dpg.create_context()
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
