@@ -16,7 +16,7 @@ heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 
 class Settings:
     def __init__(self, nodes_list: List=None):
-        self.aliases_list = []
+        self.window_ids_list = []
         self.settings_file = join(heron_path, 'settings.json')
         if not os.path.isfile(self.settings_file):
             with open(join(heron_path, 'settings_default.json'), 'r') as sfd:
@@ -27,6 +27,7 @@ class Settings:
             with open(join(heron_path, 'settings.json'), 'r') as sf:
                 self.settings_dict: dict = json.load(sf)
 
+        self.file_dialog_selectable_height = 16
         self.node_font = []
         self.editor_font = []
         self.editor_title_id = 0
@@ -46,40 +47,55 @@ class Settings:
     def set_editor_widget_ids(self, editor_title_id: int=None, start_graph_button_id: int=None,
                               end_graph_button_id: int=None, node_tree_title_id: int=None,
                               node_selector_holder_id: int=None, node_editor_window_id: int=None,
-                              node_selector_id: int=None, add_node_button_ids: List=[]):
+                              node_selector_id: int=None, add_node_button_ids: List=None):
 
-        self.editor_title_id = editor_title_id
-        self.start_graph_button_id = start_graph_button_id
-        self.end_graph_button_id = end_graph_button_id
-        self.node_tree_title_id = node_tree_title_id
-        self.node_selector_holder_id = node_selector_holder_id
-        self.node_editor_window_id = node_editor_window_id
-        self.node_selector_id = node_selector_id
-        self.add_node_button_ids = add_node_button_ids
+        if editor_title_id is not None:
+            self.editor_title_id = editor_title_id
 
+        if start_graph_button_id is not None:
+            self.start_graph_button_id = start_graph_button_id
+
+        if end_graph_button_id is not None:
+            self.end_graph_button_id = end_graph_button_id
+
+        if node_tree_title_id is not None:
+            self.node_tree_title_id = node_tree_title_id
+
+        if node_selector_holder_id is not None:
+            self.node_selector_holder_id = node_selector_holder_id
+
+        if node_editor_window_id is not None:
+            self.node_editor_window_id = node_editor_window_id
+
+        if node_selector_id is not None:
+            self.node_selector_id = node_selector_id
+
+        if add_node_button_ids is not None:
+            self.add_node_button_ids = add_node_button_ids
 
     def save_settings(self):
         with open(self.settings_file, 'w') as sf:
             json.dump(self.settings_dict, sf, indent=4)
 
+    '''
     def kill_existing_aliases(self):
-        global aliases_list
 
-        for alias in aliases_list:
+        for alias in self.aliases_list:
             try:
                 dpg.remove_alias(alias)
             except:
                 pass
-        aliases_list = []
+        self.aliases_list = []
+    '''
 
     def on_close_main(self, sender, app_data, user_data):
         global node_win
-        self.kill_existing_aliases()
+        #self.kill_existing_aliases()
         dpg.delete_item(node_win)
 
     def on_close_main_with_buttons(self, sender, app_data, user_data):
         global node_win
-        self.kill_existing_aliases()
+        #self.kill_existing_aliases()
         dpg.delete_item(node_win)
 
     def on_browse(self, sender, app_data, user_data):
@@ -115,10 +131,18 @@ class Settings:
                                        self.settings_dict['Appearance']['Editor Font']['Font'])
             editor_font_size = int(self.settings_dict['Appearance']['Editor Font']['Size'])
 
+            # Deal with File Dialog font size
+            self.file_dialog_selectable_height = editor_font_size
+
+            # Deal with Node font size
             if self.node_font != [node_font, node_font_size]:
                 node_font_id = dpg.add_font(node_font, node_font_size, parent=fonts.font_registry)
                 self.node_font = [node_font, node_font_size]
+            for node in self.nodes_list:
+                for item in node.widget_ids_with_text:
+                    dpg.bind_item_font(item, node_font_id)
 
+            # Deal with Editor font size
             if self.editor_font != [editor_font, editor_font_size]:
                 editor_font_id = dpg.add_font(editor_font, editor_font_size, parent=fonts.font_registry)
                 fonts.italic_font_id = dpg.add_font(fonts.italic_font, int(0.9 * editor_font_size),
@@ -128,36 +152,49 @@ class Settings:
                 self.editor_font = [editor_font, editor_font_size]
 
                 dpg.bind_font(editor_font_id)
-                dpg.bind_item_font(self.editor_title_id, editor_font_id)
-                dpg.bind_item_font(self.start_graph_button_id, bold_font_id)
-                dpg.bind_item_font(self.end_graph_button_id, bold_font_id)
-                dpg.bind_item_font(self.node_tree_title_id, bold_font_id)
 
-                dpg.set_item_pos(self.node_selector_holder_id, [5, 40 + 1.8 * editor_font_size])
-                dpg.set_item_width(self.node_selector_holder_id, int(70 + 10.3 * editor_font_size))
-                dpg.set_item_width(self.node_selector_id, int(65 + 10.3 * editor_font_size))
+                if self.editor_title_id is not None:
+                    dpg.bind_item_font(self.editor_title_id, editor_font_id)
+                if self.node_editor_window_id is not None:
+                    dpg.set_item_pos(self.node_editor_window_id,
+                                     [int(90 + 10 * editor_font_size), int(15 + 1 * editor_font_size)])
 
-                dpg.set_item_height(self.start_graph_button_id, int(20 + 0.8 * editor_font_size))
-                dpg.set_item_height(self.end_graph_button_id, int(20 + 0.8 * editor_font_size))
-                dpg.set_item_width(self.start_graph_button_id, int(25 + 5.1 * editor_font_size))
-                dpg.set_item_width(self.end_graph_button_id, int(25 + 5.1 * editor_font_size))
+                if self.start_graph_button_id is not None:
+                    dpg.bind_item_font(self.start_graph_button_id, bold_font_id)
+                    dpg.set_item_height(self.start_graph_button_id, int(20 + 0.8 * editor_font_size))
+                    dpg.set_item_width(self.start_graph_button_id, int(25 + 5.1 * editor_font_size))
+                if self.end_graph_button_id is not None:
+                    dpg.bind_item_font(self.end_graph_button_id, bold_font_id)
+                    dpg.set_item_height(self.end_graph_button_id, int(20 + 0.8 * editor_font_size))
+                    dpg.set_item_width(self.end_graph_button_id, int(25 + 5.1 * editor_font_size))
 
-                dpg.set_item_pos(self.node_editor_window_id,
-                                 [int(90 + 10 * editor_font_size), int(15 + 1 * editor_font_size)])
+                if self.node_tree_title_id is not None:
+                    dpg.bind_item_font(self.node_tree_title_id, bold_font_id)
+                    dpg.set_item_indent(self.node_tree_title_id, int(30 + 2 * editor_font_size))
+                if self.node_selector_holder_id is not None:
+                    dpg.set_item_pos(self.node_selector_holder_id, [5, 40 + 1.8 * editor_font_size])
+                    dpg.set_item_width(self.node_selector_holder_id, int(70 + 10.3 * editor_font_size))
+                if self.node_selector_id is not None:
+                    dpg.set_item_width(self.node_selector_id, int(65 + 10.3 * editor_font_size))
 
-                dpg.set_item_indent(self.node_tree_title_id, int(30 + 2 * editor_font_size))
+                if self.add_node_button_ids is not None:
+                    for button_id in self.add_node_button_ids:
+                        dpg.set_item_width(button_id, int(60 + 10.5 * editor_font_size))
+                        dpg.set_item_height(button_id, int(10 + 1 * editor_font_size))
 
-                for button_id in self.add_node_button_ids:
-                    dpg.set_item_width(button_id, int(60 + 10.5 * editor_font_size))
-                    dpg.set_item_height(button_id, int(10 + 1 * editor_font_size))
+            # Deal with Settings font size
+            options_window_width = 100 + 5 * editor_font_size
+            for window_id in self.window_ids_list:
+                if dpg.does_item_exist(window_id):
+                    if dpg.get_item_label(window_id) == 'Options':
+                        dpg.set_item_width(window_id, options_window_width)
+                    else:
+                        dpg.set_item_pos(window_id, [options_window_width + 10, 30])
 
-            for node in self.nodes_list:
-                for item in node.widget_ids_with_text:
-                    dpg.bind_item_font(item, node_font_id)
-
-
-    def start(self):
+    def create_gui(self):
         side_windows = []
+        editor_font_size = int(self.settings_dict['Appearance']['Editor Font']['Size'])
+        options_window_width = 100 + 5 * editor_font_size
 
         def switch_windows(sender, app_data, user_data):
             for window in side_windows:
@@ -177,7 +214,9 @@ class Settings:
         fonts = [font for dirs in os.walk(os.path.join(heron_path, 'resources', 'fonts')) for font in dirs[2]]
         with dpg.window(label='Settings', width=950, height=500, pos=[300, 200], no_collapse=True) as setting_window:
             with dpg.group(horizontal=True) as settings_group:
-                with dpg.child_window(label='Fonts', parent=settings_group, pos=[200, 30], show=False) as fonts_window:
+                with dpg.child_window(label='Fonts', parent=settings_group, pos=[options_window_width + 10, 30],
+                                      show=False) as fonts_window:
+                    self.window_ids_list.append(fonts_window)
                     dpg.add_spacer(height=30)
                     dpg.add_text(default_value='Editor font')
                     dpg.add_spacer(height=20)
@@ -204,7 +243,9 @@ class Settings:
                                        min_value=7, max_value=40)
                 side_windows.append(fonts_window)
 
-                with dpg.child_window(label='IDE', parent=settings_group, pos=[200, 30], show=False) as ide_window:
+                with dpg.child_window(label='IDE', parent=settings_group, pos=[options_window_width + 10, 30],
+                                      show=False) as ide_window:
+                    self.window_ids_list.append(ide_window)
                     dpg.add_spacer(height=30)
                     ide_exe_input = dpg.add_input_text(label='IDE executable',
                                                        default_value=self.settings_dict['IDE']['IDE Path'],
@@ -220,7 +261,9 @@ class Settings:
                                    callback=self.on_browse)
                 side_windows.append(ide_window)
 
-                with dpg.child_window(label='Operation', parent=settings_group, pos=[200, 30], show=False) as operation_window:
+                with dpg.child_window(label='Operation', parent=settings_group, pos=[options_window_width + 10, 30],
+                                      show=False) as operation_window:
+                    self.window_ids_list.append(operation_window)
                     dpg.add_spacer(height=30)
                     dpg.add_input_float(label='HEARTBEAT_RATE', default_value=self.settings_dict['Operation']['HEARTBEAT_RATE'],
                                         width=140, callback=update_setting, user_data=['Operation', 'HEARTBEAT_RATE'],
@@ -254,7 +297,9 @@ class Settings:
                                    callback=self.on_browse)
                 side_windows.append(operation_window)
 
-                with dpg.child_window(parent=setting_window, width=190, pos=[5, 30]) as options_window:
+                with dpg.child_window(label='Options', parent=setting_window, width=options_window_width, pos=[5, 30]) \
+                        as options_window:
+                    self.window_ids_list.append(options_window)
                     with dpg.tree_node(label='Appearance', bullet=False) as appearance:
                         dpg.add_spacer(height=5)
                         dpg.add_button(label='Fonts', callback=switch_windows, user_data=fonts_window, small=True)

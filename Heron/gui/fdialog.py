@@ -50,7 +50,7 @@ class FileDialog:
         no_resize=False,
         modal=True,
         show_hidden_files=False,
-        parent=None
+        selectable_height=16
     ):
         global chdir
         
@@ -71,10 +71,10 @@ class FileDialog:
         self.no_resize = no_resize
         self.modal = modal
         self.show_hidden_files = show_hidden_files
+        self.selectable_height = selectable_height
 
         self.PAYLOAD_TYPE = 'ws_' + self.tag
         self.selected_files = []
-        self.selec_height = 16
         self.image_transparency = 100
         
 
@@ -412,7 +412,7 @@ class FileDialog:
 
             item_size = get_file_size(item)
 
-            kwargs_cell = {'callback': callback, 'span_columns': True, 'height': self.selec_height, 'user_data': [file_name, os.path.join(os.getcwd(), file_name)]}
+            kwargs_cell = {'callback': callback, 'span_columns': True, 'height': self.selectable_height, 'user_data': [file_name, os.path.join(os.getcwd(), file_name)]}
             kwargs_file = {'tint_color': [255,255,255,255]}
             with dpg.table_row(parent=parent):
                 with dpg.group(horizontal=True):
@@ -459,7 +459,7 @@ class FileDialog:
                 item_type = "File"
 
                 item_size = get_file_size(item)
-                kwargs_cell = {'callback': callback, 'span_columns': True, 'height': self.selec_height,
+                kwargs_cell = {'callback': callback, 'span_columns': True, 'height': self.selectable_height,
                                'user_data': [file_name, os.path.join(os.getcwd(), file_name)]}
                 kwargs_file = {'tint_color': [255,255,255,self.image_transparency]}
 
@@ -585,7 +585,7 @@ class FileDialog:
 
                     # 'special directory' that sends back to the prevorius directory
                     with dpg.table_row(parent="explorer"):
-                        dpg.add_selectable(label="..", callback=_back, span_columns=True, height=self.selec_height)
+                        dpg.add_selectable(label="..", callback=_back, span_columns=True, height=self.selectable_height)
 
                         # dir list
                         for _dir in dirs:
@@ -609,10 +609,10 @@ class FileDialog:
                             dpg.add_image(self.img_mini_add_folder, **kwargs_file)
                             if show_new_folder_input:
                                 dpg.add_input_text(default_value='New Folder Name', user_data='input', on_enter=True,
-                                                   callback=make_new_dir, height=self.selec_height, tag='new folder name')
+                                                   callback=make_new_dir, height=self.selectable_height, tag='new folder name')
                             else:
                                 dpg.add_selectable(label="Add New Folder", user_data='click', callback=make_new_dir,
-                                                   span_columns=True, height=self.selec_height)
+                                                   span_columns=True, height=self.selectable_height)
                         # file list
                         if not self.dirs_only:
                             for file in files:

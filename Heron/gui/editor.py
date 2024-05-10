@@ -30,17 +30,18 @@ links_dict = {}
 panel_coordinates = [0, 0]
 mouse_dragging_deltas = [0, 0]
 forwarders: subprocess.Popen
-node_selector: int
 italic_font: int
 port_generator = gu.get_next_available_port_group(last_used_port, ct.MAXIMUM_RESERVED_SOCKETS_PER_NODE)
 last_visited_directory = os.path.expanduser('~')
 url_of_repo: str
 
+node_tree_title_id = 0
+node_selector = 0
+node_selector_holder = 0
 node_editor = None
 start_graph_button_id = None
 end_graph_button_id = None
 editor_title_id = None
-node_tree_title_id = None
 node_editor_window = None
 add_node_button_ids = []
 
@@ -381,7 +382,8 @@ def save_graph():
 
     file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
                              show_hidden_files=True, multi_selection=False, tag='file_dialog',
-                             default_path=last_visited_directory, dirs_only=False, callback=on_save_file_selected)
+                             default_path=last_visited_directory, dirs_only=False, callback=on_save_file_selected,
+                             selectable_height=settings.file_dialog_selectable_height)
     file_dialog.show_file_dialog()
 
 
@@ -479,7 +481,8 @@ def load_graph():
 
     file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False, file_filter='.json',
                              show_hidden_files=True, multi_selection=False, tag='file_dialog',
-                             default_path=last_visited_directory, dirs_only=False, callback=do_the_loading_of_json_file)
+                             default_path=last_visited_directory, dirs_only=False, callback=do_the_loading_of_json_file,
+                             selectable_height=settings.file_dialog_selectable_height)
     file_dialog.show_file_dialog()
 
 
@@ -579,7 +582,7 @@ def create_symlink_of_node(selected_files):
         dpg.delete_item(node_selector)
         operations_list = op_list.generate_operations_list()
         Node.operations_list = operations_list
-        node_selector = create_node_selector_window()
+        create_node_selector_window()
         return True
 
 
@@ -592,7 +595,8 @@ def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
     if user_data is None:
         file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                  show_hidden_files=False, multi_selection=False, tag='file_dialog',
-                                 default_path=last_visited_directory, dirs_only=True, callback=create_symlink_of_node)
+                                 default_path=last_visited_directory, dirs_only=True, callback=create_symlink_of_node,
+                                 selectable_height=settings.file_dialog_selectable_height)
         file_dialog.show_file_dialog()
     else:
         create_symlink_of_node(user_data)
@@ -636,7 +640,8 @@ def clone_and_add_node_repo():
         if len(url_of_repo) > 0:
             file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                      show_hidden_files=False, multi_selection=False, tag='file_dialog',
-                                     default_path=last_visited_directory, dirs_only=True, callback=on_folder_select)
+                                     default_path=last_visited_directory, dirs_only=True, callback=on_folder_select,
+                                     selectable_height=settings.file_dialog_selectable_height)
             file_dialog.show_file_dialog()
 
     with dpg.window(modal=True, pos=[500, 300], width=600, on_close=get_target_base_folder, no_close=True) as url_window:
@@ -702,11 +707,23 @@ def on_mouse_release(sender, app_data, user_data):
 
 
 def create_node_selector_window():
+    global node_selector_holder
     global node_selector
     global node_tree_title_id
+    global add_node_button_ids
 
-    with dpg.child_window(pos=[5, 80], width=270, height=-1, parent='main_window', no_scrollbar=True) \
-            as node_selector_holder:
+    node_selector_holder_width = 270
+    add_node_button_ids = []
+    if dpg.does_item_exist(node_selector):
+        dpg.delete_item(node_selector)
+    if dpg.does_item_exist(node_tree_title_id):
+        dpg.delete_item(node_tree_title_id)
+    if dpg.does_item_exist(node_selector_holder):
+        node_selector_holder_width = dpg.get_item_width(node_selector_holder)
+        dpg.delete_item(node_selector_holder)
+
+    with dpg.child_window(pos=[5, 80], width=node_selector_holder_width, height=-1, parent='main_window',
+                          no_scrollbar=True) as node_selector_holder:
         node_tree_title_id = dpg.add_text(default_value='Node Tree', indent=75)
         dpg.add_separator()
 
@@ -740,7 +757,8 @@ def create_node_selector_window():
             dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0, category=dpg.mvThemeCat_Core)
     dpg.bind_item_theme(node_selector, node_selector_theme_id)
 
-    return node_selector_holder
+    settings.set_editor_widget_ids(node_selector_id=node_selector, node_tree_title_id=node_tree_title_id,
+                                   node_selector_holder_id=node_selector_holder, add_node_button_ids=add_node_button_ids)
 
 
 def known_hosts_file_setup_check():
@@ -770,7 +788,8 @@ def known_hosts_file_setup_check():
             file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                      show_hidden_files=True, multi_selection=False, tag='file_dialog',
                                      default_path=last_visited_directory, dirs_only=False,
-                                     callback=on_file_dialog_return)
+                                     callback=on_file_dialog_return,
+                                     selectable_height=settings.file_dialog_selectable_height)
             file_dialog.show_file_dialog()
 
     try:
@@ -799,6 +818,7 @@ def run(load_json_file=None):
     global node_editor_window
     global editor_title_id
     global node_selector
+    global node_selector_holder
 
     dpg.create_context()
     dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
@@ -852,7 +872,7 @@ def run(load_json_file=None):
             with dpg.menu(label='Edit') as menu:
                 ssh_info_editor.set_parent_id(menu)
                 dpg.add_menu_item(label='Edit IPs/ports', callback=ssh_info_editor.edit_ssh_info)
-                dpg.add_menu_item(label='Settings', callback=settings.start)
+                dpg.add_menu_item(label='Settings', callback=settings.create_gui)
             with dpg.menu(label='Nodes'):
                 dpg.add_menu_item(label='Add new Operations Folder (as Symbolic Link from Existing Repo)',
                                   callback=add_new_symbolic_link_node_folder, user_data=None)
@@ -860,7 +880,7 @@ def run(load_json_file=None):
                                   callback=clone_and_add_node_repo)
                 dpg.add_menu_item(label='Create new Node', callback=graphically_create_new_node)
 
-    node_selector_holder_id = create_node_selector_window()
+    create_node_selector_window()
 
     with dpg.child_window(parent=main_window,  width=-1, height=-1)as node_editor_window:
         editor_title_id = dpg.add_text(default_value='Editor')
@@ -884,7 +904,7 @@ def run(load_json_file=None):
         dpg.add_mouse_drag_handler(callback=on_drag)
         dpg.add_mouse_release_handler(callback=on_mouse_release)
 
-    #  At start the editor checks if the known_hosts file can be found and if not warns the user
+    #  At create_gui the editor checks if the known_hosts file can be found and if not warns the user
     known_hosts_file_setup_check()
 
     # Start a thread that checks if a Node is to be deleted (when a user presses the Del button on the Node)
@@ -899,7 +919,7 @@ def run(load_json_file=None):
 
     settings.set_editor_widget_ids(editor_title_id=editor_title_id, start_graph_button_id=start_graph_button_id,
                                    end_graph_button_id=end_graph_button_id, node_tree_title_id=node_tree_title_id,
-                                   node_selector_holder_id=node_selector_holder_id,
+                                   node_selector_holder_id=node_selector_holder,
                                    node_editor_window_id=node_editor_window, node_selector_id=node_selector,
                                    add_node_button_ids=add_node_button_ids)
     dpg.start_dearpygui()
