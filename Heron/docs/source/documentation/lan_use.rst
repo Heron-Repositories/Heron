@@ -79,10 +79,9 @@ Setting up the pipeline
 The first step to set up any pipeline is to put the required Nodes in Heron's Node editor and connect them appropriately.
 For a pipeline that has Nodes (worker scripts) running on machines other than the GUIM there is also the requirement
 to let Heron (the one running on the GUIM) know where the pythons and worker scripts of the WPMs' Nodes are in those
-WPMs. This is done through the secondary window of a Node (see Figure 2) which appears when the blue button at the
-bottom left of every Node is pressed..
+WPMs. This is done through the Network secondary window of a Node (see Figure 2).
 
-.. image:: ../images/HeronGUI_secondary_Node_window.png
+.. image:: ../images/HeronGUI_SecondaryWindows_Network.png
 Figure 2.
 
 The SSH local server has to be populated with the user friendly name of the local computer (as set in the ssh info window)
@@ -102,16 +101,6 @@ this entry would look something like
 if for example the python running on the pi was a miniconda installation.
 Practically one needs to put in this entry box the same command one would need to write in an SSH terminal connected to
 the base directory of the WPM in order to run the worker script.
-
-The next two entries in the secondary window are by default empty and are used for debugging and data saving purposes
-(see :doc:`debugging` and :doc:`saving_state`). The important detail in the case of running a Node in a WPM is
-that the log file in the *Log File or Verbosity Level* entry box needs to be a file in the GUIM because it is generated
-by the com process (which always runs on the GUIM). On the other hand the path where the Save State for this Node is going
-to be saved needs to be a path in the WPM.
-
-The final entry in the secondary window is a drop down menu that allows the user to pin the com and worker processes to
-a specific CPU. If the value here is set to Any (the default) then the OS chooses how to spread the processes load
-over the system's CPUs.
 
 .. warning::
 

@@ -374,7 +374,18 @@ should be used.
 Constructing a Node from a GUI
 ------------------------------
 By clicking on Menu Bar -> Nodes -> Create New Node you can start a GUI that allows you to quickly construct a Node's
-basic structures. The first thing that Heron will ask you is the base folder you want to create the Node in.
+basic structures. The first thing that Heron will ask you is the type of the new Node (Source, Transform or Sink).
+
+.. image:: ../images/NodeCreation_PickType.png
+    :scale: 50%
+
+Then Heron will ask you to type in the Group your Node should belong (e.g. General, Numpy, Vision, etc.). You can create
+a new Group that is not currently part of Heron's Operations folder.
+
+.. image:: ../images/NodeCreation_PickGroup.png
+    :scale: 50%
+
+Finally Heron will ask you where the base folder you want to create the Node in is.
 Heron expects the base folder of a folder structure that can potentially store many Nodes and can act as a repo's
 base folder (see :doc:`adding_repos` for the folder structure of a Node). The folder does not have to be an empty one and
 Heron will happily work with a folder that hosts other Nodes. Once you have selected this folder Heron
@@ -405,6 +416,7 @@ functional Node.
 The output of these worker scripts will always be
 
 .. code-block:: python
+
     result =  [np.array([ct.IGNORE]), np.array([ct.IGNORE]), ...]
     ...
     return result

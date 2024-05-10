@@ -106,6 +106,16 @@ or (but not both!)
 Heron will work with either version. It is up to you if you need the extra functionality of the contrib version.
 
 
+Node requirements
+^^^^^^^^^^^^^^^^^
+
+The above requirements are for Heron and the Nodes that come bundled together in the Heron repository.
+The `heron-repos <https://github.com/Heron-Repositories>`_ holds more Nodes, and in the future there will be
+many more of them. Each Node has its own imports and the environment that runs the worker script of some Nodes
+needs to have all the required packages both for the basic Heron functionality and for the Nodes it is
+running.
+
+
 OS Compatibility
 ^^^^^^^^^^^^^^^^^
 Heron runs on all systems that its libraries can run on. That means Windows, MacOS, Linux and ARM based systems.
@@ -148,20 +158,14 @@ requirements and then downloading Heron from its github page.
 
 
 .. note::
-    On all systems, Heron on startup will check that you have a known_hosts file in your computer saved as USER_FOLDER/.ssh/known_hosts.
-    If no such file is found Heron will ask if you want to create an empty known_hosts file in the above folder or
-    specify where an existing a file is. Heron needs this file to exist (even empty and even when there is
-    no ssh installed in your computer) to operate. So if you have not installed ssh on your machine and you are not
-    planning to use Heron over multiple machines then allow Heron to generate an empty known_hosts file.
+    On all systems, Heron on startup will check that you have a known_hosts file in your computer saved as
+    USER_FOLDER/.ssh/known_hosts. If no such file is found Heron will ask if you want to create an empty known_hosts
+    file in the above folder or specify where an existing file is. Heron needs this file to exist (even empty and even
+    when there is no ssh installed in your computer) to operate. So if you have not installed ssh on your machine and
+    you are not planning to use Heron over multiple machines then allow Heron to generate an empty known_hosts file.
+    You can change the location and name of the known_hosts file by changing the variable KNOWN_HOSTS_FILE in Heron's
+    settings
 
-Node requirements
-^^^^^^^^^^^^^^^^^
-
-The above requirements are for Heron and the Nodes that come bundled together in the Heron repository.
-The `heron-repos <https://github.com/Heron-Repositories>`_ holds more Nodes, and in the future there will be
-many more of them. Each Node has its own imports and the environment that runs the worker script of some Nodes
-needs to have all the required packages both for the basic Heron functionality and for the Nodes it is
-running.
 
 Environments
 ^^^^^^^^^^^^^

@@ -86,9 +86,17 @@ that new data have arrived in the Nodes inputs. The worker_function of these Nod
 numpy arrays, each array corresponding to one of the Node's outputs, which Heron will deal with from that point on (again
 see :doc:`writing_new_nodes`).
 
-Heron will call the worker_function of a Node if there are new data in AND the previous call has returned. If any new
-data arrive at the Node's input and the worker_function from the previous call is still running then Heron will drop
-the new data which will be lost.
+Before the worker function is called for the first time Heron will establish a connection between the worker process
+and the Heron one. That involves checking that the parameters set in the Node GUI can pass in the worker process (
+and thus be seen by the worker function). Heron tries to establish this connection by trying run the initialisation
+function of the worker script until it gets a True return of up unitl it has tried NUMBER_OF_INITIAL_PARAMETER_UPDATES
+times (which comes first). If it fails, it stops trying to communicate and allows the worker process to kill itself.
+If it succeeds it then runs the worker function for the Source Nodes or establishes the callback functionality of the
+worker function for the Transform and Sink Nodes.
+
+Heron will call the worker_function of a Transform or Sink Node if there are new data in AND the previous call has
+returned. If any new data arrive at the Node's input and the worker_function from the previous call is still running
+then Heron will drop the new data which will be lost.
 
 .. warning::
     Heron has no buffer to hold any messages that come into a Node that is
@@ -195,6 +203,25 @@ overall resource usage and more importantly (at least in Windows) will also lead
     non Python code as a separate process). CPU locking though is not a panacea when it comes to package dropping and
     in certain cases might result in an increase of package dropping, so test your system and use appropriately.
 
+
+Multiple Inputs / Outputs
+_________________________
+
+Heron allows multiple Nodes to connect to a single input of a Node and a single output to connect to multiple Nodes.
+There is an exception to this rule. The Source Nodes can only connect each of their outputs to a single downstream Node.
+
+The multiple outputs to one input functionality is straight forward and the messages that arrive in the worker function
+of a Node can be easily differentiated by their topic (which carries the name of the outgoing Node and the outgoing
+port).
+
+The single output to multiple inputs is a bit more tricky. When this functionality is used (only valid for Transformer
+Nodes) one must allow enough time for the Node to duplicate its message and pass it to all the target Nodes. This is
+dependent on the hardware Heron runs on. To facilitate slower machines and/or large number of receiving Nodes Heron
+has a variable in its Settings called DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS. This by default is set to
+0.2 ms. On standard machines this will allow Nodes to push their output to at least two downstream Nodes. For slower
+machines or more downstream connections one must set this number to a higher number. Of course the higher the number,
+the longer it will take the Transform Node's worker function to return and be able to receive new packets from its
+upstream Nodes.
 
 
 

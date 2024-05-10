@@ -19,11 +19,17 @@ ___________________
 
 If the worker process is running on a different machine then neither the debugger will see it nor any print
 statements will pass their output to the main machine and Heron's command line window. In order to solve this (and to
-also keep a general eye on Heron's overall performance) Heron has implemented two levels of Python logging.
+also keep a general eye on Heron's overall performance) Heron has implemented two levels of Python logging. Those can
+be accessed by the Saving secondary window of each Node.
+
+.. figure:: ../images/HeronGUI_SecondaryWindows_Saving.png
+
+    Figure 1
+
 
 The com process's verbosity and log
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Each Node's secondary window provides an entry named 'Log file or Verbosity level'. There a user can set either a number
+Each Node's Saving secondary window provides an entry named 'Log file or Verbosity level'. There a user can set either a number
 (for now all numbers do the same thing but in the future there might be more verbosity levels) or a full path to a log
 file.
 
@@ -40,7 +46,9 @@ in the current Node (i.e. how many messages this Node has processed), the time t
 message and if the message is coming from an upstream Node also the index of the message in that Node and the topic of
 the message (i.e. the string that tells which Node and which output the message came from and which input the message
 has arrived into this Node).
+
 .. note::
+
     These log files are very useful to be able to track messages across Nodes. How they can be used to time match packets
     across processes is further described in the :doc:`synchronisation` section.
 
@@ -86,6 +94,12 @@ can use to log information. Use this as follows:
 
 Of course if the worker script is meant to run on a different machine the full_path_log_file_name must make sense for the
 machine that it runs on since the logger is not designed to pass its messages to different machines.
+
+The substate and parameters saving system
+_________________________________________
+Apart from the logging capabilities of Heron itself and of the com process of each Node, Heron allows the worker process
+of each Node to save information at every loop step (for the Sources case) or every time it gets called (for the Transform
+and Sink cases). This capability is fully described in the :doc:`saving_state` section.
 
 Hanging processes
 _________________
