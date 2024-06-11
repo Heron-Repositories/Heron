@@ -10,8 +10,9 @@ heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 available_fonts = [font for dirs in os.walk(os.path.join(heron_path, 'resources', 'fonts')) for font in dirs[2]]
 registered_dpg_fonts = {}
 
+
 settings_file = join(heron_path, 'settings.json')
-with open(join(heron_path, 'settings.json'), 'r') as sf:
+with open(settings_file, 'r') as sf:
     settings_dict: dict = json.load(sf)
 
 main_font_name = settings_dict['Appearance']['Editor Font']['Font']

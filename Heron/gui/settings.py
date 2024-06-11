@@ -9,23 +9,25 @@ import threading
 import time
 
 from Heron.gui.fdialog import FileDialog
-from Heron.gui import fonts
 
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
+settings_file = join(heron_path, 'settings.json')
+if not os.path.isfile(settings_file):
+    with open(join(heron_path, 'settings_default.json'), 'r') as sfd:
+        settings_dict: dict = json.load(sfd)
+        with open(join(heron_path, 'settings.json'), 'w') as sf:
+            json.dump(settings_dict, sf, indent=4)
+from Heron.gui import fonts
+
+
 
 
 class Settings:
     def __init__(self, nodes_list: List=None):
         self.window_ids_list = []
         self.settings_file = join(heron_path, 'settings.json')
-        if not os.path.isfile(self.settings_file):
-            with open(join(heron_path, 'settings_default.json'), 'r') as sfd:
-                self.settings_dict: dict = json.load(sfd)
-                with open(join(heron_path, 'settings.json'), 'w') as sf:
-                    json.dump(self.settings_dict, sf, indent=4)
-        else:
-            with open(join(heron_path, 'settings.json'), 'r') as sf:
-                self.settings_dict: dict = json.load(sf)
+        with open(self.settings_file, 'r') as sf:
+            self.settings_dict: dict = json.load(sf)
 
         self.file_dialog_selectable_height = 16
         self.table_distance_to_bottom = -30 + 5 * self.file_dialog_selectable_height
