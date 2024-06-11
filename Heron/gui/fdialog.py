@@ -6,6 +6,7 @@ import psutil
 from glob import glob
 from os.path import dirname, join
 import shutil
+import platform
 
 last_click_time = 0
 images_path = join(dirname(dirname(os.path.realpath(__file__))), 'resources', 'filedialog_images')
@@ -693,6 +694,11 @@ class FileDialog:
                         user_data=self, on_close=self.__del__):
             #info_px = 130
 
+            if platform.system() == 'Darwin':
+                videos_name = "Movies"
+            else:
+                videos_name = "Videos"
+
             # horizontal group (shot_menu + dir_list)
             with dpg.group(horizontal=True):
                 # shortcut menu
@@ -702,7 +708,10 @@ class FileDialog:
                     images = get_directory_path("Pictures")
                     documents = get_directory_path("Documents")
                     musics = get_directory_path("Music")
-                    videos = get_directory_path("Videos")
+                    if platform.system() == 'Darwin':
+                        videos = get_directory_path(videos_name)
+                    else:
+                        videos = get_directory_path(videos_name)
 
                     with dpg.group(horizontal=True):
                         dpg.add_image(self.img_desktop)
@@ -721,7 +730,7 @@ class FileDialog:
                         dpg.add_menu_item(label="Musics", callback=lambda: chdir(musics))
                     with dpg.group(horizontal=True):
                         dpg.add_image(self.img_videos)
-                        dpg.add_menu_item(label="Videos", callback=lambda: chdir(videos))
+                        dpg.add_menu_item(label=videos_name, callback=lambda: chdir(videos))
 
                     dpg.add_separator()
 

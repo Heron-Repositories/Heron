@@ -146,7 +146,6 @@ class Settings:
 
             # Deal with Editor font size
             if self.editor_font != [editor_font, editor_font_size]:
-                print(editor_font)
                 editor_font_id = dpg.add_font(editor_font, editor_font_size, parent=fonts.font_registry)
                 fonts.italic_font_id = dpg.add_font(fonts.italic_font, int(0.9 * editor_font_size),
                                                     parent=fonts.font_registry)
