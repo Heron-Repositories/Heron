@@ -11,7 +11,7 @@ import numpy as np
 from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
-from Heron.gui import settings
+from Heron.gui import settings as sett
 from Heron.communication.ssh_com import SSHCom
 
 
@@ -58,6 +58,8 @@ class SinkCom:
                 self.logger, self.listener = gu.setup_logger('Sink', log_file_name)
                 self.logger.info('Index of data packet given : Index of data packet received: Topic : Computer Time')
                 self.verbose = False
+
+        self.settings = sett.Settings()
 
         atexit.register(self.on_kill, None, None)
         signal.signal(signal.SIGTERM, self.on_kill)
@@ -126,7 +128,7 @@ class SinkCom:
         """
         while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
-            time.sleep(settings.settings_dict['Operation']['HEARTBEAT_RATE'])
+            time.sleep(self.settings.settings_dict['Operation']['HEARTBEAT_RATE'])
 
     def start_heartbeat_thread(self):
         """

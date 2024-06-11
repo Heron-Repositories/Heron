@@ -8,11 +8,12 @@ import subprocess
 import threading
 import zmq.ssh
 from Heron import general_utils as gu, constants as ct
-from Heron.gui import settings
+from Heron.gui import settings as sett
 
 class SSHCom:
     def __init__(self, worker_exec=None, local_server_id=None, remote_server_id=None,
                  ssh_local_ip=None, ssh_local_username=None, ssh_local_password=None):
+        self.settings = sett.Settings()
         if worker_exec is not None:
             self.local_server_id = local_server_id
             self.remote_server_id = remote_server_id
@@ -33,7 +34,7 @@ class SSHCom:
         try:
             pass
             self.client = paramiko.SSHClient()
-            self.client.load_host_keys(settings.settings_dict['Operation']['KNOWN_HOSTS_FILE'])
+            self.client.load_host_keys(self.settings.settings_dict['Operation']['KNOWN_HOSTS_FILE'])
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         except Exception as e:
             print('Starting paramiko client failed with error {}'.format(e))

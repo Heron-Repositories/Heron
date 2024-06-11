@@ -9,7 +9,7 @@ import pickle
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
-from Heron.gui import settings
+from Heron.gui import settings as sett
 from Heron.gui.save_node_state import SaveNodeState
 
 
@@ -83,6 +83,8 @@ class SourceWorker:
         self.socket_pub_proof_of_life.setsockopt(zmq.LINGER, 0)
         self.ssh_com.connect_socket_to_local(self.socket_pub_proof_of_life, r'tcp://127.0.0.1',
                                              self.port_pub_proof_of_life, skip_ssh=False)
+
+        self.settings = sett.Settings()
 
     def send_data_to_com(self, data):
         self.socket_push_data.send_data(data, copy=False)
@@ -173,8 +175,8 @@ class SourceWorker:
         it kills the worker_exec process
         :return: Nothing
         """
-        heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
-        heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
+        heartbeat_rate = self.settings.settings_dict['Operation']['HEARTBEAT_RATE']
+        heartbeats_to_death = self.settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
 
         while self.loops_on:
             if self.socket_pull_heartbeat.poll(timeout=(1000 * heartbeat_rate * heartbeats_to_death)):

@@ -10,7 +10,7 @@ import sys
 
 from zmq.eventloop import ioloop, zmqstream
 from Heron import constants as ct, general_utils as gu
-from Heron.gui import settings
+from Heron.gui import settings as sett
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
 from Heron.gui.save_node_state import SaveNodeState
@@ -60,6 +60,7 @@ class SinkWorker:
         self.socket_pub_proof_of_life = None
         self.thread_proof_of_life = None
         self.index = 0
+        self.settings = sett.Settings()
 
     def connect_sockets(self):
         """
@@ -203,8 +204,8 @@ class SinkWorker:
         :return: Nothing
         """
 
-        heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
-        heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
+        heartbeat_rate = self.settings.settings_dict['Operation']['HEARTBEAT_RATE']
+        heartbeats_to_death = self.settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
 
         while self.loops_on:
             current_time = time.perf_counter()

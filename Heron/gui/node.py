@@ -13,7 +13,7 @@ import zmq
 import copy
 import psutil
 import dearpygui.dearpygui as dpg
-from Heron.gui import operations_list as op, settings
+from Heron.gui import operations_list as op, settings as sett
 from Heron.general_utils import choose_color_according_to_operations_type
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
@@ -68,6 +68,7 @@ class Node:
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
+        self.settings = sett.Settings()
 
     def set_to_delete(self):
         self.to_be_deleted = True
@@ -605,7 +606,7 @@ class Node:
             dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], category=dpg.mvThemeCat_Nodes)
 
     def sending_parameters_multiple_times(self):
-        for i in range(settings.settings_dict['Operation']['NUMBER_OF_INITIAL_PARAMETERS_UPDATES']):
+        for i in range(self.settings.settings_dict['Operation']['NUMBER_OF_INITIAL_PARAMETERS_UPDATES']):
             self.update_parameters()
             gu.accurate_delay(500)
 

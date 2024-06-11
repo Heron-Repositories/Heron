@@ -10,7 +10,7 @@ from datetime import datetime
 from Heron.communication.socket_for_serialization import Socket
 from Heron import constants as ct, general_utils as gu
 from Heron.communication.ssh_com import SSHCom
-from Heron.gui import settings
+from Heron.gui import settings as sett
 
 
 class TransformCom:
@@ -61,6 +61,8 @@ class TransformCom:
                 self.logger.info('Index of data packet given : Index of data packet received : Topic : '
                                  'Computer Time of Data In : Computer Time of Data Out')
                 self.verbose = False
+
+        self.settings = sett.Settings()
 
     def connect_sockets(self):
         """
@@ -131,7 +133,7 @@ class TransformCom:
         """
         while self.all_loops_running:
             self.socket_push_heartbeat.send_string('PULSE')
-            time.sleep(settings.settings_dict['Operation']['HEARTBEAT_RATE'])
+            time.sleep(self.settings.settings_dict['Operation']['HEARTBEAT_RATE'])
 
     def start_heartbeat_thread(self):
         """
@@ -273,7 +275,7 @@ class TransformCom:
                         self.socket_pub_data.send_data(new_message_data[k], copy=False)
 
                         # This delay is critical to get single output to multiple inputs to work!
-                        gu.accurate_delay(settings.settings_dict['Operation']['DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS'])
+                        gu.accurate_delay(self.settings.settings_dict['Operation']['DELAY_BETWEEN_SENDING_DATA_TO_NEXT_NODE_MILLISECONDS'])
                 t4 = time.perf_counter()
 
                 self.index = self.index + 1

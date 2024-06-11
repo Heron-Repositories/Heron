@@ -17,6 +17,7 @@ if not os.path.isfile(settings_file):
         settings_dict: dict = json.load(sfd)
         with open(join(heron_path, 'settings.json'), 'w') as sf:
             json.dump(settings_dict, sf, indent=4)
+
 from Heron.gui import fonts
 
 
@@ -26,7 +27,7 @@ class Settings:
     def __init__(self, nodes_list: List=None):
         self.window_ids_list = []
         self.settings_file = join(heron_path, 'settings.json')
-        with open(self.settings_file, 'r') as sf:
+        with open(join(heron_path, 'settings.json'), 'r') as sf:
             self.settings_dict: dict = json.load(sf)
 
         self.file_dialog_selectable_height = 16
@@ -145,6 +146,7 @@ class Settings:
 
             # Deal with Editor font size
             if self.editor_font != [editor_font, editor_font_size]:
+                print(editor_font)
                 editor_font_id = dpg.add_font(editor_font, editor_font_size, parent=fonts.font_registry)
                 fonts.italic_font_id = dpg.add_font(fonts.italic_font, int(0.9 * editor_font_size),
                                                     parent=fonts.font_registry)

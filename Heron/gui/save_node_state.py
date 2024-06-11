@@ -5,7 +5,7 @@ import threading
 import pandas as pd
 from datetime import datetime
 from Heron import constants as ct
-from Heron.gui import settings
+from Heron.gui import settings as sett
 
 
 def rearrange_pandasdf_columns(df):
@@ -41,7 +41,7 @@ class SaveNodeState():
         self.temp_substate_list_to_save = []
         self.parameters_pandasdf: pd.DataFrame
         self.substate_pandasdf: pd.DataFrame
-
+        settings = sett.Settings()
         self.num_of_iters = settings.settings_dict['Operation']['NUMBER_OF_ITTERATIONS_BEFORE_SAVENODESTATE_SUBSTATE_SAVE']
 
         if num_of_iters is not None:

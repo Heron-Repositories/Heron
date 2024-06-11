@@ -12,7 +12,7 @@ from zmq.eventloop import ioloop, zmqstream
 from Heron.communication.socket_for_serialization import Socket
 from Heron.communication.ssh_com import SSHCom
 from Heron.gui.save_node_state import SaveNodeState
-from Heron.gui import settings
+from Heron.gui import settings as sett
 
 
 class TransformWorker:
@@ -59,6 +59,7 @@ class TransformWorker:
         self.thread_proof_of_life = None
         self.worker_visualisable_result = None
         self.index = 0
+        self.settings = sett.Settings()
 
     def connect_sockets(self):
         """
@@ -218,8 +219,8 @@ class TransformWorker:
         If it is then the current process is killed
         :return: Nothing
         """
-        heartbeat_rate = settings.settings_dict['Operation']['HEARTBEAT_RATE']
-        heartbeats_to_death = settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
+        heartbeat_rate = self.settings.settings_dict['Operation']['HEARTBEAT_RATE']
+        heartbeats_to_death = self.settings.settings_dict['Operation']['HEARTBEATS_TO_DEATH']
 
         while self.loops_on:
             current_time = time.perf_counter()
