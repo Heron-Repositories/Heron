@@ -21,9 +21,16 @@ if not os.path.isfile(settings_file):
 from Heron.gui import fonts
 
 
+class Singleton (type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
-class Settings:
+class Settings(metaclass=Singleton):
     def __init__(self, nodes_list: List=None):
         self.window_ids_list = []
         self.settings_file = join(heron_path, 'settings.json')
