@@ -622,7 +622,7 @@ def clone_and_add_node_repo():
         if '.git' in operation_folder:
             operation_folder = operation_folder.split('.')[0]
         operation_path = os.path.join(operations_parent_directory, operation_folder)
-        cmd = f'{git_path} clone {url_of_repo} {operation_path}'
+        cmd = [git_path, 'clone', url_of_repo, operation_path]
         msg = message.Message("Downloading and installing Node repository", show_ok_button=False,
                               loading_indicator=True, element_indent=130)
         git_process = subprocess.run(cmd)
