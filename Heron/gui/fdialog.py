@@ -702,7 +702,8 @@ class FileDialog:
             # horizontal group (shot_menu + dir_list)
             with dpg.group(horizontal=True):
                 # shortcut menu
-                with dpg.child_window(tag="shortcut_menu", width=200, show=self.show_shortcuts_menu, height=-self.table_distance_to_bottom):
+                with dpg.child_window(tag="shortcut_menu", width=200, show=self.show_shortcuts_menu,
+                                      height=-self.table_distance_to_bottom):
                     desktop = get_directory_path("Desktop")
                     downloads = get_directory_path("Downloads")
                     images = get_directory_path("Pictures")

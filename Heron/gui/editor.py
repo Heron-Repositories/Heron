@@ -14,6 +14,7 @@ import threading
 import shutil
 
 sys.path.insert(0, dirname(dirname(dirname(os.path.realpath(__file__)))))
+
 import Heron.general_utils as gu
 from Heron.gui import operations_list as op_list
 from Heron.gui.node import Node
@@ -46,7 +47,8 @@ editor_title_id = None
 node_editor_window = None
 add_node_button_ids = []
 
-settings = sett.Settings(nodes_list)
+#settings = sett.Settings(nodes_list)
+settings: sett.Settings
 
 
 def generate_node_tree():
@@ -821,11 +823,13 @@ def run(load_json_file=None):
     global node_selector
     global node_selector_holder
     global table_distance_to_bottom
+    global settings
 
     dpg.create_context()
-    dpg.create_viewport(title='Heron', width=1620, height=1000, x_pos=350, y_pos=0)
+    dpg.create_viewport(title='Heron', width=1400, height=900, x_pos=0, y_pos=5)
 
     fonts.add_to_registry()
+    settings = sett.Settings(nodes_list)
 
     '''
     with dpg.font_registry() as f_reg:
@@ -858,7 +862,7 @@ def run(load_json_file=None):
 
     dpg.bind_theme(main_theme_id)
 
-    with dpg.window(width=1620, height=1000, pos=[0, 0], tag='main_window') as main_window:
+    with dpg.window(width=1200, height=800, pos=[0, 0], tag='main_window') as main_window:
         dpg.set_primary_window(main_window, True)
 
         with dpg.group(horizontal=True):

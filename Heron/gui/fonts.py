@@ -28,10 +28,12 @@ def add_to_registry():
     global font_registry
     global italic_font_id
 
-    with dpg.font_registry() as font_registry:
-        italic_font_id = dpg.add_font(italic_font, int(0.9 * main_font_size))
-        dpg.add_font(bold_font, int(1.2 * main_font_size))
-        default = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', main_font_name), main_font_size)
+    font_registry = dpg.add_font_registry()
+    #with dpg.font_registry() as font_registry:
+    italic_font_id = dpg.add_font(italic_font, int(0.9 * main_font_size), parent=font_registry)
+    dpg.add_font(bold_font, int(1.2 * main_font_size), parent=font_registry)
+    default = dpg.add_font(os.path.join(heron_path, 'resources', 'fonts', main_font_name), main_font_size,
+                           parent=font_registry)
 
     dpg.bind_font(default)
 
