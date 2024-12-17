@@ -101,10 +101,10 @@ class Node:
         for i, attr in enumerate(self.operation.attributes):
             if attr_type != str(dpg.mvNode_Attr_Static) and attr in attr_name:
                 x = i - 1 if has_params else i
-                text = f'{self.operation.attributes[i]}: {self.operation.attribute_tooltips[x]}'
+                text = f'{self.operation.attributes[i]}:\n\n {self.operation.attribute_tooltips[x]}'
             elif 'Param' in attr_type:
                 param_num = int(attr_type.split(':')[1])
-                text = f'{self.operation.parameters[param_num]}: {self.operation.parameter_tooltips[param_num]}'
+                text = f'{self.operation.parameters[param_num]}:\n\n {self.operation.parameter_tooltips[param_num]}'
 
         if text is not None:
             text += '\n ___________________________________________________________________________________\n'
@@ -356,7 +356,7 @@ class Node:
             self.widget_ids_with_text.append(title_tooltip)
             node_name = re.sub('\d', '', self.name).replace('#', '')
             text = codecs.decode(self.operation.tooltip, 'unicode_escape')
-            id_node_tt = dpg.add_text(f'{node_name}: {text}', wrap=390, indent=5)
+            id_node_tt = dpg.add_text(f'{node_name}:\n\n {text}', wrap=390, indent=5)
             self.widget_ids_with_text.append(id_node_tt)
 
         def show_node_tooltip_on_hover():

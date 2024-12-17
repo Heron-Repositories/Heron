@@ -1,3 +1,4 @@
+import time
 
 from dearpygui import dearpygui as dpg
 from os.path import join
@@ -33,6 +34,7 @@ parameter_types = ['bool', 'str', 'list', 'float', 'int']
 heron_path = Path(os.path.dirname(os.path.realpath(__file__))).parent
 images_path = join(heron_path, 'resources', 'basic_icons')
 add_node_to_tree_func: Callable
+main_window_x_pos = 300
 
 
 # The Code Editing
@@ -127,8 +129,8 @@ def generate_data(node_name_id):
                 message = f"Default value {node_data['ParametersDefaultValues'][i]} of parameter " \
                           f"{node_data['ParameterNames'][i]}\ncannot be evaluated appropriately."
                 print(message)
-                with dpg.window(label=f'Error on parameter {i}', pos=[100, 200+120*i], height=120, width=300,
-                                show=True, popup=True):
+                with dpg.window(label=f'Error on parameter {i}', pos=[main_window_x_pos, 200+120*i],
+                                height=120, width=300, show=True, popup=True):
                     dpg.add_text(default_value=message)
                 error = True
 
@@ -169,6 +171,8 @@ def generate_folder_structure():
             pass
     except FileExistsError:
         pass
+
+    time.sleep(0.2)
 
 
 def write_code():
@@ -283,7 +287,7 @@ def write_code():
                      f"    #  worker_object.savenodestate_create_parameters_df({parameters_names[0]}={parameters_names[0]}, \n"
     for name in parameters_names[1:]:
         worker_script += \
-                     f"    #                                                   {name }={name}\n"
+                     f"    #                                                   {name }={name},\n"
     worker_script += "    #                                                    )\n\n" \
                      "    # DO ANY OTHER INITIALISATION HERE \n\n"
 
@@ -383,7 +387,11 @@ def generate_code(node_name_id):
         generate_folder_structure()
         write_code()
         gu.start_ide(node_data['ComExecutable'], node_data['WorkerDefaultExecutable'])
-        add_node_to_tree_func(sender=None, app_data=None, user_data=path)
+        add_node_to_tree_func(sender=None, app_data=None, user_data=[path])
+
+        return True
+
+    return False
 
 
 # The GUI
@@ -423,24 +431,29 @@ def kill_existing_aliases():
 
 
 def on_close_main(sender, app_data, user_data):
+    kill_window = True
     if user_data:
         node_name_id = user_data
-        generate_code(node_name_id)
-    kill_existing_aliases()
-    if user_data:
-        dpg.delete_item(node_win)
+        kill_window = generate_code(node_name_id)
+    if kill_window:
+        kill_existing_aliases()
+        if user_data:
+            dpg.delete_item(node_win)
 
 
 def on_close_main_with_buttons(sender, app_data, user_data):
     global node_win
 
     node_name_id, gen_data = user_data
-    dpg.configure_item(node_win, show=False)
-    if gen_data:
-        generate_code(node_name_id)
+    kill_window = True
 
-    kill_existing_aliases()
-    dpg.delete_item(node_win)
+    if gen_data:
+        kill_window = generate_code(node_name_id)
+
+    if kill_window:
+        dpg.configure_item(node_win, show=False)
+        kill_existing_aliases()
+        dpg.delete_item(node_win)
 
 
 def start(_add_node_to_tree_func):
@@ -749,7 +762,7 @@ def make_node_window():
         dpg.add_static_texture(wdel, hdel, ddel, tag=tag_delete_texture)
         dpg.add_static_texture(wedit, hedit, dedit, tag=tag_edit_texture)
 
-    with dpg.window(label='New Node Editor', tag=tag_main, width=550, height=430, pos=[300, 100],
+    with dpg.window(label='New Node Editor', tag=tag_main, width=550, height=430, pos=[main_window_x_pos, 100],
                     user_data=tag_name_text, on_close=on_close_main, no_collapse=True) as node_win:
         with dpg.group(horizontal=True):
             dpg.add_input_text(tag=tag_name_text, width=-30, height=40, indent=5, default_value='Node Name')

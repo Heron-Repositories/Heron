@@ -573,10 +573,10 @@ def create_symlink_of_node(selected_files):
                             return False
 
     if not folders_exist:
-        error_text = "The selected Directory {} \n" \
+        error_text = f"The selected Directory {operations_directory} \n" \
                      "doesn't have at least one of the\n" \
                      "Sources, Transforms or Sinks folders in it, so it cannot\n" \
-                     "be Heron Node code. Please select another directory.".format(operations_directory)
+                     "be Heron Node code. Please select another directory."
         message.Message(error_text, element_indent=120)
         # The FileEditor checks if the callback from pressing OK returns anything and if it does, and it is False
         # then it does nothing (including not killing the file dialog window)
@@ -589,12 +589,11 @@ def create_symlink_of_node(selected_files):
         return True
 
 
-def add_new_symbolic_link_node_folder(sender, app_data, user_data=None):
+def add_new_symbolic_link_node_folder(sender, app_data, user_data=None, check_for_proper_folder_structure: bool = True):
     global last_visited_directory
 
     if not check_for_windows_admin():
         return False
-
     if user_data is None:
         file_dialog = FileDialog(show_dir_size=False, modal=False, allow_drag=False,
                                  show_hidden_files=False, multi_selection=False, tag='file_dialog',
