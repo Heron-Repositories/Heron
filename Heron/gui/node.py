@@ -68,7 +68,7 @@ class Node:
         self.ssh_local_server = self.ssh_server_id_and_names[0]
         self.ssh_remote_server = self.ssh_server_id_and_names[0]
         self.worker_executable = self.operation.worker_exec
-        self.settings = sett.Settings()
+        self.times_to_resend_params = sett.Settings().settings_dict['Operation']['NUMBER_OF_INITIAL_PARAMETERS_UPDATES']
 
     def set_to_delete(self):
         self.to_be_deleted = True
@@ -606,7 +606,7 @@ class Node:
             dpg.add_theme_color(dpg.mvNodeCol_NodeOutline, [255, 255, 255, 255], category=dpg.mvThemeCat_Nodes)
 
     def sending_parameters_multiple_times(self):
-        for i in range(self.settings.settings_dict['Operation']['NUMBER_OF_INITIAL_PARAMETERS_UPDATES']):
+        for i in range(self.times_to_resend_params):
             self.update_parameters()
             gu.accurate_delay(500)
 

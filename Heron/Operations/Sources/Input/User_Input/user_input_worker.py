@@ -16,10 +16,12 @@ from Heron.gui.visualisation_dpg import VisualisationDPG
 
 worker_object: SourceWorker
 visualisation_on: bool
-latest_user_input: str
+output_type: str
+latest_user_input: str | int | float
 loop_on = False
 finish = False
 vis: VisualisationDPG
+initial_user_input = ''
 
 
 def initialise(_worker_object):
@@ -28,6 +30,7 @@ def initialise(_worker_object):
     global latest_user_input
     global loop_on
     global vis
+    global initial_user_input
 
     try:
         visualisation_on = _worker_object.parameters[0]
@@ -35,10 +38,10 @@ def initialise(_worker_object):
         latest_user_input = str(_worker_object.parameters[2])
 
         vis = VisualisationDPG(_node_name=_worker_object.node_name, _node_index=_worker_object.node_index,
-                               _visualisation_type='Value', _buffer=20)
+                               _visualisation_type='Value', _buffer=10)
 
         loop_on = True
-
+        initial_user_input = latest_user_input
     except:
         pass
 
@@ -50,6 +53,7 @@ def start_user_input_capture(_worker_object):
     global output_type
     global latest_user_input
     global loop_on
+    global initial_user_input
 
     while not loop_on and not finish:
         gu.accurate_delay(1)
@@ -66,7 +70,8 @@ def start_user_input_capture(_worker_object):
 
             vis.visualisation_on = visualisation_on
 
-            if latest_user_input != '':
+            if latest_user_input != '' and initial_user_input != latest_user_input:
+                initial_user_input = ''
 
                 if output_type == 'int':
                     latest_user_input = [int(i) for i in latest_user_input.split(' ')]
@@ -91,7 +96,7 @@ def on_end_of_life():
     global loop_on
     global finish
 
-    finish = False
+    finish = True
     loop_on = False
     vis.end_of_life()
 

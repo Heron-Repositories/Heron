@@ -25,6 +25,7 @@ Exec = os.path.abspath(__file__)
 Properties of the generated Node
 """
 BaseName = 'User Defined Function 1I 1O'
+NodeTooltip = 'Run a custom python function as a Node.\n\nCreate a python script with a function as follows:\n\ndef function(topic, input_data)\n    Your code here\n    return result\n\nThe result must be a numpy array or a list.'
 NodeAttributeNames = ['Parameters', 'Input', 'Output']
 
 NodeAttributeType = ['Static', 'Input', 'Output']

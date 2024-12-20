@@ -356,6 +356,7 @@ def on_save_file_selected(selected_files):
     global last_visited_directory
 
     save_to = selected_files[0]
+    print(save_to)
     last_visited_directory = dirname(save_to)
     node_dict = {}
     for n in nodes_list:
@@ -369,7 +370,6 @@ def on_save_file_selected(selected_files):
         n = copy.deepcopy(n)
         node_dict[n.name] = n.__dict__
         node_dict[n.name]['operation'] = node_dict[n.name]['operation'].__dict__
-
     node_dict['links'] = links_dict
 
     with open(save_to, 'w+') as file:

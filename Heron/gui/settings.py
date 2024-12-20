@@ -149,7 +149,10 @@ class Settings(metaclass=Singleton):
                 self.node_font = [node_font, node_font_size]
             for node in self.nodes_list:
                 for item in node.widget_ids_with_text:
-                    dpg.bind_item_font(item, node_font_id)
+                    try:
+                        dpg.bind_item_font(item, node_font_id)
+                    except:
+                        pass
 
             # Deal with Editor font size
             if self.editor_font != [editor_font, editor_font_size]:

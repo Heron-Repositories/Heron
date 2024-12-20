@@ -332,7 +332,7 @@ def write_code():
                      f"        {extra_indent}pass\n\n"
 
     if node_type != 'Source':
-        worker_script += f"    {extra_indent}topic = data[0]\n\n" \
+        worker_script += f"    {extra_indent}topic = data[0].decode('utf-8')\n\n" \
                          f"    {extra_indent}message = data[1:]\n" \
                          f"    {extra_indent}message = Socket.reconstruct_data_from_bytes_message(message)\n" \
                          f"    {extra_indent}# OR Socket.reconstruct_array_from_bytes_message_cv2correction(message) " \
